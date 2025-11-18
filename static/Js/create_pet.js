@@ -9,7 +9,7 @@ const message = document.getElementById("message");
 
 // 🔙 Back button
 document.getElementById("backBtn").addEventListener("click", () => {
-  window.location.href = "login.html";
+  window.location.href = "index.html";
 });
 
 // 🟢 Toggle co-parent mode
@@ -103,4 +103,5 @@ petForm.addEventListener("submit", async (e) => {
     message.textContent = "❌ Error connecting to the server.";
   }
 });
+
 
