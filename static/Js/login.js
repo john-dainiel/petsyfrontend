@@ -14,8 +14,10 @@ let currentRole = "";
 // ==============================
 // 💬 On-page Message Display (instant text)
 function showMessage(text, type = "info") {
+  const message = document.getElementById("message");
   message.textContent = text;
   message.className = `msg ${type}`;
+  message.style.display = text ? "block" : "none";
 }
 
 // ==============================
@@ -222,3 +224,4 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
