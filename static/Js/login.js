@@ -13,15 +13,13 @@ let currentRole = "";
 
 // ==============================
 // 💬 On-page Message Display (instant text)
-// ==============================
 function showMessage(text, type = "info") {
   message.textContent = text;
   message.className = `msg ${type}`;
 }
 
 // ==============================
-// Inject styles
-// ==============================
+// Inject styles for messages
 const style = document.createElement("style");
 style.textContent = `
   #message {
@@ -39,7 +37,6 @@ document.head.appendChild(style);
 
 // ==============================
 // 🧩 Redirect Helper (with pet check)
-// ==============================
 async function redirectUser(userId, role) {
   if (role.toLowerCase() === "admin") {
     window.location.href = "admin.html";
@@ -69,7 +66,6 @@ async function redirectUser(userId, role) {
 
 // ==============================
 // 🧩 AUTO LOGIN (Remember PC)
-// ==============================
 window.addEventListener("DOMContentLoaded", async () => {
   const savedToken = localStorage.getItem("remember_token");
   const savedUsername = localStorage.getItem("remember_username");
@@ -94,17 +90,16 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       showMessage(`Welcome back, ${savedUsername}!`, "success");
 
-      // ✅ Auto-redirect silently
       setTimeout(() => redirectUser(data.user.id, data.user.role), 500);
     }
   } catch (err) {
     console.error("Auto-login error:", err);
+    showMessage("Server unavailable. Try again later.", "warn");
   }
 });
 
 // ==============================
 // 🧩 LOGIN FORM
-// ==============================
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -120,12 +115,14 @@ loginForm.addEventListener("submit", async (e) => {
   currentUsername = username;
 
   try {
+    // First: login check
     const res = await fetch(`${backendUrl}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
+
     if (!res.ok) {
       showMessage(data.error || "Wrong username or password.", "error");
       return;
@@ -133,6 +130,7 @@ loginForm.addEventListener("submit", async (e) => {
 
     currentRole = data.role || "user";
 
+    // Second: request OTP
     const otpRes = await fetch(`${backendUrl}/request_otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -140,31 +138,29 @@ loginForm.addEventListener("submit", async (e) => {
     });
     const otpData = await otpRes.json();
 
-    if (otpRes.ok) {
-      // Store device token if rememberPC is checked
+    if (otpRes.ok && otpData.success) {
       if (rememberPC && otpData.remember_token) {
         localStorage.setItem("remember_token", otpData.remember_token);
         localStorage.setItem("remember_username", username);
       }
-
       showMessage("OTP sent to your email!", "info");
 
       loginForm.style.display = "none";
       otpForm.style.display = "block";
     } else {
-      showMessage(otpData.error || "Failed to send OTP.", "error");
+      showMessage(otpData.message || "Failed to send OTP.", "error");
     }
   } catch (err) {
     console.error("Login error:", err);
-    showMessage("Server connection error.", "warn");
+    showMessage("Server unavailable. Try again later.", "warn");
   }
 });
 
 // ==============================
 // 🧩 OTP VERIFICATION
-// ==============================
 otpForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const otpCode = document.getElementById("otpCode").value.trim();
   if (!otpCode) {
     showMessage("Please enter your OTP.", "warn");
@@ -179,7 +175,7 @@ otpForm.addEventListener("submit", async (e) => {
     });
     const data = await res.json();
 
-    if (res.ok) {
+    if (res.ok && data.success) {
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("user_id", data.user_id || "");
       localStorage.setItem("remember_username", currentUsername);
@@ -190,15 +186,15 @@ otpForm.addEventListener("submit", async (e) => {
       showMessage("Login complete!", "success");
       setTimeout(() => redirectUser(data.user_id, currentRole), 500);
     } else {
-      showMessage(data.error || "Invalid OTP.", "error");
+      showMessage(data.message || "Invalid OTP.", "error");
     }
   } catch (err) {
-    console.error("OTP verify error:", err);
-    showMessage("Server connection error.", "warn");
+    console.error("OTP verification error:", err);
+    showMessage("Server unavailable. Try again later.", "warn");
   }
 });
 
-// 🔙 Back to login
+// 🔙 Back to login button
 const backBtn = document.createElement("button");
 backBtn.type = "button";
 backBtn.textContent = "Back to Login";
@@ -211,14 +207,17 @@ otpForm.appendChild(backBtn);
 
 // ==============================
 // 🚪 LOGOUT
-// ==============================
 async function logout() {
   const userId = localStorage.getItem("user_id");
-  await fetch(`${backendUrl}/logout`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId }),
-  });
+  try {
+    await fetch(`${backendUrl}/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId }),
+    });
+  } catch (err) {
+    console.error("Logout error:", err);
+  }
   localStorage.clear();
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
