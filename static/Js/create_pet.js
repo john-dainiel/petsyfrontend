@@ -1,4 +1,4 @@
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 
 const isCoParent = document.getElementById("isCoParent");
@@ -103,3 +103,4 @@ petForm.addEventListener("submit", async (e) => {
     message.textContent = "❌ Error connecting to the server.";
   }
 });
+
