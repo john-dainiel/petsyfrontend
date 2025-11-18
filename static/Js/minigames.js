@@ -2,7 +2,7 @@
 // 🐾 PETSY MINIGAMES.JS — with dynamic re-randomizing on Play Again
 // ===============================
 
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 const pet_id = localStorage.getItem("pet_id") || 1;
 
@@ -332,3 +332,4 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!$("#gamePanel")) console.warn("gamePanel element not found");
   if (!$("#popupMessage")) console.warn("popupMessage element not found");
 });
+
