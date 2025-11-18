@@ -12,7 +12,7 @@
 // - FIXES: play button local-only lock, wakePet(), hourly energy restore while sleeping
 // ===============================
 
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 
 let petData = null;
@@ -1276,4 +1276,5 @@ async function renamePet() {
 
 // Bind rename button
 document.getElementById("renameBtn").addEventListener("click", renamePet);
+
 
