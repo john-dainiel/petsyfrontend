@@ -1,4 +1,4 @@
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 // change if your Flask URL differs
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -46,3 +46,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     petInfoText.textContent = "Unable to load pet info right now.";
   }
 });
+
