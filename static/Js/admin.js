@@ -1,4 +1,4 @@
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // Load default
@@ -234,3 +234,4 @@ function logout() {
       window.location.href = "login.html";
     });
 }
+
