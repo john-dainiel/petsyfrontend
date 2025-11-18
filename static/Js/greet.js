@@ -2,7 +2,7 @@
 // 🐾 PETSY GREET.JS — Reliable Pet Greeting System
 // ===============================
 
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 
 // 🧩 Helper: Get query parameters from OTP redirect
@@ -105,3 +105,4 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = nextPage;
   });
 });
+
