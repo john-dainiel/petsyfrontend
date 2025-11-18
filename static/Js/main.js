@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   logoutBtn?.addEventListener('click', () => {
     localStorage.clear();
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
   });
 
   shopBtn?.addEventListener('click', async () => {
@@ -1276,5 +1276,6 @@ async function renamePet() {
 
 // Bind rename button
 document.getElementById("renameBtn").addEventListener("click", renamePet);
+
 
 
