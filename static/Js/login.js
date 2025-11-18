@@ -1,5 +1,5 @@
 // ==============================
-// 🐾 PETSY LOGIN.JS — CLEANED & INLINE NOTIFICATIONS
+// 🐾 PETSY LOGIN.JS — FIXED “Remember PC” FLOW
 // ==============================
 
 const backendUrl = "https://petsy-dow7.onrender.com";
@@ -12,14 +12,16 @@ let currentUsername = "";
 let currentRole = "";
 
 // ==============================
-// 💬 Inline Message Display
+// 💬 On-page Message Display (instant text)
 // ==============================
-function showMessage(text = "", type = "info") {
+function showMessage(text, type = "info") {
   message.textContent = text;
-  message.className = `msg ${type}`; // success, error, warn, info
+  message.className = `msg ${type}`;
 }
 
-// Inject styles for message
+// ==============================
+// Inject styles
+// ==============================
 const style = document.createElement("style");
 style.textContent = `
   #message {
@@ -47,31 +49,26 @@ async function redirectUser(userId, role) {
   try {
     const res = await fetch(`${backendUrl}/get_pet/${userId}`);
     if (res.status === 404) {
-      showMessage("No pet found. Redirecting to create your pet...", "info");
       window.location.href = "create_pet.html";
       return;
     }
-
     if (res.ok) {
       const data = await res.json();
       if (data && data.id) {
         localStorage.setItem("pet_id", data.id);
-        showMessage("Welcome back to your pet!", "success");
         window.location.href = "greet.html";
         return;
       }
     }
-
-    window.location.href = "create_pet.html";
+    window.location.href = "create_pet.html"; // fallback
   } catch (err) {
     console.error("Pet check failed:", err);
-    showMessage("Error checking pet data. Redirecting...", "warn");
     window.location.href = "greet.html";
   }
 }
 
 // ==============================
-// 🧩 AUTO LOGIN (only shows message if successful)
+// 🧩 AUTO LOGIN (Remember PC)
 // ==============================
 window.addEventListener("DOMContentLoaded", async () => {
   const savedToken = localStorage.getItem("remember_token");
@@ -82,20 +79,26 @@ window.addEventListener("DOMContentLoaded", async () => {
     const res = await fetch(`${backendUrl}/auto_login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: savedUsername, device_token: savedToken }),
+      body: JSON.stringify({ device_token: savedToken }),
     });
     const data = await res.json();
+
     if (res.ok && data.success) {
-      showMessage("Welcome back! PC recognized.", "success");
+      currentUsername = savedUsername;
+      currentRole = data.user.role;
+
+      // Save user info locally
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("user_id", data.user.id);
       localStorage.setItem("remember_username", savedUsername);
 
+      showMessage(`Welcome back, ${savedUsername}!`, "success");
+
+      // ✅ Auto-redirect silently
       setTimeout(() => redirectUser(data.user.id, data.user.role), 500);
     }
   } catch (err) {
     console.error("Auto-login error:", err);
-    // No message shown if auto-login fails
   }
 });
 
@@ -123,7 +126,6 @@ loginForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({ username, password }),
     });
     const data = await res.json();
-
     if (!res.ok) {
       showMessage(data.error || "Wrong username or password.", "error");
       return;
@@ -131,34 +133,22 @@ loginForm.addEventListener("submit", async (e) => {
 
     currentRole = data.role || "user";
 
-    // Request OTP
     const otpRes = await fetch(`${backendUrl}/request_otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username,
-        remember_pc: rememberPC,
-        device_token: localStorage.getItem("remember_token") || null,
-      }),
+      body: JSON.stringify({ username, remember_pc: rememberPC }),
     });
     const otpData = await otpRes.json();
 
     if (otpRes.ok) {
-      if (otpData.skip_otp) {
-        showMessage("Login successful! Redirecting...", "success");
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("user_id", otpData.user_id || data.user_id || "");
-        localStorage.setItem("remember_username", username);
-        setTimeout(() => redirectUser(otpData.user_id || data.user_id, currentRole), 500);
-        return;
-      }
-
-      if (otpData.remember_token) {
+      // Store device token if rememberPC is checked
+      if (rememberPC && otpData.remember_token) {
         localStorage.setItem("remember_token", otpData.remember_token);
         localStorage.setItem("remember_username", username);
       }
 
       showMessage("OTP sent to your email!", "info");
+
       loginForm.style.display = "none";
       otpForm.style.display = "block";
     } else {
@@ -175,7 +165,6 @@ loginForm.addEventListener("submit", async (e) => {
 // ==============================
 otpForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-
   const otpCode = document.getElementById("otpCode").value.trim();
   if (!otpCode) {
     showMessage("Please enter your OTP.", "warn");
@@ -191,7 +180,6 @@ otpForm.addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if (res.ok) {
-      showMessage("Login complete! Redirecting...", "success");
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("user_id", data.user_id || "");
       localStorage.setItem("remember_username", currentUsername);
@@ -199,6 +187,7 @@ otpForm.addEventListener("submit", async (e) => {
       loginForm.style.display = "none";
       otpForm.style.display = "none";
 
+      showMessage("Login complete!", "success");
       setTimeout(() => redirectUser(data.user_id, currentRole), 500);
     } else {
       showMessage(data.error || "Invalid OTP.", "error");
@@ -209,11 +198,10 @@ otpForm.addEventListener("submit", async (e) => {
   }
 });
 
-// 🔙 Back to login button
+// 🔙 Back to login
 const backBtn = document.createElement("button");
 backBtn.type = "button";
 backBtn.textContent = "Back to Login";
-backBtn.classList.add("secondary");
 backBtn.onclick = () => {
   otpForm.style.display = "none";
   loginForm.style.display = "block";
@@ -222,7 +210,7 @@ backBtn.onclick = () => {
 otpForm.appendChild(backBtn);
 
 // ==============================
-// 🚪 LOGOUT FUNCTION
+// 🚪 LOGOUT
 // ==============================
 async function logout() {
   const userId = localStorage.getItem("user_id");
@@ -233,5 +221,5 @@ async function logout() {
   });
   localStorage.clear();
   showMessage("Logged out successfully.", "success");
-  setTimeout(() => (window.location.href = "index.html"), 500);
+  setTimeout(() => (window.location.href = "index.html"), 1000);
 }
