@@ -5,7 +5,7 @@
 // - Users with pet → greet.html
 // ==============================
 
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 
 const loginForm = document.getElementById("loginForm");
@@ -298,3 +298,4 @@ async function logout() {
   showNotification("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "login.html"), 1000);
 }
+
