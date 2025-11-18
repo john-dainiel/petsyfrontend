@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     greetEl.textContent = "Welcome, Guest!";
     petInfoText.textContent = "Please log in first.";
     continueBtn.textContent = "Go to Login";
-    continueBtn.onclick = () => window.location.href = "login.html";
+    continueBtn.onclick = () => window.location.href = "index.html";
     return;
   }
 
@@ -46,4 +46,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     petInfoText.textContent = "Unable to load pet info right now.";
   }
 });
+
 
