@@ -1,5 +1,4 @@
-const backendUrl = "https://petsy-backend.onrender.com";
-
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("registerForm");
@@ -127,3 +126,4 @@ function getPasswordStrength(password) {
   if (score === 3 || score === 4) return { message: "Medium password 🟠", color: "orange" };
   return { message: "Strong password 🟢", color: "green" };
 }
+
