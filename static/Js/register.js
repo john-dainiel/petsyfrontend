@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         messageEl.textContent = "✅ Registration successful! Redirecting...";
         messageEl.style.color = "green";
-        setTimeout(() => (window.location.href = "login.html"), 1000);
+        setTimeout(() => (window.location.href = "index.html"), 1000);
       }
     } catch (err) {
       console.error(err);
@@ -126,4 +126,5 @@ function getPasswordStrength(password) {
   if (score === 3 || score === 4) return { message: "Medium password 🟠", color: "orange" };
   return { message: "Strong password 🟢", color: "green" };
 }
+
 
