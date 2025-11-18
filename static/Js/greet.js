@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Logout → clear session + return to login
   document.getElementById("logout")?.addEventListener("click", () => {
     localStorage.clear();
-    window.location.href = "login.html";
+    window.location.href = "index.html";
   });
 
   // Continue → go to next page (main or admin)
@@ -105,4 +105,5 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = nextPage;
   });
 });
+
 
