@@ -1,4 +1,4 @@
-const backendUrl = "https://petsy-backend.onrender.com";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 
 async function createPost() {
@@ -107,3 +107,4 @@ function logout() {
 }
 
 document.addEventListener("DOMContentLoaded", loadFeed);
+
