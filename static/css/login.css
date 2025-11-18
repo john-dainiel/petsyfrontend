@@ -108,4 +108,18 @@ button.secondary:hover {
   font-size: 14px;
   cursor: pointer;
   color: #333;
+
 }
+
+#message {
+  margin-top: 10px;
+  font-size: 15px;
+  text-align: center;
+  min-height: 22px;
+  transition: all 0.3s ease;
+}
+
+.msg.success { color: #28a745; }
+.msg.error { color: #dc3545; }
+.msg.warn { color: #ffc107; }
+.msg.info { color: #007bff; }
