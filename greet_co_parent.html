@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Welcome to Petsy</title>
-  <link rel="stylesheet" href="https://petsy-dow7.onrender.com/static/css/greet_co_parent.css">
+  <link rel="stylesheet" href="https://petsyfrontend.onrender.com/static/css/greet_co_parent.css">
 </head>
 <body>
   <div class="greet-container">
@@ -11,7 +11,7 @@
     <p id="petInfoText">You are co-parenting <strong id="petName">your pet</strong> 🐾</p>
 
     <div class="pet-preview">
-      <img id="petImage" src="https://petsy-dow7.onrender.com/static/static/images/paw.png" alt="Pet Preview">
+      <img id="petImage" src="https://petsyfrontend.onrender.com/static/images/paw.png" alt="Pet Preview">
     </div>
 
     <button id="continueBtn">Continue to Pet</button>
@@ -32,7 +32,7 @@
           document.getElementById("petInfoText").textContent = "No pet found yet.";
         } else {
           document.getElementById("petName").textContent = data.pet_name;
-          document.getElementById("petImage").src = data.photo || "https://petsy-dow7.onrender.com/static/static/images/paw.png";
+          document.getElementById("petImage").src = data.photo || "hhttps://petsyfrontend.onrender.com/static/images/paw.png";
         }
       } catch (err) {
         console.error(err);
@@ -40,8 +40,9 @@
     });
 
     document.getElementById("continueBtn").addEventListener("click", () => {
-      window.location.href = "https://petsy-dow7.onrender.com/static/main.html"; // Go to pet simulator
+      window.location.href = "https://petsyfrontend.onrender.com/static/main.html"; // Go to pet simulator
     });
   </script>
 </body>
 </html>
+
