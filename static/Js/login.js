@@ -1,5 +1,5 @@
 // ==============================
-// 🐾 PETSY LOGIN.JS — FIXED “Remember PC” FLOW
+// 🐾 PETSY LOGIN.JS — FIXED “Remember PC” & ADMIN FLOW
 // ==============================
 
 const backendUrl = "https://petsy-dow7.onrender.com";
@@ -9,36 +9,28 @@ const otpForm = document.getElementById("otpForm");
 const message = document.getElementById("message");
 
 let currentUsername = "";
-let currentRole = "";
 
 // ==============================
-// 💬 On-page Message Display (instant text)
+// 💬 Message display
 function showMessage(text, type = "info") {
-  const message = document.getElementById("message");
   message.textContent = text;
   message.className = `msg ${type}`;
   message.style.display = text ? "block" : "none";
 }
 
-// ==============================
-// Inject styles for messages
+// Inject message styles
 const style = document.createElement("style");
 style.textContent = `
-  #message {
-    margin-top: 10px;
-    font-size: 15px;
-    text-align: center;
-    min-height: 22px;
-  }
-  .msg.success { color: #28a745; }
-  .msg.error { color: #dc3545; }
-  .msg.warn { color: #ffc107; }
-  .msg.info { color: #007bff; }
+  #message { margin-top:10px; font-size:15px; text-align:center; min-height:22px; }
+  .msg.success { color:#28a745; }
+  .msg.error { color:#dc3545; }
+  .msg.warn { color:#ffc107; }
+  .msg.info { color:#007bff; }
 `;
 document.head.appendChild(style);
 
 // ==============================
-// 🧩 Redirect Helper (with pet check)
+// 💻 Redirect helper
 async function redirectUser(userId, role) {
   if (role.toLowerCase() === "admin") {
     window.location.href = "admin.html";
@@ -59,7 +51,7 @@ async function redirectUser(userId, role) {
         return;
       }
     }
-    window.location.href = "create_pet.html"; // fallback
+    window.location.href = "create_pet.html";
   } catch (err) {
     console.error("Pet check failed:", err);
     window.location.href = "greet.html";
@@ -67,7 +59,7 @@ async function redirectUser(userId, role) {
 }
 
 // ==============================
-// 🧩 AUTO LOGIN (Remember PC)
+// 🧩 Auto-login (Remember PC)
 window.addEventListener("DOMContentLoaded", async () => {
   const savedToken = localStorage.getItem("remember_token");
   const savedUsername = localStorage.getItem("remember_username");
@@ -83,9 +75,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     if (res.ok && data.success) {
       currentUsername = savedUsername;
-      currentRole = data.user.role;
 
-      // Save user info locally
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("user_id", data.user.id);
       localStorage.setItem("remember_username", savedUsername);
@@ -101,7 +91,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 // ==============================
-// 🧩 LOGIN FORM
+// 🧩 Login form submit
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -117,7 +107,7 @@ loginForm.addEventListener("submit", async (e) => {
   currentUsername = username;
 
   try {
-    // First: login check
+    // Login credentials
     const res = await fetch(`${backendUrl}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -125,14 +115,12 @@ loginForm.addEventListener("submit", async (e) => {
     });
     const data = await res.json();
 
-    if (!res.ok) {
-      showMessage(data.error || "Wrong username or password.", "error");
+    if (!res.ok || !data.success) {
+      showMessage(data.message || "Wrong username or password.", "error");
       return;
     }
 
-    currentRole = data.role || "user";
-
-    // Second: request OTP
+    // Request OTP
     const otpRes = await fetch(`${backendUrl}/request_otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -145,6 +133,7 @@ loginForm.addEventListener("submit", async (e) => {
         localStorage.setItem("remember_token", otpData.remember_token);
         localStorage.setItem("remember_username", username);
       }
+
       showMessage("OTP sent to your email!", "info");
 
       loginForm.style.display = "none";
@@ -159,7 +148,7 @@ loginForm.addEventListener("submit", async (e) => {
 });
 
 // ==============================
-// 🧩 OTP VERIFICATION
+// 🧩 OTP verification
 otpForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -186,7 +175,9 @@ otpForm.addEventListener("submit", async (e) => {
       otpForm.style.display = "none";
 
       showMessage("Login complete!", "success");
-      setTimeout(() => redirectUser(data.user_id, currentRole), 500);
+
+      // ✅ Pass role returned from backend
+      setTimeout(() => redirectUser(data.user_id, data.role), 500);
     } else {
       showMessage(data.message || "Invalid OTP.", "error");
     }
@@ -208,7 +199,7 @@ backBtn.onclick = () => {
 otpForm.appendChild(backBtn);
 
 // ==============================
-// 🚪 LOGOUT
+// 🚪 Logout
 async function logout() {
   const userId = localStorage.getItem("user_id");
   try {
@@ -224,27 +215,3 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
-
-async function requestOTP(username, remember_pc = false) {
-  try {
-    const res = await fetch(`${backendUrl}/request_otp`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, remember_pc })
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      alert("✅ OTP sent!");
-      return true;
-    } else {
-      alert(`❌ OTP failed: ${data.message}${data.error ? " — " + data.error : ""}`);
-      return false;
-    }
-  } catch (err) {
-    console.error("Request OTP failed:", err);
-    alert("⚠️ Network error while requesting OTP");
-    return false;
-  }
-}
-
