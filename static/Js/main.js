@@ -2,7 +2,7 @@
 // 🐾 PETSY MAIN.JS — Fixed Shop + Working Community + Treats + Options
 // ===============================
 
-const backendUrl = "http://localhost:5000";
+const backendUrl = "https://petsy-dow7.onrender.com";
 
 let petData = null;
 let ageInterval = null;
@@ -986,3 +986,4 @@ function showToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 }
+
