@@ -1,400 +1,414 @@
 // ===============================
-// 🐾 PETSY MAIN.JS — Fixed Shop + Working Community + Treats + Options
+// 🐾 PETSY MAIN.JS — All features combined & cleaned
+// - Shop (buy, inventory)
+// - Treats / feed system
+// - Community popups
+// - Sleep / wake persistence + emoji animation
+// - Clean, Options modal (rename, mute)
+// - Pet image / mood logic (baby/adult)
+// - Background by time of day
+// - Hunger, dirty/clean logic, play counter (dirty after 3 plays/pets)
+// - Small sparkle animation on cleaning
+// - FIXES: play button local-only lock, wakePet(), hourly energy restore while sleeping
 // ===============================
 
-const backendUrl = "https://petsy-dow7.onrender.com";
+const backendUrl = "https://petsy-backend.onrender.com";
+
 
 let petData = null;
 let ageInterval = null;
 let communityIntervalId = null;
 let lastPopupIds = new Set();
 let treatInventory = { small: 0, medium: 0, large: 0 };
-let sleepEmojiInterval = null; // 💤 added for continuous emoji
+let sleepEmojiInterval = null;
+let petMoodInterval = null;
+let energyRestoreInterval = null; // restores energy each hour while sleeping
+let playFrameInterval = null; // interval for play animation frames
 
-// Utility: safe query
-const $ = (sel, root = document) => root.querySelector(sel);
+// Safe selector helper
+const $ = (sel, root = document) => (root || document).querySelector(sel);
 
-// 🟢 Run after DOM ready
-document.addEventListener("DOMContentLoaded", () => {
-  // Element references (now safe)
-  const playBtn = $("#playBtn");
-  const restBtn = $("#restBtn");
-  const miniGamesBtn = $("#miniGamesBtn");
-  const logoutBtn = $("#logoutBtn");
-  const shopBtn = $("#shopBtn");
-  const communityBtn = $("#communityBtn");
-  const shopModal = $("#shopModal");
-  const shopResult = $("#shopResult");
-  const closeShopBtn = $("#closeShopBtn");
-  const shopOverlay = document.createElement("div");
-  shopOverlay.className = "modal-overlay hidden";
+// -----------------------
+// DOM Ready — initialize once
+// -----------------------
+document.addEventListener('DOMContentLoaded', () => {
+  // Element refs (some may be optional depending on page)
+  const playBtn = $('#playBtn');
+  const restBtn = $('#restBtn');   // sleep/wake button
+  const miniGamesBtn = $('#miniGamesBtn');
+  const logoutBtn = $('#logoutBtn');
+  const shopBtn = $('#shopBtn');
+  const communityBtn = $('#communityBtn');
+  const shopModal = $('#shopModal');
+  const shopResult = $('#shopResult');
+  const closeShopBtn = $('#closeShopBtn');
+  const shopOverlay = document.createElement('div');
+  shopOverlay.className = 'modal-overlay hidden';
   document.body.appendChild(shopOverlay);
 
-  const eatButton = $("#eatButton");
-  const treatMenu = $("#treatOptions");
-  const eatMenuContainer = document.querySelector(".eat-menu");
-  const shopButtons = Array.from(document.querySelectorAll(".shop-btn"));
-  const treatOptionEls = Array.from(document.querySelectorAll(".treat-option"));
+  const eatButton = $('#eatButton');
+  const treatMenu = $('#treatOptions');
+  const eatMenuContainer = document.querySelector('.eat-menu');
+  const shopButtons = Array.from(document.querySelectorAll('.shop-btn'));
+  const treatOptionEls = Array.from(document.querySelectorAll('.treat-option'));
 
-  // NEW: elements for cleaning & options
-  const cleanBtn = $("#cleanBtn");
-  const optionsBtn = $("#optionsBtn");
-  const optionsModal = $("#optionsModal");
-  const closeOptionsBtn = $("#closeOptionsBtn");
-  const renameInput = $("#renameInput");
-  const saveNameBtn = $("#saveNameBtn");
-  const renameResult = $("#renameResult");
-  const muteToggle = $("#muteToggle");
-  const muteStatus = $("#muteStatus");
+  // cleaning & options
+  const cleanBtn = $('#cleanBtn');
+  const optionsBtn = $('#optionsBtn');
+  const optionsModal = $('#optionsModal');
+  const closeOptionsBtn = $('#closeOptionsBtn');
+  const renameInput = $('#renameInput');
+  const saveNameBtn = $('#saveNameBtn');
+  const renameResult = $('#renameResult');
+  const muteToggle = $('#muteToggle');
+  const muteStatus = $('#muteStatus');
 
-  // initialize
-  loadMain();
-
-  // Buttons
-  playBtn?.addEventListener("click", () => doPatAction());
-  restBtn?.addEventListener("click", () => doAction("sleep_pet"));
-
-  // miniGames should go to mingames.com (external)
-  miniGamesBtn?.addEventListener("click", () => {
-    window.location.href = "minigames.html";
-  });
-
-  logoutBtn?.addEventListener("click", () => {
-    localStorage.clear();
-    window.location.href = "login.html";
-  });
-
-  function logout() {
-    localStorage.removeItem("isLoggedIn");
-    window.location.href = "login.html";
+  // UI tweaks: ensure restBtn text fits circle and is centered if present
+  if (restBtn) {
+    restBtn.style.fontSize = '12px';
+    restBtn.style.padding = '0.4rem';
+    restBtn.style.display = 'flex';
+    restBtn.style.alignItems = 'center';
+    restBtn.style.justifyContent = 'center';
+    restBtn.style.textAlign = 'center';
+    restBtn.style.whiteSpace = 'nowrap';
   }
 
-  // Shop - open modal
-  shopBtn?.addEventListener("click", async () => {
-    // ensure inventory fresh before opening
+  // Buttons wiring
+  playBtn?.addEventListener('click', () => doPatAction()); // play/pat action
+
+  miniGamesBtn?.addEventListener('click', () => {
+    window.location.href = 'minigames.html';
+  });
+
+  logoutBtn?.addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = 'login.html';
+  });
+
+  shopBtn?.addEventListener('click', async () => {
     await loadTreatInventory();
     updateTreatMenu();
 
-    shopModal.classList.remove("hidden");
-    shopOverlay.classList.remove("hidden");
-    shopResult.classList.add("hidden");
-    shopResult.textContent = "";
-    // prevent body scroll while modal open
-    document.body.style.overflow = "hidden";
+    shopModal?.classList.remove('hidden');
+    shopOverlay.classList.remove('hidden');
+    shopResult?.classList.add('hidden');
+    shopResult && (shopResult.textContent = '');
+    document.body.style.overflow = 'hidden';
   });
 
-  // Close shop modal (button)
-  closeShopBtn?.addEventListener("click", closeShop);
-
-  // Close when clicking overlay (outside modal)
-  shopOverlay?.addEventListener("click", closeShop);
+  closeShopBtn?.addEventListener('click', closeShop);
+  shopOverlay?.addEventListener('click', closeShop);
+  shopModal?.querySelector('.modal-content')?.addEventListener('click', e => e.stopPropagation());
 
   function closeShop() {
-    shopModal.classList.add("hidden");
-    shopOverlay.classList.add("hidden");
-    document.body.style.overflow = "";
+    shopModal?.classList.add('hidden');
+    shopOverlay?.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
-  
-  
-  // Prevent accidental propagation inside modal so clicks inside don't close it
-  shopModal?.querySelector(".modal-content")?.addEventListener("click", (e) => {
-    e.stopPropagation();
+  communityBtn?.addEventListener('click', () => {
+    window.location.href = 'community.html';
   });
-
-  // Community button should go directly to community.html
-  communityBtn?.addEventListener("click", () => {
-    window.location.href = "community.html";
-  });
-
-  // 🐾 Update pet name in Flask
-async function renamePet(newName) {
-  try {
-    const res = await fetch(`${backendUrl}/rename_pet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id, new_name: newName }),
-    });
-
-    if (!res.ok) throw new Error(`rename_pet failed: ${res.status}`);
-    const data = await res.json();
-
-    if (data.success) {
-      showToast(`✅ Pet name changed to ${newName}!`);
-      return true;
-    } else {
-      showToast("⚠️ Couldn't rename pet.");
-      return false;
-    }
-  } catch (err) {
-    console.error("renamePet error:", err);
-    showToast("❌ Server error while renaming pet.");
-    return false;
-  }
-}
-
-  $("#renameBtn")?.addEventListener("click", async () => {
-  const newName = $("#newPetName").value.trim();
-  if (!newName) {
-    showToast("Please enter a name.");
-    return;
-  }
-
-  const ok = await renamePet(newName);
-  if (ok) {
-    localStorage.setItem("pet_name", newName);
-    $("#petNameDisplay").textContent = newName; // update name on page if exists
-  }
-  });
-
 
   // Shop buy handlers
   shopButtons.forEach(btn => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener('click', async () => {
       const treatType = btn.dataset.type;
-      const pet_id = localStorage.getItem("pet_id");
+      const pet_id = localStorage.getItem('pet_id');
       if (!pet_id) {
-        shopResult.textContent = "❌ No pet selected.";
-        shopResult.classList.remove("hidden");
+        if (shopResult) {
+          shopResult.textContent = '❌ No pet selected.';
+          shopResult.classList.remove('hidden');
+        }
         return;
       }
 
       try {
         const res = await fetch(`${backendUrl}/buy_treat/${pet_id}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ treat_type: treatType })
         });
-
         const data = await res.json();
 
         if (res.ok && data && data.success) {
-          // Refresh treat inventory and coins from server
           await loadTreatInventory();
           updateTreatMenu();
           await updateStats();
-
-          shopResult.textContent = `✅ You bought a ${treatType} treat!`;
-          shopResult.classList.remove("hidden");
+          if (shopResult) {
+            shopResult.textContent = `✅ You bought a ${treatType} treat!`;
+            shopResult.classList.remove('hidden');
+          }
         } else {
-          const errMsg = data && data.error ? data.error : "Purchase failed.";
-          shopResult.textContent = `❌ ${errMsg}`;
-          shopResult.classList.remove("hidden");
+          const errMsg = data && data.error ? data.error : 'Purchase failed.';
+          if (shopResult) {
+            shopResult.textContent = `❌ ${errMsg}`;
+            shopResult.classList.remove('hidden');
+          }
         }
       } catch (err) {
-        console.error("Shop error:", err);
-        shopResult.textContent = "❌ Network error.";
-        shopResult.classList.remove("hidden");
+        console.error('Shop error:', err);
+        if (shopResult) {
+          shopResult.textContent = '❌ Network error.';
+          shopResult.classList.remove('hidden');
+        }
       }
     });
   });
 
-  // Treat menu show/hide behavior
+  // Treat menu show/hide
   if (eatButton && treatMenu && eatMenuContainer) {
-    eatButton.addEventListener("mouseenter", () => {
+    eatButton.addEventListener('mouseenter', () => {
       updateTreatMenu();
-      treatMenu.classList.remove("hidden");
+      treatMenu.classList.remove('hidden');
     });
-
-    // Hide menu when mouse leaves the eat menu container
-    eatMenuContainer.addEventListener("mouseleave", () => {
-      treatMenu.classList.add("hidden");
+    eatMenuContainer.addEventListener('mouseleave', () => {
+      treatMenu.classList.add('hidden');
     });
-
-    // Click treat options
     treatOptionEls.forEach(option => {
-      option.addEventListener("click", async () => {
+      option.addEventListener('click', async () => {
         const treatType = option.dataset.type;
-        // Use feed_pet route which consumes a treat and boosts hunger
         await feedPet(treatType);
-        treatMenu.classList.add("hidden");
+        treatMenu.classList.add('hidden');
       });
     });
   }
 
-  // NEW: Clean button handler
-  cleanBtn?.addEventListener("click", async () => {
-    const pet_id = localStorage.getItem("pet_id");
+  // Clean button
+  cleanBtn?.addEventListener('click', async () => {
+    const pet_id = localStorage.getItem('pet_id');
     if (!pet_id) {
-      alert("No pet selected.");
+      alert('No pet selected.');
       return;
     }
     try {
       const res = await fetch(`${backendUrl}/clean_pet`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pet_id })
       });
-
       const data = await res.json();
-
       if (res.ok && (data.success || data.cleaned)) {
-        // If server returns updated stats, refresh
+        // reset local play counter and dirty flag
+        resetPlayCounter(pet_id);
+        if (petData) { petData.is_dirty = false; petData.isDirty = false; }
         await updateStats();
-        alert("✨ Your pet has been cleaned!");
+        sparklesOnClean();
+        showToast('✨ Your pet has been cleaned!');
       } else {
-        // fallback message
-        alert((data && data.error) ? (`❌ ${data.error}`) : "❌ Cleaning failed or not supported on server.");
+        alert((data && data.error) ? (`❌ ${data.error}`) : '❌ Cleaning failed or not supported on server.');
       }
     } catch (err) {
-      console.error("Clean error:", err);
-      alert("Network error while cleaning the pet.");
+      console.error('Clean error:', err);
+      alert('Network error while cleaning the pet.');
     }
   });
 
-  // NEW: Options modal handlers
-  optionsBtn?.addEventListener("click", () => {
-    optionsModal.classList.remove("hidden");
-    shopOverlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-
-    // load mute status
-    const muted = localStorage.getItem("muted") === "true";
+  // Options modal
+  optionsBtn?.addEventListener('click', () => {
+    optionsModal?.classList.remove('hidden');
+    shopOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    const muted = localStorage.getItem('muted') === 'true';
     updateMuteUI(muted);
   });
 
-  closeOptionsBtn?.addEventListener("click", closeOptions);
+  closeOptionsBtn?.addEventListener('click', closeOptions);
+  optionsModal?.querySelector('.modal-content')?.addEventListener('click', e => e.stopPropagation());
 
   function closeOptions() {
-    optionsModal.classList.add("hidden");
-    shopOverlay.classList.add("hidden");
-    document.body.style.overflow = "";
+    optionsModal?.classList.add('hidden');
+    shopOverlay?.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
-  // Prevent modal inside options from closing when clicked
-  optionsModal?.querySelector(".modal-content")?.addEventListener("click", (e) => {
-    e.stopPropagation();
-  });
+  // Rename pet (options modal)
+  // -----------------------
+// Rename pet with 1-day cooldown
+// -----------------------
+saveNameBtn?.addEventListener('click', async () => {
+  const newName = (renameInput?.value || '').trim();
+  const pet_id = localStorage.getItem('pet_id');
+  if (!pet_id) {
+    renameResult.textContent = '❌ No pet selected.';
+    renameResult.classList.remove('hidden');
+    return;
+  }
+  if (!newName) {
+    renameResult.textContent = '❌ Name cannot be empty.';
+    renameResult.classList.remove('hidden');
+    return;
+  }
 
-  // Rename pet handler
-  saveNameBtn?.addEventListener("click", async () => {
-    const newName = (renameInput.value || "").trim();
-    const pet_id = localStorage.getItem("pet_id");
-    if (!pet_id) {
-      renameResult.textContent = "❌ No pet selected.";
-      renameResult.classList.remove("hidden");
-      return;
-    }
-    if (!newName) {
-      renameResult.textContent = "❌ Name cannot be empty.";
-      renameResult.classList.remove("hidden");
-      return;
-    }
+  const cooldownKey = `pet_rename_cooldown_${pet_id}`;
+  const lastRename = parseInt(localStorage.getItem(cooldownKey) || '0', 10);
+  const now = Date.now();
+  const oneDayMs = 24 * 60 * 60 * 1000;
 
-    try {
-      // Try server rename first
-      const res = await fetch(`${backendUrl}/rename_pet`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pet_id, new_name: newName })
-      });
+  // Check cooldown
+  if (lastRename && now - lastRename < oneDayMs) {
+    const remaining = Math.ceil((oneDayMs - (now - lastRename)) / (1000 * 60 * 60));
+    renameResult.textContent = `❌ You can rename again in ${remaining} hour(s).`;
+    renameResult.classList.remove('hidden');
+    return;
+  }
 
-      const data = await res.json();
+  // Confirm user knows about cooldown
+  if (!confirm('⚠️ After renaming, you cannot change the name again for 1 day. Proceed?')) return;
 
-      if (res.ok && data && (data.success || data.updated)) {
-        // update UI
-        $("#petName").textContent = newName;
-        renameResult.textContent = "✅ Name updated.";
-        renameResult.classList.remove("hidden");
-        // update local petData if present
-        if (petData) petData.pet_name = newName;
-      } else {
-        // fallback: update locally and inform user
-        $("#petName").textContent = newName;
-        if (petData) petData.pet_name = newName;
-        renameResult.textContent = "⚠️ Updated locally. Server rename failed or endpoint missing.";
-        renameResult.classList.remove("hidden");
-      }
-    } catch (err) {
-      console.error("Rename error:", err);
-      $("#petName").textContent = newName;
+  try {
+    const res = await fetch(`${backendUrl}/rename_pet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pet_id, new_name: newName })
+    });
+    const data = await res.json();
+
+    if (res.ok && data && (data.success || data.updated)) {
+      // ✅ update UI immediately
+      $('#petName') && ($('#petName').textContent = newName);
       if (petData) petData.pet_name = newName;
-      renameResult.textContent = "⚠️ Network error — name updated locally.";
-      renameResult.classList.remove("hidden");
+      localStorage.setItem('pet_name', newName);
+
+      // store cooldown timestamp
+      localStorage.setItem(cooldownKey, now.toString());
+
+      renameResult.textContent = '✅ Name updated successfully!';
+      renameResult.classList.remove('hidden');
+    } else {
+      renameResult.textContent = data.error || '⚠️ Server rename failed.';
+      renameResult.classList.remove('hidden');
     }
-  });
+  } catch (err) {
+    console.error('Rename error:', err);
+    renameResult.textContent = '⚠️ Network error — try again later.';
+    renameResult.classList.remove('hidden');
+  }
+});
 
-  // Mute toggle handler
-  muteToggle?.addEventListener("click", () => {
-    const muted = localStorage.getItem("muted") === "true";
-    localStorage.setItem("muted", (!muted).toString());
+
+  // Mute toggle
+  muteToggle?.addEventListener('click', () => {
+    const muted = localStorage.getItem('muted') === 'true';
+    localStorage.setItem('muted', (!muted).toString());
     updateMuteUI(!muted);
-
-    // If you add audio elements later, you could pause/mute them here:
-    // document.querySelectorAll('audio').forEach(a => a.muted = !muted);
   });
-
   function updateMuteUI(muted) {
-    muteStatus.textContent = muted ? "On" : "Off";
-    muteToggle.textContent = muted ? "Unmute" : "Mute";
+    if (muteStatus) muteStatus.textContent = muted ? 'On' : 'Off';
+    if (muteToggle) muteToggle.textContent = muted ? 'Unmute' : 'Mute';
   }
 
-  // Ensure only one community polling interval runs
-  if (!communityIntervalId) {
-    startCommunityPopups(); // starts the interval and sets communityIntervalId
-  }
-    const petNameDisplay = $("#petNameDisplay");
-  if (petNameDisplay && localStorage.getItem("pet_name")) {
-    petNameDisplay.textContent = localStorage.getItem("pet_name");
+  // Show pet_name on header when available
+  const petNameDisplay = $('#petNameDisplay');
+  if (petNameDisplay && localStorage.getItem('pet_name')) {
+    petNameDisplay.textContent = localStorage.getItem('pet_name');
   }
 
-  }); // end DOMContentLoaded
+  // start community popups if not running
+  if (!communityIntervalId) startCommunityPopups();
 
-// =======================
-// Core functions
-// =======================
+  // Load main data
+  loadMain();
+
+  // Register sleep/wake rest button behavior and initialize sleep state
+  const storedSleeping = !!localStorage.getItem('pet_sleep_start');
+  if (restBtn) {
+    // initialize button text
+    restBtn.textContent = storedSleeping ? '🌞 Wake Up' : '💤 Sleep';
+
+    restBtn.addEventListener('click', async () => {
+      const sleeping = !!localStorage.getItem('pet_sleep_start');
+      const pet_id = localStorage.getItem('pet_id');
+      if (!pet_id) { showToast('No pet selected.'); return; }
+
+      if (!sleeping) {
+        // put pet to sleep
+        await handleSleep();
+        startSleepTimer();
+        // immediately restore one hour worth of energy (makes UX feel responsive)
+        await restoreEnergyOnce();
+        restBtn.textContent = '🌞 Wake Up';
+        showToast('💤 Your pet is now sleeping...');
+      } else {
+        // wake pet
+        await wakePet(); // uses central wake path
+        restBtn.textContent = '💤 Sleep';
+      }
+    });
+  }
+
+  // If pet was already sleeping on load, set UI accordingly
+  if (storedSleeping) {
+    disableAllActions(true);
+    startSleepEmoji();
+    startEnergyRestore();
+    if (restBtn) restBtn.textContent = '🌞 Wake Up';
+  }
+
+  // Periodically check auto-wake
+  setInterval(checkAutoWake, 60000);
+}); // end DOMContentLoaded
+
+// -----------------------
+// Core functions: loadMain, updateStats, etc.
+// -----------------------
 
 async function loadMain() {
-  console.log("📦 loadMain() starting...");
-
-  const user_id = localStorage.getItem("user_id");
-  const pet_id = localStorage.getItem("pet_id");
+  console.log('📦 loadMain() starting...');
+  const user_id = localStorage.getItem('user_id');
+  const pet_id = localStorage.getItem('pet_id');
 
   if (!user_id) {
-    console.log("❌ No user_id found, redirecting to login...");
-    window.location.href = "login.html";
+    console.log('❌ No user_id found, redirecting to login...');
+    window.location.href = 'login.html';
     return;
   }
 
   const idToLoad = pet_id ? pet_id : user_id;
-  const endpoint = pet_id ? "get_pet_by_id" : "get_pet";
+  const endpoint = pet_id ? 'get_pet_by_id' : 'get_pet';
 
   try {
     const res = await fetch(`${backendUrl}/${endpoint}/${idToLoad}`);
     const data = await res.json();
 
     if (!res.ok || data.error) {
-      console.error("Error loading pet:", data.error);
+      console.error('Error loading pet:', data.error);
       return;
     }
 
     petData = data;
-    localStorage.setItem("pet_id", data.id);
+    // normalize some common fields
+    petData.isDirty = petData.isDirty || petData.is_dirty || false;
+    petData.is_dirty = petData.is_dirty || petData.isDirty || false;
+    petData.sleeping = petData.sleeping || petData.is_sleeping || false;
+    petData.ageDays = computeAgeDays(petData.created_at || localStorage.getItem('pet_birthdate'));
+
+    // ensure energy/hunger/happiness default numbers if missing
+    petData.energy = (typeof petData.energy === 'number') ? petData.energy : (petData.energy ?? 100);
+    petData.hunger = (typeof petData.hunger === 'number') ? petData.hunger : (petData.hunger ?? 50);
+    petData.happiness = (typeof petData.happiness === 'number') ? petData.happiness : (petData.happiness ?? 50);
+
+    localStorage.setItem('pet_id', data.id);
+    if (data.pet_name) localStorage.setItem('pet_name', data.pet_name);
+    if (data.pet_type) localStorage.setItem('pet_type', data.pet_type.toLowerCase());
+    if (data.created_at) localStorage.setItem('pet_birthdate', data.created_at.split(' ')[0]);
 
     // Display Info
-    $("#petId").textContent = `#${data.id}`;
-    $("#petName").textContent = data.pet_name;
-    $("#petType").textContent = data.pet_type;
-    $("#petCoins").textContent = data.coins ?? 0;
+    $('#petId') && ($('#petId').textContent = `#${data.id}`);
+    $('#petName') && ($('#petName').textContent = data.pet_name || 'Pet');
+    $('#petType') && ($('#petType').textContent = data.pet_type || 'Unknown');
+    $('#petCoins') && ($('#petCoins').textContent = data.coins ?? 0);
 
-    // Pet Image
-    const img = $("#petImage");
-    const type = (data.pet_type || "").toLowerCase();
-    const petImages = {
-      dog: "static/images/dog.png",
-      cat: "static/images/cat.gif",
-      dragon: "static/images/dragon.png",
-      bird: "static/images/bird.png",
-    };
-    if (img) img.src = petImages[type] || "static/images/paw.png";
-
-    // NEW: update play/pat button icon based on type
-    const playBtn = $("#playBtn");
-    if (playBtn) {
-      if (type === "cat") playBtn.textContent = "🧶"; // yarn
-      else if (type === "dog") playBtn.textContent = "⚽"; // ball
-      else playBtn.textContent = "🐾"; // default paw
+    // apply dirty flag from local storage if present (keeps client-side persistent)
+    const localDirtyKey = `pet_dirty_${data.id}`;
+    if (localStorage.getItem(localDirtyKey) === 'true') {
+      petData.is_dirty = true;
+      petData.isDirty = true;
     }
+
+    // Pet image logic based on age/type - initial set
+    setPetImage(petData.sleeping ? 'sleeping' : 'happy');
 
     updateBackground();
     displayAge();
@@ -402,67 +416,81 @@ async function loadMain() {
 
     // load treats from server and show
     await loadTreatInventory();
+  
     updateTreatMenu();
 
     // Auto refresh stats and age
     if (ageInterval) clearInterval(ageInterval);
     ageInterval = setInterval(displayAge, 60000);
+    if (petMoodInterval) clearInterval(petMoodInterval);
+    petMoodInterval = setInterval(() => startPetMoodMonitor(), 5000);
     setInterval(updateStats, 30000);
+
   } catch (err) {
-    console.error("Failed to load main:", err);
+    console.error('Failed to load main:', err);
   }
 }
 
+function computeAgeDays(createdAtString) {
+  if (!createdAtString) return 0;
+  const createdAt = new Date(createdAtString);
+  const now = new Date();
+  return Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+}
+
 function displayAge() {
-  if (!petData || !petData.created_at) return;
-  const createdAt = new Date(petData.created_at);
+  if (!petData || !localStorage.getItem('pet_birthdate')) return;
+  const createdAt = new Date(localStorage.getItem('pet_birthdate'));
   const now = new Date();
   const diffDays = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
-  const el = $("#petAge");
-  if (el) el.textContent = `${diffDays} day${diffDays !== 1 ? "s" : ""}`;
+  const el = $('#petAge');
+  if (el) el.textContent = `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
 }
 
 async function updateStats() {
-  const pet_id = localStorage.getItem("pet_id");
+  const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
-
   try {
     const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
     const data = await res.json();
-
     if (!res.ok || data.error) return;
+    // update local petData with normalized keys
+    petData = Object.assign({}, petData || {}, data);
+    petData.isDirty = petData.isDirty || petData.is_dirty || false;
+    petData.is_dirty = petData.is_dirty || petData.isDirty || false;
+    petData.sleeping = petData.sleeping || petData.is_sleeping || false;
 
-    petData = data;
-    // progress elements
-    const hunger = $("#hungerBar");
-    const energy = $("#energyBar");
-    const happiness = $("#happinessBar");
+    const hunger = $('#hungerBar');
+    const energy = $('#energyBar');
+    const happiness = $('#happinessBar');
 
     if (hunger) hunger.value = data.hunger ?? hunger.value;
     if (energy) energy.value = data.energy ?? energy.value;
     if (happiness) happiness.value = data.happiness ?? happiness.value;
 
-    $("#petCoins").textContent = data.coins ?? 0;
+    $('#petCoins') && ($('#petCoins').textContent = data.coins ?? 0);
     displayAge();
 
-    // sync treatInventory from latest pet data if present
-    if (typeof data.small_treats !== "undefined") {
+    if (typeof data.small_treats !== 'undefined') {
       treatInventory.small = data.small_treats ?? 0;
       treatInventory.medium = data.medium_treats ?? 0;
       treatInventory.large = data.large_treats ?? 0;
       updateTreatMenu();
     }
+
+    // update image and local state
+    setPetImage(petData.sleeping ? 'sleeping' : 'happy');
+
   } catch (err) {
-    console.error("Failed to update stats:", err);
+    console.error('Failed to update stats:', err);
   }
 }
 
 function updateBackground() {
   const hour = new Date().getHours();
-  const bg = document.querySelector(".background");
+  const bg = document.querySelector('.background');
   if (!bg) return;
-  bg.classList.add("fade-transition");
-
+  bg.classList.add('fade-transition');
   if (hour >= 6 && hour < 12) {
     bg.style.backgroundImage = "url('static/images/background/morning.png')";
   } else if (hour >= 12 && hour < 18) {
@@ -470,520 +498,782 @@ function updateBackground() {
   } else {
     bg.style.backgroundImage = "url('static/images/background/night.png')";
   }
-
-  setTimeout(() => bg.classList.remove("fade-transition"), 1500);
+  setTimeout(() => bg.classList.remove('fade-transition'), 1500);
 }
 
-// 💤 Sleep action (with floating emoji + disable)
+// -----------------------
+// Actions: sleep / play / feed
+// -----------------------
+
+// generic endpoint action with small floating emoji feedback
 async function doAction(endpoint) {
-  const pet_id = localStorage.getItem("pet_id");
+  const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
 
-  const allBtns = document.querySelectorAll("button:not(#logoutBtn):not(#communityBtn):not(#shopBtn)");
-  const emoji = document.createElement("div");
-  emoji.className = "floating-emoji";
-  emoji.textContent = "💤";
+  const emoji = document.createElement('div');
+  emoji.className = 'floating-emoji';
+  emoji.textContent = '✨';
   document.body.appendChild(emoji);
 
-  allBtns.forEach(btn => btn.disabled = true);
-  emoji.style.position = "fixed";
-  emoji.style.fontSize = "4rem";
-  emoji.style.top = "40%";
-  emoji.style.left = "50%";
-  emoji.style.transform = "translate(-50%, -50%)";
-  emoji.style.opacity = "0";
-  emoji.style.transition = "opacity 0.3s ease";
-  setTimeout(() => (emoji.style.opacity = "1"), 50);
+  Object.assign(emoji.style, {
+    position: 'fixed', fontSize: '3rem', top: '40%', left: '50%', transform: 'translate(-50%, -50%)',
+    opacity: '0', transition: 'opacity 0.25s ease'
+  });
+  setTimeout(() => (emoji.style.opacity = '1'), 50);
 
   try {
-    const res = await fetch(`${backendUrl}/sleep_pet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch(`${backendUrl}/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pet_id }),
     });
     const data = await res.json();
-
-    if (data.success) {
-      console.log("Sleeping:", data.message);
-      await updateStats();
-    }
+    if (data.success) await updateStats();
   } catch (err) {
-    console.error("Sleep error:", err);
+    console.error('Action error:', err);
   }
 
   setTimeout(() => {
     emoji.remove();
-    allBtns.forEach(btn => (btn.disabled = false));
-  }, 4000); // sleep for 4 seconds
+  }, 1200);
 }
 
-// 🐾 Play / pat action — random happy emoji + disable 1 minute
+// Play / pat action — cooldown 60s, but only play button disabled (others still clickable).
+// -----------------------
+// Play / pat action — cooldown 60s with visual countdown
+// -----------------------
+// ===============================
+// 🐾 doPatAction — Play with pet (fixed dirty/baby logic)
+// ===============================
 async function doPatAction() {
-  const pet_id = localStorage.getItem("pet_id");
+  const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
 
-  const allBtns = document.querySelectorAll("button:not(#logoutBtn):not(#communityBtn):not(#shopBtn)");
-  allBtns.forEach(btn => (btn.disabled = true));
+  const playBtn = document.getElementById('playBtn');
+  if (!playBtn) return;
 
-  const emojis = ["😄", "🐾", "🎾", "🎉", "🦴", "🧶"];
-  const emoji = document.createElement("div");
-  emoji.className = "floating-emoji";
-  emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-  document.body.appendChild(emoji);
-
-  emoji.style.position = "fixed";
-  emoji.style.fontSize = "4rem";
-  emoji.style.top = "40%";
-  emoji.style.left = "50%";
-  emoji.style.transform = "translate(-50%, -50%)";
-  emoji.style.opacity = "0";
-  emoji.style.transition = "opacity 0.3s ease";
-  setTimeout(() => (emoji.style.opacity = "1"), 50);
-
-  try {
-    const res = await fetch(`${backendUrl}/play_pet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id }),
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      console.log(data.message);
-      await updateStats();
-    }
-  } catch (err) {
-    console.error("Play error:", err);
+  // 💤 If pet sleeping, ignore
+  if (petData && (petData.sleeping || petData.is_sleeping)) {
+    showToast('😴 Your pet is sleeping.');
+    return;
   }
 
-  setTimeout(() => {
-    emoji.remove();
-    allBtns.forEach(btn => (btn.disabled = false));
-  }, 60000); // 1 minute cooldown
+  playBtn.disabled = true;
+  playBtn.classList.add('disabled');
+
+  // ⏱️ Cooldown timer (60s)
+  let cooldown = 60;
+  playBtn.textContent = getCooldownEmoji() + ` ${cooldown}s`;
+  const cooldownInterval = setInterval(() => {
+    cooldown--;
+    playBtn.textContent = getCooldownEmoji() + ` ${cooldown}s`;
+    if (cooldown <= 0) {
+      clearInterval(cooldownInterval);
+      playBtn.disabled = false;
+      playBtn.classList.remove('disabled');
+      playBtn.textContent = '▶️ Play';
+    }
+  }, 1000);
+
+  // 💫 Floating emoji feedback
+  const emoji = document.createElement('div');
+  emoji.className = 'floating-emoji';
+  emoji.textContent = getCooldownEmoji();
+  document.body.appendChild(emoji);
+  Object.assign(emoji.style, {
+    position: 'fixed',
+    fontSize: '3.5rem',
+    top: '38%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    opacity: '0',
+    transition: 'opacity 0.15s ease'
+  });
+  setTimeout(() => (emoji.style.opacity = '1'), 30);
+
+  // 🎬 Play animation frames
+  const petImg = document.getElementById('petImage');
+  const baseType = (localStorage.getItem('pet_type') || 'cat').toLowerCase();
+
+  // 🍼 Detect baby vs adult folder for play animation
+  const birthDate = pet?.created_at ? new Date(pet.created_at) : null;
+  const today = new Date();
+  const ageDays = birthDate ? Math.floor((today - birthDate) / (1000 * 60 * 60 * 24)) : 999;
+  const stage = ageDays < 10 ? "baby" : "adult";
+
+  const frame1 = `static/images/${stage}_${baseType}_when_play1.png`;
+  const frame2 = `static/images/${stage}_${baseType}_when_play2.png`;
+
+  if (petImg) {
+    let toggle = false;
+    let cycles = 0;
+    const maxCycles = 6;
+    const frameInterval = 600;
+
+    const playFrameInterval = setInterval(() => {
+      toggle = !toggle;
+      petImg.src = toggle ? frame1 : frame2;
+      cycles++;
+      if (cycles >= maxCycles) {
+        clearInterval(playFrameInterval);
+
+        // ✅ FIXED: Don't force happy — let updatePetImage decide
+        updatePetImage(); // respects dirty/sleeping/happy logic
+      }
+    }, frameInterval);
+  }
+
+  // Increment local play counter
+  incrementPlayCounter(pet_id);
+
+  // ✅ Delay backend sync so animation finishes first
+  setTimeout(async () => {
+    try {
+      const res = await fetch(`${backendUrl}/play_pet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pet_id })
+      });
+      const data = await res.json();
+      if (data.success) await updateStats();
+    } catch (err) {
+      console.error('Play error:', err);
+    }
+  }, 4000);
+
+  setTimeout(() => emoji.remove(), 1500);
 }
 
 
-// =======================
-// COMMUNITY POPUPS
-// =======================
+// Helper to pick emoji for cooldown display
+function getCooldownEmoji() {
+  const type = (localStorage.getItem('pet_type') || 'cat').toLowerCase();
+  if (type === 'dog') return '⚽'; // small ball
+  return '🧶'; // yarn for cat
+}
+
+
+function getPlayKey(pet_id) { return `play_count_${pet_id}`; }
+function incrementPlayCounter(pet_id) {
+  const key = getPlayKey(pet_id);
+  let count = parseInt(localStorage.getItem(key) || '0', 10);
+  count += 1;
+  localStorage.setItem(key, String(count));
+  // if reaches 3, mark dirty and reset counter
+  if (count >= 3) {
+    markPetDirtyLocal(pet_id);
+    showToast('💩 Your pet got dirty after playing a lot—time to clean!');
+    localStorage.setItem(key, '0');
+  }
+}
+function resetPlayCounter(pet_id) { const key = getPlayKey(pet_id); localStorage.setItem(key, '0'); }
+
+// try to persist dirty state on server if endpoint exists; otherwise keep client-side
+async function markPetDirtyLocal(pet_id) {
+  if (!pet_id) return;
+
+  // optimistic local update
+  if (!petData) petData = {};
+  petData.is_dirty = true;
+  petData.isDirty = true;
+  localStorage.setItem(`pet_dirty_${pet_id}`, 'true');
+
+  // ✅ Fix: set dirty image
+  setPetImage('dirty');
+
+  // try notifying server (optional)
+  try {
+    await fetch(`${backendUrl}/mark_dirty`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pet_id })
+    });
+    setTimeout(updateStats, 800);
+  } catch (err) {
+    console.debug('mark_dirty not available or failed:', err);
+  }
+}
+
+// -----------------------
+// Feed / Treats
+// -----------------------
+
+async function loadTreatInventory() {
+  const pet_id = localStorage.getItem('pet_id');
+  if (!pet_id) return;
+  try {
+    const res = await fetch(`${backendUrl}/get_treats/${pet_id}`);
+    if (!res.ok) { console.warn('get_treats returned non-ok:', res.status); return; }
+    const data = await res.json();
+    treatInventory.small = data.small_treats ?? 0;
+    treatInventory.medium = data.medium_treats ?? 0;
+    treatInventory.large = data.large_treats ?? 0;
+    updateTreatMenu();
+  } catch (err) { console.error('Failed to load treats:', err); }
+}
+
+async function feedPet(treatType) {
+  const pet_id = localStorage.getItem('pet_id');
+  if (!pet_id) return;
+  if (!treatInventory[treatType] || treatInventory[treatType] <= 0) {
+    alert('❌ You\'re out of this treat!');
+    return;
+  }
+  try {
+    const res = await fetch(`${backendUrl}/feed_pet`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pet_id, treatType })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'Failed to feed pet.'); return; }
+    if (data.success) {
+      treatInventory[treatType] = Math.max(0, (treatInventory[treatType] || 0) - 1);
+      await loadTreatInventory();
+      updateTreatMenu();
+      await updateStats();
+      const hungerBoost = { small: 10, medium: 25, large: 50 }[treatType] || 0;
+      showToast(`🍗 ${capitalize(treatType)} treat eaten! Hunger +${hungerBoost}`);
+      // playing reduces play fatigue — do a small counter decrement so frequent feeding helps
+      const key = getPlayKey(pet_id);
+      const current = parseInt(localStorage.getItem(key) || '0', 10);
+      if (current > 0) localStorage.setItem(key, String(Math.max(0, current - 1)));
+    } else {
+      alert(data.error || 'Failed to feed pet.');
+    }
+  } catch (err) { console.error('Feeding failed:', err); alert('Network error while feeding pet.'); }
+}
+
+function updateTreatMenu() {
+  document.querySelectorAll('.treat-option').forEach(option => {
+    const type = option.dataset.type;
+    const count = treatInventory[type] || 0;
+    const emoji = type === 'small' ? '🍪' : type === 'medium' ? '🥩' : '🍗';
+    option.innerHTML = `${emoji} ${capitalize(type)} Treat ×${count}`;
+    if (count <= 0) option.classList.add('disabled'); else option.classList.remove('disabled');
+  });
+  $('#smallCount') && ($('#smallCount').textContent = treatInventory.small || 0);
+  $('#mediumCount') && ($('#mediumCount').textContent = treatInventory.medium || 0);
+  $('#largeCount') && ($('#largeCount').textContent = treatInventory.large || 0);
+  $('#smallTreats') && ($('#smallTreats').textContent = `Small Treats: ${treatInventory.small || 0}`);
+  $('#mediumTreats') && ($('#mediumTreats').textContent = `Medium Treats: ${treatInventory.medium || 0}`);
+  $('#largeTreats') && ($('#largeTreats').textContent = `Large Treats: ${treatInventory.large || 0}`);
+}
+
+function capitalize(s = '') { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+// -----------------------
+// Community popups
+// -----------------------
+
 async function fetchRecentPosts() {
   try {
     const res = await fetch(`${backendUrl}/get_recent_posts`);
     if (!res.ok) return [];
     const posts = await res.json();
     return Array.isArray(posts) ? posts : [];
-  } catch (err) {
-    console.error("Error fetching posts:", err);
-    return [];
-  }
+  } catch (err) { console.error('Error fetching posts:', err); return []; }
 }
 
 function showPostPopup(post) {
   if (!post || !post.id) return;
   if (lastPopupIds.has(post.id)) return;
   lastPopupIds.add(post.id);
-
-  const popup = document.createElement("div");
-  popup.className = "post-popup";
-  popup.innerHTML = `<strong>💬 ${post.username || "Someone"}</strong><br>${post.content || ""}`;
+  const popup = document.createElement('div');
+  popup.className = 'post-popup';
+  popup.innerHTML = `<strong>💬 ${post.username || 'Someone'}</strong><br>${post.content || ''}`;
   document.body.appendChild(popup);
-  // show animation
-  setTimeout(() => popup.classList.add("show"), 50);
-
-  // stays visible for 7 seconds
-  setTimeout(() => {
-    popup.classList.remove("show");
-    popup.remove();
-  }, 7000);
+  setTimeout(() => popup.classList.add('show'), 50);
+  setTimeout(() => { popup.classList.remove('show'); popup.remove(); }, 7000);
 }
 
 function startCommunityPopups() {
-  // avoid starting multiple intervals
   if (communityIntervalId) return;
-
-  // fetch immediately, then every 10s
   (async () => {
     const posts = await fetchRecentPosts();
     posts.forEach(p => showPostPopup(p));
   })();
-
   communityIntervalId = setInterval(async () => {
     const posts = await fetchRecentPosts();
     posts.forEach(p => showPostPopup(p));
   }, 10000);
 }
 
-// =======================
-// FEED/TREAT SYSTEM
-// =======================
+// -----------------------
+// Sleep / wake persistent behavior
+// -----------------------
 
-/**
- * Load treats for current pet from server and populate treatInventory.
- * Endpoint used: GET /get_treats/<pet_id>
- */
-async function loadTreatInventory() {
-  const pet_id = localStorage.getItem("pet_id");
+async function handleSleep() {
+  const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
-
   try {
-    const res = await fetch(`${backendUrl}/get_treats/${pet_id}`);
-    if (!res.ok) {
-      console.warn("get_treats returned non-ok:", res.status);
+    const res = await fetch(`${backendUrl}/sleep_pet`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pet_id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message || 'Sleeping...');
+      if (data.sleeping) {
+        disableAllActions(true);
+        if (petData) { petData.sleeping = true; petData.is_sleeping = true; }
+        setPetImage('sleeping');
+      } else if (data.awake) {
+        disableAllActions(false);
+        if (petData) { petData.sleeping = false; petData.is_sleeping = false; }
+        setPetImage('happy');
+      }
+    }
+  } catch (err) { console.error('Sleep error:', err); showToast('⚠️ Could not update sleep status.'); }
+}
+
+function startSleepTimer() {
+  localStorage.setItem('pet_sleep_start', Date.now().toString());
+  // disable only actions we want to restrict (play, eat, clean)
+  disableAllActions(true);
+  startSleepEmoji();
+  startEnergyRestore();
+  // mark local state too
+  if (petData) { petData.sleeping = true; petData.is_sleeping = true; }
+  setPetImage('sleeping');
+}
+
+async function wakePet() {
+  // Unified wake logic — used by rest button and auto-wake
+  const pet_id = localStorage.getItem('pet_id');
+  if (!pet_id) return;
+  // attempt server wake endpoint; fallback to client-side
+  try {
+    const res = await fetch(`${backendUrl}/wake_pet`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pet_id })
+    });
+    const data = await res.json();
+    // if server confirms, use server state; otherwise fall through
+    if (res.ok && data && (data.success || data.awake)) {
+      localStorage.removeItem('pet_sleep_start');
+      stopEnergyRestore();
+      stopSleepEmoji();
+      disableAllActions(false);
+      if (petData) { petData.sleeping = false; petData.is_sleeping = false; }
+      setPetImage('happy');
+      await updateStats();
+      showToast('☀️ Your pet woke up!');
       return;
     }
-    const data = await res.json();
-    // API returns { small_treats, medium_treats, large_treats } or defaults
-    treatInventory.small = data.small_treats ?? 0;
-    treatInventory.medium = data.medium_treats ?? 0;
-    treatInventory.large = data.large_treats ?? 0;
-
-    // Update visible counts
-    updateTreatMenu();
   } catch (err) {
-    console.error("Failed to load treats:", err);
+    console.debug('wake_pet endpoint missing or failed:', err);
+    // continue to client fallback
+  }
+
+  // client-side fallback wake behavior
+  localStorage.removeItem('pet_sleep_start');
+  stopEnergyRestore();
+  stopSleepEmoji();
+  disableAllActions(false);
+  if (petData) { petData.sleeping = false; petData.is_sleeping = false; }
+  setPetImage('happy');
+  await updateStats();
+  showToast('☀️ Your pet woke up!');
+}
+
+function checkAutoWake() {
+  const sleepStart = parseInt(localStorage.getItem('pet_sleep_start') || '0', 10);
+  if (!sleepStart) return;
+  const now = Date.now();
+  const eightHours = 8 * 60 * 60 * 1000;
+  if (now - sleepStart >= eightHours) {
+    // auto wake path uses unified function so intervals/flags cleared consistently
+    wakePet();
+    const restBtn = document.getElementById('restBtn');
+    if (restBtn) restBtn.textContent = '💤 Sleep';
   }
 }
 
-/**
- * Use a treat (feed pet).
- * Calls /feed_pet which expects { pet_id, treatType } and handles decrement + pet stat change.
- */
-async function feedPet(treatType) {
-  const pet_id = localStorage.getItem("pet_id");
-  if (!pet_id) return;
+function startSleepEmoji() {
+  stopSleepEmoji();
+  sleepEmojiInterval = setInterval(() => {
+    const emoji = document.createElement('div');
+    emoji.className = 'floating-emoji';
+    emoji.textContent = '💤';
+    document.body.appendChild(emoji);
+    Object.assign(emoji.style, { position: 'fixed', fontSize: '4rem', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', opacity: '0', transition: 'opacity 1s ease' });
+    setTimeout(() => (emoji.style.opacity = '1'), 50);
+    setTimeout(() => emoji.remove(), 2000);
+  }, 5000);
+}
 
-  // local guard
-  if (!treatInventory[treatType] || treatInventory[treatType] <= 0) {
-    alert("❌ You’re out of this treat!");
+function stopSleepEmoji() { if (sleepEmojiInterval) { clearInterval(sleepEmojiInterval); sleepEmojiInterval = null; } }
+
+async function checkSleepStatus() {
+  const pet_id = localStorage.getItem('pet_id');
+  if (!pet_id) return;
+  try {
+    const res = await fetch(`${backendUrl}/check_sleep_status/${pet_id}`);
+    const data = await res.json();
+    if (data.sleeping) {
+      disableAllActions(true);
+      if (petData) petData.sleeping = true;
+      setPetImage('sleeping');
+    }
+    else {
+      disableAllActions(false);
+      if (petData) petData.sleeping = false;
+      setPetImage('happy');
+    }
+  } catch (err) { console.error('Check sleep error:', err); }
+}
+
+function disableAllActions(disabled) {
+  const limitedBtns = [document.getElementById('playBtn'), document.getElementById('cleanBtn'), document.getElementById('eatButton')].filter(Boolean);
+  limitedBtns.forEach(btn => {
+    btn.disabled = disabled;
+    btn.style.opacity = disabled ? '0.5' : '1';
+    btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
+  });
+}
+
+// Keep a background check for server sleep status
+setInterval(checkSleepStatus, 60000);
+
+// -----------------------
+// Pet image & mood handling
+// -----------------------
+
+const petImage = document.getElementById('petImage');
+
+function getPetType() { return localStorage.getItem('pet_type') || (petData && petData.pet_type) || 'cat'; }
+function isBabyPetLocal() {
+  const birthdate = localStorage.getItem('pet_birthdate');
+  if (!birthdate) return true;
+  const today = new Date();
+  const born = new Date(birthdate);
+  const ageInDays = Math.floor((today - born) / (1000*60*60*24));
+  return ageInDays < 10;
+}
+
+// single authoritative image setter used everywhere
+function setPetImage(forcedState = null) {
+  const petImg = document.getElementById("petImage");
+  if (!petImg || !petData) return;
+
+  // 🧸 Determine type (cat, dog, etc.) and whether it's a baby or adult
+  const baseType = (localStorage.getItem("pet_type") || "cat").toLowerCase();
+  const isBaby = petData.age && petData.age < 3; // baby if < 3 days old
+  const type = isBaby ? `baby_${baseType}` : baseType;
+
+  // 🌀 Handle forced states (like animations or mood override)
+  if (forcedState) {
+    const forcedPath = `static/images/${type}_${forcedState}.png`;
+    petImg.src = forcedPath;
     return;
   }
 
+  // Extract current stats safely
+  const {
+    hunger = 100,
+    energy = 100,
+    happiness = 100,
+    sleeping,
+    is_sleeping,
+    dirty,
+    is_dirty,
+    isDirty
+  } = petData;
+
+  // 💤 Sleeping (highest priority)
+  if (sleeping || is_sleeping) {
+    petImg.src = `static/images/${type}_sleeping.png`;
+  }
+  // 💩 Dirty pet (handles multiple dirty flags)
+  else if (dirty || is_dirty || isDirty) {
+    petImg.src = `static/images/${type}_dirty.png`;
+  }
+  // 🍗 Very hungry
+  else if (hunger <= 10) {
+    petImg.src = `static/images/${type}_hungry.png`;
+  }
+  // 😴 Tired
+  else if (energy <= 15) {
+    petImg.src = `static/images/${type}_tired.png`;
+  }
+  // 😿 Sad / low happiness
+  else if (happiness <= 20) {
+    petImg.src = `static/images/${type}_sad.png`;
+  }
+  // 😺 Default happy & clean
+  else {
+    petImg.src = `static/images/${type}_happy.png`;
+  }
+
+  // 🧩 Optional fallback: if baby image missing, use adult version instead
+  petImg.onerror = () => {
+    const fallbackType = baseType;
+    const currentState = petImg.src.split("_").pop().replace(".png", "");
+    petImg.src = `static/images/${fallbackType}_${currentState}.png`;
+  };
+}
+
+
+
+
+function chooseImageFilename({ pet_type = 'cat', isBaby = true, state = 'happy', hunger = null, energy = null, is_dirty = false }) {
+  const type = (pet_type || 'cat').toLowerCase();
+
+  // Priority: sleeping > dirty > hungry/sad > tired > happy
+  if (state === 'sleeping' || (petData && (petData.sleeping || petData.is_sleeping)) || (energy !== null && Number(energy) <= 10)) {
+    if (type === 'cat') return isBaby ? 'baby_cat_sleeping.png' : 'cat_sleeping.png';
+    if (type === 'dog') return isBaby ? 'baby_dog_sleeping.png' : 'dog_sleeping.png';
+  }
+
+  if (is_dirty === 1 || is_dirty === true) {
+    if (type === 'cat') return isBaby ? 'baby_cat_dirty.png' : 'cat_dirty.png';
+    if (type === 'dog') return isBaby ? 'baby_dog_dirty.png' : 'sad_dog1.png';
+  }
+
+  if (hunger !== null && Number(hunger) <= 10) {
+    if (type === 'cat') return isBaby ? 'baby_cat_hungry.png' : 'cat_hungry.png';
+    if (type === 'dog') return isBaby ? 'baby_dog_sad.png' : 'sad_dog1.png';
+  }
+
+  if (energy !== null && Number(energy) < 20) {
+    if (type === 'cat') return isBaby ? 'baby_cat_sleeping.png' : 'cat_sleeping.png';
+    if (type === 'dog') return isBaby ? 'baby_dog_sleeping.png' : 'dog_sleeping.png';
+  }
+
+  // Default happy images
+  if (type === 'cat') return isBaby ? 'baby_cat_happy.png' : 'cat_happy.png';
+  if (type === 'dog') return isBaby ? 'baby_dog_happy.png' : 'dog_happy1.png';
+
+  return 'paw.png';
+}
+
+let idleTimeout;
+function returnToHappy() { clearTimeout(idleTimeout); idleTimeout = setTimeout(() => setPetImage('happy'), 3000); }
+function animatePetAction(action) { setPetImage(action); returnToHappy(); }
+
+// connect action triggers if present (these are optional quick-trigger buttons)
+const eatBtn = document.getElementById('eatBtn');
+const playBtnQuick = document.getElementById('playBtn');
+const sleepBtnQuick = document.getElementById('sleepBtn');
+if (eatBtn) eatBtn.addEventListener('click', () => animatePetAction('eating'));
+if (playBtnQuick) playBtnQuick.addEventListener('click', () => animatePetAction('playing'));
+if (sleepBtnQuick) sleepBtnQuick.addEventListener('click', () => animatePetAction('sleeping'));
+window.addEventListener('load', () => setPetImage('happy'));
+
+function startPetMoodMonitor() {
+  if (!petData) return;
+  setPetImage(petData.sleeping ? 'sleeping' : 'happy');
+}
+
+// -----------------------
+// ENERGY RESTORE WHILE SLEEPING
+// -----------------------
+// New behaviour: every hour while pet is sleeping we ensure energy is full (100).
+// This uses a client-side interval; if the server provides `/restore_energy` or `/add_energy` endpoints
+// this will attempt to call them; otherwise it will update locally and call updateStats().
+
+async function restoreEnergyOnce() {
+  const pet_id = localStorage.getItem('pet_id');
+  if (!pet_id) return;
+
+  // Try server endpoint first (optional). If it fails, do local update.
   try {
-    const res = await fetch(`${backendUrl}/feed_pet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id, treatType })
+    const res = await fetch(`${backendUrl}/restore_energy/${pet_id}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 100 })
     });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || "Failed to feed pet.");
+    if (res.ok) {
+      await updateStats();
       return;
     }
-
-    if (data.success) {
-      // Decrement local inventory and refresh UI & stats from server
-      treatInventory[treatType] = Math.max(0, (treatInventory[treatType] || 0) - 1);
-
-      // server returns updated pet stats in data.data in your backend; refresh from server to be safe
-      await loadTreatInventory();
-      updateTreatMenu();
-      await updateStats();
-
-      const hungerBoost = { small: 10, medium: 25, large: 50 }[treatType] || 0;
-      alert(`🍗 ${capitalize(treatType)} treat eaten! Hunger +${hungerBoost}`);
-    } else {
-      alert(data.error || "Failed to feed pet.");
-    }
   } catch (err) {
-    console.error("Feeding failed:", err);
-    alert("Network error while feeding pet.");
+    // endpoint might not exist — we'll patch locally
+    console.debug('restore_energy not available or failed:', err);
   }
+
+  // Local fallback: set energy to 100 and push an updateStats call
+  if (!petData) petData = {};
+  petData.energy = 100;
+  const energyEl = $('#energyBar');
+  if (energyEl) energyEl.value = 100;
+  await updateStats();
 }
 
-/**
- * Update treat option elements and numeric counters.
- */
-function updateTreatMenu() {
-  // update each .treat-option text + disabled states + the small/medium/large span counters
-  document.querySelectorAll(".treat-option").forEach(option => {
-    const type = option.dataset.type;
-    const count = treatInventory[type] || 0;
-    const emoji = type === "small" ? "🍪" : type === "medium" ? "🥩" : "🍗";
-    option.innerHTML = `${emoji} ${capitalize(type)} Treat ×${count}`;
-    if (count <= 0) {
-      option.classList.add("disabled");
-    } else {
-      option.classList.remove("disabled");
-    }
+function startEnergyRestore() {
+  stopEnergyRestore();
+  // restore immediately (UX) and then schedule hourly
+  restoreEnergyOnce();
+  // set interval to every hour
+  energyRestoreInterval = setInterval(() => {
+    // if pet is no longer sleeping, stop interval
+    if (!localStorage.getItem('pet_sleep_start')) { stopEnergyRestore(); return; }
+    restoreEnergyOnce();
+  }, 60 * 60 * 1000); // 1 hour
+}
+
+function stopEnergyRestore() { if (energyRestoreInterval) { clearInterval(energyRestoreInterval); energyRestoreInterval = null; } }
+
+// -----------------------
+// UI & Toast helpers
+// -----------------------
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.className = 'toast';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// sparkle animation when cleaning
+function sparklesOnClean() {
+  const s = document.createElement('div');
+  s.className = 'sparkles';
+  s.textContent = '✨';
+  Object.assign(s.style, {
+    position: 'absolute', fontSize: '2.5rem', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', opacity: '0', pointerEvents: 'none', transition: 'opacity 400ms ease'
   });
-
-  // update numeric counters if those spans exist
-  const smallCountSpan = $("#smallCount");
-  const mediumCountSpan = $("#mediumCount");
-  const largeCountSpan = $("#largeCount");
-  if (smallCountSpan) smallCountSpan.textContent = treatInventory.small || 0;
-  if (mediumCountSpan) mediumCountSpan.textContent = treatInventory.medium || 0;
-  if (largeCountSpan) largeCountSpan.textContent = treatInventory.large || 0;
-
-  // also update smallTreats/mediumTreats/largeTreats display if present
-  const smallTreats = $("#smallTreats");
-  const mediumTreats = $("#mediumTreats");
-  const largeTreats = $("#largeTreats");
-  if (smallTreats) smallTreats.textContent = `Small Treats: ${treatInventory.small || 0}`;
-  if (mediumTreats) mediumTreats.textContent = `Medium Treats: ${treatInventory.medium || 0}`;
-  if (largeTreats) largeTreats.textContent = `Large Treats: ${treatInventory.large || 0}`;
+  document.body.appendChild(s);
+  requestAnimationFrame(() => (s.style.opacity = '1'));
+  setTimeout(() => (s.style.opacity = '0'), 700);
+  setTimeout(() => s.remove(), 1200);
 }
 
-function capitalize(s = "") {
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+// -----------------------
+// Misc dev helpers
+// -----------------------
 
-/**
- * Optional helper to explicitly fetch pet & treat view for some UI parts.
- */
+// ==============================
+// 🐾 LOAD PET DATA (with baby/adult logic)
+// ==============================
 async function loadPetData() {
-  const pet_id = localStorage.getItem("pet_id");
+  const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
 
   try {
     const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
-    if (!res.ok) return;
-    const pet = await res.json();
+    if (!res.ok) throw new Error('Failed to fetch pet data');
 
-    const pn = $("#petName");
-    const pc = $("#petCoins");
-    if (pn) pn.textContent = pet.pet_name || pet.name || "Pet";
-    if (pc) pc.textContent = `Coins: ${pet.coins ?? 0} 🪙`;
+    // Save globally for use by other functions
+    pet = await res.json();
 
-    // 🦴 Show treat inventory
-    if (typeof pet.small_treats !== "undefined") {
+    // 🏷️ Display pet info
+    const petNameEl = document.getElementById('petName');
+    const petCoinsEl = document.getElementById('petCoins');
+
+    if (petNameEl) petNameEl.textContent = pet.pet_name || 'Pet';
+    if (petCoinsEl) petCoinsEl.textContent = `Coins: ${pet.coins ?? 0} 🪙`;
+
+    // 🍪 Treat inventory
+    if (typeof pet.small_treats !== 'undefined') {
       treatInventory.small = pet.small_treats ?? 0;
       treatInventory.medium = pet.medium_treats ?? 0;
       treatInventory.large = pet.large_treats ?? 0;
     } else {
-      // fallback to /get_treats if not present in payload
       await loadTreatInventory();
     }
+
     updateTreatMenu();
-  } catch (err) {
-    console.error("Failed to load pet data:", err);
-  }
-}
 
-/* Helper that safely applies a hunger boost locally (not invoked automatically).
-   This replaces the previous broken code block and avoids runtime errors.
-*/
-function applyHungerBoostLocal(treatType) {
-  const hungerBar = document.querySelector("#hungerBar");
-  if (!hungerBar) return;
-  const boost = { small: 10, medium: 25, large: 50 }[treatType] || 0;
-  hungerBar.value = Math.min(100, (parseInt(hungerBar.value) || 0) + boost);
-}
+    // 🍼 Show correct image (baby or adult)
+    // ... your loadPetData() code here ...
 
-const pet_id = localStorage.getItem("pet_id") || "1";
-const actionButtons = document.querySelectorAll(".pet-action-btn"); // all your pet buttons
+// ================================
+// 🍼 PET AGE CHECK — Baby or Adult
+// ================================
+// ================================
+// 🍼 PET IMAGE HANDLER — Age + Mood + Dirt
+// ================================
+function updatePetImage(mood = "happy") {
+  const petImg = document.getElementById("petImage");
+  if (!petImg || !pet) return;
 
-async function handleSleep() {
-  try {
-    const res = await fetch(`${backendUrl}/sleep_pet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id }),
-    });
-    const data = await res.json();
+  // 📅 Compute age in days
+  const birthDate = new Date(pet.created_at);
+  const today = new Date();
+  const ageDays = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
+  const stage = ageDays < 10 ? "baby" : "adult"; // 🍼 baby if <10 days
 
-    if (data.success) {
-      showToast(data.message);
-
-      if (data.sleeping) {
-        disableAllActions(true);
-      } else if (data.awake) {
-        disableAllActions(false);
-      }
-    }
-  } catch (err) {
-    console.error("Sleep error:", err);
-    showToast("⚠️ Could not update sleep status.");
-  }
-}
-
-// Automatically check every minute if pet should wake up
-setInterval(checkSleepStatus, 60000);
-
-async function checkSleepStatus() {
-  try {
-    const res = await fetch(`${backendUrl}/check_sleep_status/${pet_id}`);
-    const data = await res.json();
-
-    if (data.sleeping) {
-      disableAllActions(true);
-    } else {
-      disableAllActions(false);
-    }
-  } catch (err) {
-    console.error("Check sleep error:", err);
-  }
-}
-
-function disableAllActions(disabled) {
-  // only disable play, clean, and eat buttons
-  const limitedBtns = [
-    document.getElementById("playBtn"),
-    document.getElementById("cleanBtn"),
-    document.getElementById("eatButton")
-  ].filter(Boolean);
-
-  limitedBtns.forEach(btn => {
-    btn.disabled = disabled;
-    btn.style.opacity = disabled ? "0.5" : "1";
-    btn.style.cursor = disabled ? "not-allowed" : "pointer";
-  });
-}
-
-
-
-// (keep all your other code here untouched)
-
-async function doPatAction() {
-  const pet_id = localStorage.getItem("pet_id");
-  if (!pet_id) return;
-
-  const allBtns = document.querySelectorAll("button:not(#logoutBtn):not(#communityBtn):not(#shopBtn)");
-  allBtns.forEach(btn => (btn.disabled = true));
-
-  const emojis = ["😄", "🐾", "🎾", "🎉", "🦴", "🧶"];
-  const emoji = document.createElement("div");
-  emoji.className = "floating-emoji";
-  emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-  document.body.appendChild(emoji);
-
-  emoji.style.position = "fixed";
-  emoji.style.fontSize = "4rem";
-  emoji.style.top = "40%";
-  emoji.style.left = "50%";
-  emoji.style.transform = "translate(-50%, -50%)";
-  emoji.style.opacity = "0";
-  emoji.style.transition = "opacity 0.3s ease";
-  setTimeout(() => (emoji.style.opacity = "1"), 50);
-
-  try {
-    // ✅ play_pet now gives +25 happiness
-    const res = await fetch(`${backendUrl}/play_pet`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id }),
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      console.log(data.message);
-      await updateStats();
-    }
-  } catch (err) {
-    console.error("Play error:", err);
+  // 🐾 Determine mood priority
+  // If dirty → always show dirty
+  // Else if sleeping → sleeping
+  // Else use passed mood (happy/sad)
+  let displayMood = mood;
+  if (pet.is_dirty) {
+    displayMood = "dirty";
+  } else if (pet.is_sleeping) {
+    displayMood = "sleeping";
   }
 
-  setTimeout(() => {
-    emoji.remove();
-    allBtns.forEach(btn => (btn.disabled = false));
-  }, 60000); // 1 minute cooldown
-}
-
-// (keep everything else, unchanged...)
-
-// =======================
-// 💤 Sleep/Wake Persistent Behavior (add-on) — ENHANCED
-// =======================
-
-function startSleepTimer() {
-  const now = Date.now();
-  localStorage.setItem("pet_sleep_start", now.toString());
-  disableAllActions(true);
-  startSleepEmoji(); // 💤 start continuous emoji
-}
-
-function checkAutoWake() {
-  const sleepStart = parseInt(localStorage.getItem("pet_sleep_start") || "0", 10);
-  if (!sleepStart) return;
-
-  const restBtn = document.getElementById("restBtn");
-  if (restBtn) restBtn.textContent = "💤 Sleep";
-
-  const now = Date.now();
-  const eightHours = 8 * 60 * 60 * 1000;
-  if (now - sleepStart >= eightHours) {
-    localStorage.removeItem("pet_sleep_start");
-    disableAllActions(false);
-    stopSleepEmoji();
-    showToast("☀️ Your pet woke up after 8 hours of rest!");
-  }
-}
-
-// 💤 Continuous sleep emoji animation every 5s
-function startSleepEmoji() {
-  stopSleepEmoji(); // ensure no duplicates
-  sleepEmojiInterval = setInterval(() => {
-    const emoji = document.createElement("div");
-    emoji.className = "floating-emoji";
-    emoji.textContent = "💤";
-    document.body.appendChild(emoji);
-    emoji.style.position = "fixed";
-    emoji.style.fontSize = "4rem";
-    emoji.style.top = "40%";
-    emoji.style.left = "50%";
-    emoji.style.transform = "translate(-50%, -50%)";
-    emoji.style.opacity = "0";
-    emoji.style.transition = "opacity 1s ease";
-    setTimeout(() => (emoji.style.opacity = "1"), 50);
-    setTimeout(() => emoji.remove(), 2000);
-  }, 5000); // every 5 seconds
-}
-
-function stopSleepEmoji() {
-  if (sleepEmojiInterval) {
-    clearInterval(sleepEmojiInterval);
-    sleepEmojiInterval = null;
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const restBtn = document.getElementById("restBtn");
-  if (!restBtn) return;
-
-  restBtn.addEventListener("click", async () => {
-  const sleeping = !!localStorage.getItem("pet_sleep_start");
-
-  if (!sleeping) {
-    await handleSleep();
-    startSleepTimer();
-    restBtn.textContent = "🌞 Wake Up";
-    showToast("💤 Your pet is now sleeping...");
+  // 🐶🐱 Choose image name
+  let imageFile = "";
+  if (pet.type === "cat") {
+    imageFile = `${stage}_cat_${displayMood}.png`;
+  } else if (pet.type === "dog") {
+    imageFile = `${stage}_dog_${displayMood}.png`;
   } else {
-    localStorage.removeItem("pet_sleep_start");
-    disableAllActions(false);
-    stopSleepEmoji();
-    restBtn.textContent = "💤 Sleep";
-    showToast("☀️ Your pet woke up!");
-  }
-});
-  
-
-  const stillSleeping = !!localStorage.getItem("pet_sleep_start");
-  if (stillSleeping) {
-    disableAllActions(true);
-    startSleepEmoji();
-    const restBtn = document.getElementById("restBtn");
-    if (restBtn) restBtn.textContent = "🌞 Wake Up";
+    imageFile = `${stage}_cat_${displayMood}.png`; // fallback
   }
 
-  setInterval(checkAutoWake, 60000);
-});
-
-if (now - sleepStart >= eightHours) {
-  localStorage.removeItem("pet_sleep_start");
-  disableAllActions(false);
-  stopSleepEmoji();
-  showToast("☀️ Your pet woke up after 8 hours of rest!");
+  // 🖼️ Update pet image
+  petImg.src = `static/images/${imageFile}`;
+  console.log(`🐾 Showing: ${imageFile}`);
 }
 
-function showToast(msg) {
-  const toast = document.createElement("div");
-  toast.textContent = msg;
-  toast.className = "toast";
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+
+
+  } catch (err) {
+    console.error('❌ Failed to load pet data:', err);
+  }
 }
+
+
+// -----------------------
+// Run once sanity checks
+// -----------------------
+(function sanity() {
+  // ensure there's a pet_id set for dev if not present
+  if (!localStorage.getItem('pet_id')) {
+    // don't overwrite user's data; only set for dev local testing
+    // localStorage.setItem('pet_id', '1');
+  }
+})();
+
+// End of main.js
+
+
+// ===============================
+// 🐾 RENAME PET FEATURE
+// ===============================
+async function renamePet() {
+  const newName = document.getElementById("renameInput").value.trim();
+  const pet_id = localStorage.getItem("pet_id");
+
+  if (!newName) {
+    alert("Please enter a name!");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${backendUrl}/pets/rename`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pet_id, name: newName }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert("✅ Pet renamed successfully!");
+      document.querySelector(".pet-name").textContent = newName; // updates the visible name
+      document.getElementById("renameInput").value = "";
+    } else {
+      alert("❌ Rename failed: " + (data.message || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Rename error:", err);
+    alert("⚠️ Could not connect to server.");
+  }
+}
+
+// Bind rename button
+document.getElementById("renameBtn").addEventListener("click", renamePet);
 
