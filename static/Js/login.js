@@ -225,3 +225,26 @@ async function logout() {
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
 
+async function requestOTP(username, remember_pc = false) {
+  try {
+    const res = await fetch(`${backendUrl}/request_otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, remember_pc })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ OTP sent!");
+      return true;
+    } else {
+      alert(`❌ OTP failed: ${data.message}${data.error ? " — " + data.error : ""}`);
+      return false;
+    }
+  } catch (err) {
+    console.error("Request OTP failed:", err);
+    alert("⚠️ Network error while requesting OTP");
+    return false;
+  }
+}
+
