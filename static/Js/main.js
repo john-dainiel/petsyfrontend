@@ -364,10 +364,6 @@ function safeSetPetImage(imgEl, src) {
 // Core functions: loadMain, updateStats, etc.
 // -----------------------
 
-let pet = null;
-let petMoodInterval = null;
-let petStatsInterval = null;
-
 async function loadMain() {
   console.log('📦 loadMain() starting...');
   const user_id = localStorage.getItem('user_id');
@@ -1233,6 +1229,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
