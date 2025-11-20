@@ -681,28 +681,6 @@ async function doPatAction() {
 
 
 
-  // Increment local play counter
-  incrementPlayCounter(pet_id);
-
-  // ✅ Delay backend sync so animation finishes first
-  setTimeout(async () => {
-    try {
-      const res = await fetch(`${backendUrl}/play_pet`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pet_id })
-      });
-      const data = await res.json();
-      if (data.success) await updateStats();
-    } catch (err) {
-      console.error('Play error:', err);
-    }
-  }, 4000);
-
-  setTimeout(() => emoji.remove(), 1500);
-}
-
-
 // Helper to pick emoji for cooldown display
 function getCooldownEmoji() {
   const type = (localStorage.getItem('pet_type') || 'cat').toLowerCase();
@@ -1291,6 +1269,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
