@@ -552,7 +552,7 @@ async function doPatAction() {
   const playBtn = document.getElementById('playBtn');
   if (!playBtn) return;
 
-  // 💤 If pet sleeping, ignore
+  // If pet sleeping, ignore
   if (petData && (petData.sleeping || petData.is_sleeping)) {
     showToast('😴 Your pet is sleeping.');
     return;
@@ -561,7 +561,7 @@ async function doPatAction() {
   playBtn.disabled = true;
   playBtn.classList.add('disabled');
 
-  // ⏱️ Cooldown timer (60s)
+  // Cooldown (60s)
   let cooldown = 60;
   playBtn.textContent = getCooldownEmoji() + ` ${cooldown}s`;
   const cooldownInterval = setInterval(() => {
@@ -575,7 +575,7 @@ async function doPatAction() {
     }
   }, 1000);
 
-  // 💫 Floating emoji feedback
+  // Floating emoji
   const emoji = document.createElement('div');
   emoji.className = 'floating-emoji';
   emoji.textContent = getCooldownEmoji();
@@ -591,37 +591,122 @@ async function doPatAction() {
   });
   setTimeout(() => (emoji.style.opacity = '1'), 30);
 
-  // 🎬 Play animation frames
+  // Animation frames
   const petImg = document.getElementById('petImage');
-  const baseType = (localStorage.getItem('pet_type') || 'cat').toLowerCase();
+  const baseType = (localStorage.getItem('pet_type') || petData?.pet_type || 'cat').toLowerCase();
 
-  // 🍼 Detect baby vs adult folder for play animation
-  const birthDate = pet?.created_at ? new Date(pet.created_at) : null;
-  const today = new Date();
-  const ageDays = birthDate ? Math.floor((today - birthDate) / (1000 * 60 * 60 * 24)) : 999;
-  const stage = ageDays < 10 ? "baby" : "adult";
+  // Determine baby or adult
+  const ageDays =
+    typeof petData?.ageDays === 'number'
+      ? petData.ageDays
+      : petData?.created_at
+      ? Math.floor((Date.now() - new Date(petData.created_at)) / (1000 * 60 * 60 * 24))
+      : 999;
 
-  const frame1 = `static/images/${stage}_${baseType}_when_play1.png`;
-  const frame2 = `static/images/${stage}_${baseType}_when_play2.png`;
+  const stage = ageDays < 10 ? 'baby' : 'adult';
 
-  if (petImg) {
-    let toggle = false;
-    let cycles = 0;
-    const maxCycles = 6;
-    const frameInterval = 600;
+  const candidateFrames = [
+    `static/images/${stage}_${baseType}_when_play1.png`,
+    `static/images/${baseType}_when_play1.png`
+  ];
+  const candidateFrames2 = [
+    `static/images/${stage}_${baseType}_when_play2.png`,
+    `static/images/${baseType}_when_play2.png`
+  ];
 
-    const playFrameInterval = setInterval(() => {
-      toggle = !toggle;
-      petImg.src = toggle ? frame1 : frame2;
-      cycles++;
-      if (cycles >= maxCycles) {
-        clearInterval(playFrameInterval);
-
-        // ✅ FIXED: Don't force happy — let updatePetImage decide
-        updatePetImage(); // respects dirty/sleeping/happy logic
-      }
-    }, frameInterval);
+  // Helper to find valid image
+  function firstExisting(srcList, cb) {
+    let idx = 0;
+    const tryNext = () => {
+      if (idx >= srcList.length) return cb(null);
+      const img = new Image();
+      img.onload = () => cb(srcList[idx]);
+      img.onerror = () => {
+        idx++;
+        tryNext();
+      };
+      img.src = srcList[idx];
+    };
+    tryNext();
   }
+
+  // Animate
+  firstExisting(candidateFrames, (f1) => {
+    if (!f1) return;
+    firstExisting(candidateFrames2, (f2) => {
+      if (!f2) f2 = f1;
+      if (!petImg) return;
+
+      let toggle = false;
+      let cycles = 0;
+      const maxCycles = 6;
+
+      const interval = setInterval(() => {
+        toggle = !toggle;
+        petImg.src = toggle ? f1 : f2;
+        cycles++;
+        if (cycles >= maxCycles) {
+          clearInterval(interval);
+          setPetImage(); // restore correct image
+        }
+      }, 600);
+    });
+  });
+
+  // Local happiness increase
+  petData.happiness = Math.min(100, (Number(petData.happiness) || 0) + 5);
+  const happinessEl = $('#happinessBar');
+  if (happinessEl) happinessEl.value = petData.happiness;
+
+  // Mark dirty after 3 plays
+  incrementPlayCounter(pet_id);
+
+  // Backend sync after animation
+  setTimeout(async () => {
+    try {
+      const res = await fetch(`${backendUrl}/play_pet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pet_id })
+      });
+
+      await updateStats();
+    } catch (err) {
+      console.error('Play error:', err);
+    }
+  }, 4000);
+
+  setTimeout(() => emoji.remove(), 1500);
+}
+
+  // Increment local play counter & mark dirty if needed
+  incrementPlayCounter(pet_id);
+
+  // Locally bump happiness for immediate UX if server doesn't update happiness
+  if (!petData) petData = {};
+  petData.happiness = Math.min(100, (Number(petData.happiness) || 0) + 5);
+  const happinessEl = $('#happinessBar');
+  if (happinessEl) happinessEl.value = petData.happiness;
+
+  // Delay backend sync so animation finishes first
+  setTimeout(async () => {
+    try {
+      const res = await fetch(`${backendUrl}/play_pet`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pet_id })
+      });
+      const data = await res.json();
+      // Ensure UI updates (server may report new stats)
+      await updateStats();
+    } catch (err) {
+      console.error('Play error:', err);
+    }
+  }, 4000);
+
+  setTimeout(() => emoji.remove(), 1500);
+}
+
 
   // Increment local play counter
   incrementPlayCounter(pet_id);
@@ -955,63 +1040,58 @@ function setPetImage(forcedState = null) {
   const petImg = document.getElementById("petImage");
   if (!petImg || !petData) return;
 
-  // 🧸 Determine type (cat, dog, etc.) and whether it's a baby or adult
-  const baseType = (localStorage.getItem("pet_type") || "cat").toLowerCase();
-  const isBaby = petData.age && petData.age < 3; // baby if < 3 days old
-  const type = isBaby ? `baby_${baseType}` : baseType;
+  const baseType = (localStorage.getItem("pet_type") || petData.pet_type || "cat").toLowerCase();
 
-  // 🌀 Handle forced states (like animations or mood override)
+  // Use the canonical ageDays value (ensure it's set in loadMain)
+  const ageDays = (typeof petData.ageDays === 'number') ? petData.ageDays :
+                  (petData.created_at ? computeAgeDays(petData.created_at) : 999);
+  const isBaby = ageDays < 10; // single threshold everywhere
+
+  // Allow external forced state (e.g., 'dirty','sleeping','happy','playing', etc.)
   if (forcedState) {
-    const forcedPath = `static/images/${type}_${forcedState}.png`;
-    petImg.src = forcedPath;
+    // prefer baby image if baby and file exists; otherwise use adult
+    const babyPath = `static/images/${isBaby ? 'baby_' + baseType : baseType}_${forcedState}.png`;
+    const adultPath = `static/images/${baseType}_${forcedState}.png`;
+    // Try baby then adult
+    const testImg = new Image();
+    testImg.onload = () => { petImg.src = babyPath; };
+    testImg.onerror = () => { petImg.src = adultPath; };
+    testImg.src = babyPath;
     return;
   }
 
-  // Extract current stats safely
-  const {
-    hunger = 100,
-    energy = 100,
-    happiness = 100,
-    sleeping,
-    is_sleeping,
-    dirty,
-    is_dirty,
-    isDirty
-  } = petData;
+  // Safely extract stats
+  const hunger = Number(petData.hunger ?? 100);
+  const energy = Number(petData.energy ?? 100);
+  const happiness = Number(petData.happiness ?? 100);
+  const sleeping = petData.sleeping || petData.is_sleeping || false;
+  const is_dirty = petData.is_dirty || petData.isDirty || false;
 
-  // 💤 Sleeping (highest priority)
-  if (sleeping || is_sleeping) {
-    petImg.src = `static/images/${type}_sleeping.png`;
-  }
-  // 💩 Dirty pet (handles multiple dirty flags)
-  else if (dirty || is_dirty || isDirty) {
-    petImg.src = `static/images/${type}_dirty.png`;
-  }
-  // 🍗 Very hungry
-  else if (hunger <= 10) {
-    petImg.src = `static/images/${type}_hungry.png`;
-  }
-  // 😴 Tired
-  else if (energy <= 15) {
-    petImg.src = `static/images/${type}_tired.png`;
-  }
-  // 😿 Sad / low happiness
-  else if (happiness <= 20) {
-    petImg.src = `static/images/${type}_sad.png`;
-  }
-  // 😺 Default happy & clean
-  else {
-    petImg.src = `static/images/${type}_happy.png`;
-  }
+  // Determine image name priority
+  let filenameState = 'happy';
+  if (sleeping) filenameState = 'sleeping';
+  else if (is_dirty) filenameState = 'dirty';
+  else if (hunger <= 10) filenameState = 'hungry';
+  else if (energy <= 15) filenameState = 'tired';
+  else if (happiness <= 20) filenameState = 'sad';
+  else filenameState = 'happy';
 
-  // 🧩 Optional fallback: if baby image missing, use adult version instead
-  petImg.onerror = () => {
-    const fallbackType = baseType;
-    const currentState = petImg.src.split("_").pop().replace(".png", "");
-    petImg.src = `static/images/${fallbackType}_${currentState}.png`;
+  // Compose candidate paths (try baby first for images that exist)
+  const babyPath = `static/images/baby_${baseType}_${filenameState}.png`;
+  const adultPath = `static/images/${baseType}_${filenameState}.png`;
+
+  const probe = new Image();
+  probe.onload = () => { petImg.src = isBaby ? babyPath : adultPath; };
+  probe.onerror = () => {
+    // Fallback: try adult path, then generic fallback
+    const fallback = new Image();
+    fallback.onload = () => petImg.src = adultPath;
+    fallback.onerror = () => petImg.src = `static/images/${baseType}_happy.png`;
+    fallback.src = adultPath;
   };
+  // Start probe with baby if baby else adult
+  probe.src = isBaby ? babyPath : adultPath;
 }
-
 
 
 
@@ -1276,5 +1356,6 @@ async function renamePet() {
 
 // Bind rename button
 document.getElementById("renameBtn").addEventListener("click", renamePet);
+
 
 
