@@ -1197,6 +1197,9 @@ function sparklesOnClean() {
 // ==============================
 // 🐾 LOAD PET DATA (with baby/adult logic)
 // ==============================
+// ==============================
+// 🐾 LOAD PET DATA (cleaned, unified with global pet)
+// ==============================
 async function loadpet() {
   const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
@@ -1205,17 +1208,46 @@ async function loadpet() {
     const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
     if (!res.ok) throw new Error('Failed to fetch pet data');
 
-    // Save globally for use by other functions
+    // Save globally
     pet = await res.json();
 
-    // 🏷️ Display pet info
-    const petNameEl = document.getElementById('petName');
-    const petCoinsEl = document.getElementById('petCoins');
+    // -----------------------------
+    // Normalize fields like loadMain()
+    // -----------------------------
+    pet.isDirty = pet.isDirty || pet.is_dirty || false;
+    pet.is_dirty = pet.is_dirty || pet.isDirty || false;
+    pet.sleeping = pet.sleeping || pet.is_sleeping || false;
+    pet.ageDays = computeAgeDays(pet.created_at || localStorage.getItem('pet_birthdate'));
 
-    if (petNameEl) petNameEl.textContent = pet.pet_name || 'Pet';
-    if (petCoinsEl) petCoinsEl.textContent = `Coins: ${pet.coins ?? 0} 🪙`;
+    // Ensure energy/hunger/happiness defaults
+    pet.energy = (typeof pet.energy === 'number') ? pet.energy : 100;
+    pet.hunger = (typeof pet.hunger === 'number') ? pet.hunger : 50;
+    pet.happiness = (typeof pet.happiness === 'number') ? pet.happiness : 50;
 
-    // 🍪 Treat inventory
+    // Store info in localStorage
+    localStorage.setItem('pet_id', pet.id);
+    if (pet.pet_name) localStorage.setItem('pet_name', pet.pet_name);
+    if (pet.pet_type) localStorage.setItem('pet_type', pet.pet_type.toLowerCase());
+    if (pet.created_at) localStorage.setItem('pet_birthdate', pet.created_at.split(' ')[0]);
+
+    // -----------------------------
+    // Display in DOM
+    // -----------------------------
+    $('#petName') && ($('#petName').textContent = pet.pet_name || 'Pet');
+    $('#petCoins') && ($('#petCoins').textContent = pet.coins ?? 0);
+    $('#petId') && ($('#petId').textContent = `#${pet.id}`);
+    $('#petType') && ($('#petType').textContent = pet.pet_type || 'Unknown');
+
+    // Apply local dirty state if present
+    const localDirtyKey = `pet_dirty_${pet.id}`;
+    if (localStorage.getItem(localDirtyKey) === 'true') {
+      pet.is_dirty = true;
+      pet.isDirty = true;
+    }
+
+    // -----------------------------
+    // Load treats
+    // -----------------------------
     if (typeof pet.small_treats !== 'undefined') {
       treatInventory.small = pet.small_treats ?? 0;
       treatInventory.medium = pet.medium_treats ?? 0;
@@ -1223,60 +1255,28 @@ async function loadpet() {
     } else {
       await loadTreatInventory();
     }
-
     updateTreatMenu();
 
-    // 🍼 Show correct image (baby or adult)
-    // ... your loadpet() code here ...
+    // -----------------------------
+    // Pet image logic (use unified function)
+    // -----------------------------
+    setPetImage(pet.sleeping ? 'sleeping' : 'happy');
 
-// ================================
-// 🍼 PET AGE CHECK — Baby or Adult
-// ================================
-// ================================
-// 🍼 PET IMAGE HANDLER — Age + Mood + Dirt
-// ================================
-function updatePetImage(mood = "happy") {
-  const petImg = document.getElementById("petImage");
-  if (!petImg || !pet) return;
+    // -----------------------------
+    // Display age
+    // -----------------------------
+    displayAge();
 
-  // 📅 Compute age in days
-  const birthDate = new Date(pet.created_at);
-  const today = new Date();
-  const ageDays = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
-  const stage = ageDays < 10 ? "baby" : "adult"; // 🍼 baby if <10 days
-
-  // 🐾 Determine mood priority
-  // If dirty → always show dirty
-  // Else if sleeping → sleeping
-  // Else use passed mood (happy/sad)
-  let displayMood = mood;
-  if (pet.is_dirty) {
-    displayMood = "dirty";
-  } else if (pet.is_sleeping) {
-    displayMood = "sleeping";
-  }
-
-  // 🐶🐱 Choose image name
-  let imageFile = "";
-  if (pet.type === "cat") {
-    imageFile = `${stage}_cat_${displayMood}.png`;
-  } else if (pet.type === "dog") {
-    imageFile = `${stage}_dog_${displayMood}.png`;
-  } else {
-    imageFile = `${stage}_cat_${displayMood}.png`; // fallback
-  }
-
-  // 🖼️ Update pet image
-  petImg.src = `static/images/${imageFile}`;
-  console.log(`🐾 Showing: ${imageFile}`);
-}
-
-
+    // -----------------------------
+    // Update stats periodically
+    // -----------------------------
+    updateStats();
 
   } catch (err) {
     console.error('❌ Failed to load pet data:', err);
   }
 }
+
 
 
 // -----------------------
@@ -1291,6 +1291,7 @@ function updatePetImage(mood = "happy") {
 })();
 
 // End of main.js
+
 
 
 
