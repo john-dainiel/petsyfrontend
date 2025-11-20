@@ -364,6 +364,10 @@ function safeSetPetImage(imgEl, src) {
 // Core functions: loadMain, updateStats, etc.
 // -----------------------
 
+let pet = null;
+let petMoodInterval = null;
+let petStatsInterval = null;
+
 async function loadMain() {
   console.log('📦 loadMain() starting...');
   const user_id = localStorage.getItem('user_id');
@@ -392,6 +396,7 @@ async function loadMain() {
     pet.hunger = typeof pet.hunger === 'number' ? pet.hunger : 50;
     pet.happiness = typeof pet.happiness === 'number' ? pet.happiness : 50;
 
+    // Store locally
     localStorage.setItem('pet_id', pet.id);
     localStorage.setItem('pet_name', pet.pet_name || 'Pet');
     localStorage.setItem('pet_type', (pet.pet_type || 'unknown').toLowerCase());
@@ -403,17 +408,17 @@ async function loadMain() {
     $('#petType')?.textContent = pet.pet_type || 'Unknown';
     $('#petCoins')?.textContent = pet.coins ?? 0;
 
-    // Set initial pet image
-    startPetMoodMonitor();
-
-    // Load treats and other UI updates
+    // Load treats and UI
     await loadTreatInventory();
     updateTreatMenu();
     updateBackground();
     displayAge();
     updateStats();
 
-    // Set intervals
+    // First refresh of stats before starting intervals
+    await refreshPetStats();
+
+    // Start intervals AFTER pet stats are fresh
     if (petMoodInterval) clearInterval(petMoodInterval);
     petMoodInterval = setInterval(startPetMoodMonitor, 5000); // update image
 
@@ -428,25 +433,27 @@ async function loadMain() {
   }
 }
 
-// 🔄 Poll backend for latest stats
+// Fetch latest pet stats from backend
 async function refreshPetStats() {
   if (!pet?.id) return;
+
   try {
     const res = await fetch(`${backendUrl}/get_pet_by_id/${pet.id}`);
     const data = await res.json();
     if (!res.ok || data.error) return;
 
-    pet.hunger = data.hunger;
-    pet.energy = data.energy;
-    pet.happiness = data.happiness;
+    // Validate before updating
+    if (typeof data.hunger === 'number') pet.hunger = data.hunger;
+    if (typeof data.energy === 'number') pet.energy = data.energy;
+    if (typeof data.happiness === 'number') pet.happiness = data.happiness;
 
-    startPetMoodMonitor(); // update image after refresh
+    startPetMoodMonitor(); // always update mood after refresh
   } catch (e) {
     console.error('Failed to refresh pet stats:', e);
   }
 }
 
-// 🐶 Update pet image based on mood
+// Update pet image based on current stats
 function startPetMoodMonitor() {
   if (!pet) return;
 
@@ -459,11 +466,12 @@ function startPetMoodMonitor() {
   setPetImage(mood);
 }
 
-// Example: setPetImage updates the <img> src
+// Update <img> element
 function setPetImage(mood) {
   const img = document.getElementById('petImage');
-  if (!img) return;
-  img.src = `images/pets/${pet.pet_type}_${mood}.png`; // adjust path to your assets
+  if (!img || !pet.pet_type) return;
+
+  img.src = `images/pets/${pet.pet_type}_${mood}.png`;
 }
 
 
