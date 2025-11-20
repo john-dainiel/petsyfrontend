@@ -679,33 +679,6 @@ async function doPatAction() {
   setTimeout(() => emoji.remove(), 1500);
 }
 
-  // Increment local play counter & mark dirty if needed
-  incrementPlayCounter(pet_id);
-
-  // Locally bump happiness for immediate UX if server doesn't update happiness
-  if (!petData) petData = {};
-  petData.happiness = Math.min(100, (Number(petData.happiness) || 0) + 5);
-  const happinessEl = $('#happinessBar');
-  if (happinessEl) happinessEl.value = petData.happiness;
-
-  // Delay backend sync so animation finishes first
-  setTimeout(async () => {
-    try {
-      const res = await fetch(`${backendUrl}/play_pet`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pet_id })
-      });
-      const data = await res.json();
-      // Ensure UI updates (server may report new stats)
-      await updateStats();
-    } catch (err) {
-      console.error('Play error:', err);
-    }
-  }, 4000);
-
-  setTimeout(() => emoji.remove(), 1500);
-}
 
 
   // Increment local play counter
@@ -1320,42 +1293,8 @@ function updatePetImage(mood = "happy") {
 // End of main.js
 
 
-// ===============================
-// 🐾 RENAME PET FEATURE
-// ===============================
-async function renamePet() {
-  const newName = document.getElementById("renameInput").value.trim();
-  const pet_id = localStorage.getItem("pet_id");
 
-  if (!newName) {
-    alert("Please enter a name!");
-    return;
-  }
 
-  try {
-    const response = await fetch(`${backendUrl}/pets/rename`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id, name: newName }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      alert("✅ Pet renamed successfully!");
-      document.querySelector(".pet-name").textContent = newName; // updates the visible name
-      document.getElementById("renameInput").value = "";
-    } else {
-      alert("❌ Rename failed: " + (data.message || "Unknown error"));
-    }
-  } catch (err) {
-    console.error("Rename error:", err);
-    alert("⚠️ Could not connect to server.");
-  }
-}
-
-// Bind rename button
-document.getElementById("renameBtn").addEventListener("click", renamePet);
 
 
 
