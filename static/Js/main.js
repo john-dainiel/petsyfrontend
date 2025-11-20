@@ -33,6 +33,7 @@ const $ = (sel, root = document) => (root || document).querySelector(sel);
 // -----------------------
 document.addEventListener('DOMContentLoaded', () => {
   // Element refs (some may be optional depending on page)
+  const petImage = document.getElementById('petImage');
   const playBtn = $('#playBtn');
   const restBtn = $('#restBtn');   // sleep/wake button
   const miniGamesBtn = $('#miniGamesBtn');
@@ -350,6 +351,15 @@ saveNameBtn?.addEventListener('click', async () => {
   setInterval(checkAutoWake, 60000);
 }); // end DOMContentLoaded
 
+// Safe image setter
+function safeSetPetImage(imgEl, src) {
+  const temp = new Image();
+  temp.onload = () => { imgEl.src = src; };
+  temp.onerror = () => { console.warn('Image not found:', src); };
+  temp.src = src;
+}
+
+
 // -----------------------
 // Core functions: loadMain, updateStats, etc.
 // -----------------------
@@ -561,19 +571,20 @@ async function doPatAction() {
   playBtn.disabled = true;
   playBtn.classList.add('disabled');
 
-  // Cooldown (60s)
-  let cooldown = 60;
+// Cooldown display
+let cooldown = 60;
+playBtn.disabled = true;
+playBtn.classList.add('disabled');
+const cooldownInterval = setInterval(() => {
+  cooldown--;
   playBtn.textContent = getCooldownEmoji() + ` ${cooldown}s`;
-  const cooldownInterval = setInterval(() => {
-    cooldown--;
-    playBtn.textContent = getCooldownEmoji() + ` ${cooldown}s`;
-    if (cooldown <= 0) {
-      clearInterval(cooldownInterval);
-      playBtn.disabled = false;
-      playBtn.classList.remove('disabled');
-      playBtn.textContent = '▶️ Play';
-    }
-  }, 1000);
+  if (cooldown <= 0) {
+    clearInterval(cooldownInterval);
+    playBtn.disabled = false;
+    playBtn.classList.remove('disabled');
+    playBtn.textContent = '▶️ Play';
+  }
+}, 1000);
 
   // Floating emoji
   const emoji = document.createElement('div');
@@ -976,14 +987,14 @@ setInterval(checkSleepStatus, 60000);
 
 const petImage = document.getElementById('petImage');
 
-function getPetType() { return localStorage.getItem('pet_type') || (pet && pet.pet_type) || 'cat'; }
+function getPetType() {
+  // Return the pet type from the pet object, fallback to localStorage, default to 'cat'
+  return (pet?.pet_type) || localStorage.getItem('pet_type') || 'cat';
+}
+
 function isBabyPetLocal() {
-  const birthdate = localStorage.getItem('pet_birthdate');
-  if (!birthdate) return true;
-  const today = new Date();
-  const born = new Date(birthdate);
-  const ageInDays = Math.floor((today - born) / (1000*60*60*24));
-  return ageInDays < 10;
+  // Use pet.ageDays if available; treat pet as baby if ageDays < 10
+  return (pet?.ageDays ?? 0) < 10;
 }
 
 // single authoritative image setter used everywhere
@@ -999,17 +1010,12 @@ function setPetImage(forcedState = null) {
   const isBaby = ageDays < 10; // single threshold everywhere
 
   // Allow external forced state (e.g., 'dirty','sleeping','happy','playing', etc.)
-  if (forcedState) {
-    // prefer baby image if baby and file exists; otherwise use adult
-    const babyPath = `static/images/${isBaby ? 'baby_' + baseType : baseType}_${forcedState}.png`;
-    const adultPath = `static/images/${baseType}_${forcedState}.png`;
-    // Try baby then adult
-    const testImg = new Image();
-    testImg.onload = () => { petImg.src = babyPath; };
-    testImg.onerror = () => { petImg.src = adultPath; };
-    testImg.src = babyPath;
-    return;
-  }
+ if (forcedState) {
+  const babyPath = `static/images/${isBaby ? 'baby_' + baseType : baseType}_${forcedState}.png`;
+  const adultPath = `static/images/${baseType}_${forcedState}.png`;
+  safeSetPetImage(petImg, babyPath);
+  return;
+}
 
   // Safely extract stats
   const hunger = Number(pet.hunger ?? 100);
@@ -1179,80 +1185,8 @@ function sparklesOnClean() {
 // 🐾 LOAD PET DATA (cleaned, unified with global pet)
 // ==============================
 async function loadpet() {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
-
-  try {
-    const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
-    if (!res.ok) throw new Error('Failed to fetch pet data');
-
-    // Save globally
-    pet = await res.json();
-
-    // -----------------------------
-    // Normalize fields like loadMain()
-    // -----------------------------
-    pet.isDirty = pet.isDirty || pet.is_dirty || false;
-    pet.is_dirty = pet.is_dirty || pet.isDirty || false;
-    pet.sleeping = pet.sleeping || pet.is_sleeping || false;
-    pet.ageDays = computeAgeDays(pet.created_at || localStorage.getItem('pet_birthdate'));
-
-    // Ensure energy/hunger/happiness defaults
-    pet.energy = (typeof pet.energy === 'number') ? pet.energy : 100;
-    pet.hunger = (typeof pet.hunger === 'number') ? pet.hunger : 50;
-    pet.happiness = (typeof pet.happiness === 'number') ? pet.happiness : 50;
-
-    // Store info in localStorage
-    localStorage.setItem('pet_id', pet.id);
-    if (pet.pet_name) localStorage.setItem('pet_name', pet.pet_name);
-    if (pet.pet_type) localStorage.setItem('pet_type', pet.pet_type.toLowerCase());
-    if (pet.created_at) localStorage.setItem('pet_birthdate', pet.created_at.split(' ')[0]);
-
-    // -----------------------------
-    // Display in DOM
-    // -----------------------------
-    $('#petName') && ($('#petName').textContent = pet.pet_name || 'Pet');
-    $('#petCoins') && ($('#petCoins').textContent = pet.coins ?? 0);
-    $('#petId') && ($('#petId').textContent = `#${pet.id}`);
-    $('#petType') && ($('#petType').textContent = pet.pet_type || 'Unknown');
-
-    // Apply local dirty state if present
-    const localDirtyKey = `pet_dirty_${pet.id}`;
-    if (localStorage.getItem(localDirtyKey) === 'true') {
-      pet.is_dirty = true;
-      pet.isDirty = true;
-    }
-
-    // -----------------------------
-    // Load treats
-    // -----------------------------
-    if (typeof pet.small_treats !== 'undefined') {
-      treatInventory.small = pet.small_treats ?? 0;
-      treatInventory.medium = pet.medium_treats ?? 0;
-      treatInventory.large = pet.large_treats ?? 0;
-    } else {
-      await loadTreatInventory();
-    }
-    updateTreatMenu();
-
-    // -----------------------------
-    // Pet image logic (use unified function)
-    // -----------------------------
-    setPetImage(pet.sleeping ? 'sleeping' : 'happy');
-
-    // -----------------------------
-    // Display age
-    // -----------------------------
-    displayAge();
-
-    // -----------------------------
-    // Update stats periodically
-    // -----------------------------
-    updateStats();
-
-  } catch (err) {
-    console.error('❌ Failed to load pet data:', err);
-  }
+  // Just delegate to loadMain()
+  await loadMain();
 }
 
 
@@ -1269,6 +1203,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
