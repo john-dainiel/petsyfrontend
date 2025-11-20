@@ -364,13 +364,16 @@ function safeSetPetImage(imgEl, src) {
 // Core functions: loadMain, updateStats, etc.
 // -----------------------
 
+let pet = null;
+let petMoodInterval = null;
+let petStatsInterval = null;
+
 async function loadMain() {
   console.log('📦 loadMain() starting...');
   const user_id = localStorage.getItem('user_id');
   const pet_id = localStorage.getItem('pet_id');
 
   if (!user_id) {
-    console.log('❌ No user_id found, redirecting to login...');
     window.location.href = 'login.html';
     return;
   }
@@ -381,65 +384,92 @@ async function loadMain() {
   try {
     const res = await fetch(`${backendUrl}/${endpoint}/${idToLoad}`);
     const data = await res.json();
-
-    if (!res.ok || data.error) {
-      console.error('Error loading pet:', data.error);
-      return;
-    }
+    if (!res.ok || data.error) return console.error('Error loading pet:', data.error);
 
     pet = data;
-    // normalize some common fields
+
+    // Normalize fields
     pet.isDirty = pet.isDirty || pet.is_dirty || false;
-    pet.is_dirty = pet.is_dirty || pet.isDirty || false;
     pet.sleeping = pet.sleeping || pet.is_sleeping || false;
     pet.ageDays = computeAgeDays(pet.created_at || localStorage.getItem('pet_birthdate'));
+    pet.energy = typeof pet.energy === 'number' ? pet.energy : 100;
+    pet.hunger = typeof pet.hunger === 'number' ? pet.hunger : 50;
+    pet.happiness = typeof pet.happiness === 'number' ? pet.happiness : 50;
 
-    // ensure energy/hunger/happiness default numbers if missing
-    pet.energy = (typeof pet.energy === 'number') ? pet.energy : (pet.energy ?? 100);
-    pet.hunger = (typeof pet.hunger === 'number') ? pet.hunger : (pet.hunger ?? 50);
-    pet.happiness = (typeof pet.happiness === 'number') ? pet.happiness : (pet.happiness ?? 50);
+    localStorage.setItem('pet_id', pet.id);
+    localStorage.setItem('pet_name', pet.pet_name || 'Pet');
+    localStorage.setItem('pet_type', (pet.pet_type || 'unknown').toLowerCase());
+    localStorage.setItem('pet_birthdate', (pet.created_at || '').split(' ')[0] || '');
 
-    localStorage.setItem('pet_id', data.id);
-    if (data.pet_name) localStorage.setItem('pet_name', data.pet_name);
-    if (data.pet_type) localStorage.setItem('pet_type', data.pet_type.toLowerCase());
-    if (data.created_at) localStorage.setItem('pet_birthdate', data.created_at.split(' ')[0]);
+    // Display info
+    $('#petId')?.textContent = `#${pet.id}`;
+    $('#petName')?.textContent = pet.pet_name || 'Pet';
+    $('#petType')?.textContent = pet.pet_type || 'Unknown';
+    $('#petCoins')?.textContent = pet.coins ?? 0;
 
-    // Display Info
-    $('#petId') && ($('#petId').textContent = `#${data.id}`);
-    $('#petName') && ($('#petName').textContent = data.pet_name || 'Pet');
-    $('#petType') && ($('#petType').textContent = data.pet_type || 'Unknown');
-    $('#petCoins') && ($('#petCoins').textContent = data.coins ?? 0);
+    // Set initial pet image
+    startPetMoodMonitor();
 
-    // apply dirty flag from local storage if present (keeps client-side persistent)
-    const localDirtyKey = `pet_dirty_${data.id}`;
-    if (localStorage.getItem(localDirtyKey) === 'true') {
-      pet.is_dirty = true;
-      pet.isDirty = true;
-    }
-
-    // Pet image logic based on age/type - initial set
-    setPetImage(pet.sleeping ? 'sleeping' : 'happy');
-
+    // Load treats and other UI updates
+    await loadTreatInventory();
+    updateTreatMenu();
     updateBackground();
     displayAge();
     updateStats();
 
-    // load treats from server and show
-    await loadTreatInventory();
-  
-    updateTreatMenu();
-
-    // Auto refresh stats and age
-    if (ageInterval) clearInterval(ageInterval);
-    ageInterval = setInterval(displayAge, 60000);
+    // Set intervals
     if (petMoodInterval) clearInterval(petMoodInterval);
-    petMoodInterval = setInterval(() => startPetMoodMonitor(), 5000);
+    petMoodInterval = setInterval(startPetMoodMonitor, 5000); // update image
+
+    if (petStatsInterval) clearInterval(petStatsInterval);
+    petStatsInterval = setInterval(refreshPetStats, 10000); // update hunger/energy/happiness
+
+    setInterval(displayAge, 60000);
     setInterval(updateStats, 30000);
 
   } catch (err) {
     console.error('Failed to load main:', err);
   }
 }
+
+// 🔄 Poll backend for latest stats
+async function refreshPetStats() {
+  if (!pet?.id) return;
+  try {
+    const res = await fetch(`${backendUrl}/get_pet_by_id/${pet.id}`);
+    const data = await res.json();
+    if (!res.ok || data.error) return;
+
+    pet.hunger = data.hunger;
+    pet.energy = data.energy;
+    pet.happiness = data.happiness;
+
+    startPetMoodMonitor(); // update image after refresh
+  } catch (e) {
+    console.error('Failed to refresh pet stats:', e);
+  }
+}
+
+// 🐶 Update pet image based on mood
+function startPetMoodMonitor() {
+  if (!pet) return;
+
+  let mood = 'happy';
+  if (pet.sleeping) mood = 'sleeping';
+  else if (pet.hunger <= 30) mood = 'hungry';
+  else if (pet.energy <= 20) mood = 'tired';
+  else if (pet.happiness <= 30) mood = 'sad';
+
+  setPetImage(mood);
+}
+
+// Example: setPetImage updates the <img> src
+function setPetImage(mood) {
+  const img = document.getElementById('petImage');
+  if (!img) return;
+  img.src = `images/pets/${pet.pet_type}_${mood}.png`; // adjust path to your assets
+}
+
 
 function computeAgeDays(createdAtString) {
   if (!createdAtString) return 0;
@@ -1203,6 +1233,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
