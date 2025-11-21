@@ -1070,8 +1070,7 @@ function setPetImage(forcedState = null) {
   } else if (baseType === "cat" && hunger <= 40) {
     filenameState = "hungry";
   } else if (baseType === "dog" && hunger <= 40) {
-    // For dogs, use `sad` for baby, `sad1` for adult
-    filenameState = isBaby ? "sad" : "sad1";
+   filenameState = "hungry";
   } else if (energy <= 15) {
     filenameState = "tired";
   } else {
@@ -1209,6 +1208,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
