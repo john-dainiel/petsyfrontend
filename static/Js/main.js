@@ -1,3 +1,5 @@
+
+
 // ===============================
 // 🐾 PETSY MAIN.JS — All features combined & cleaned
 // - Shop (buy, inventory)
@@ -468,22 +470,21 @@ function startPetMoodMonitor() {
   if (!pet) return;
 
   let mood = 'happy';
-  if (pet.sleeping) {
-    mood = 'sleeping';
-  } else if (pet.is_dirty) {
-    mood = 'dirty';
-  } else if (pet.hunger <= 30) {
-    mood = 'hungry';
-  } else if (pet.energy <= 20) {
-    mood = 'tired';
-  } else if (pet.happiness <= 30) {
-    mood = 'sad';
-  }
+  if (pet.sleeping) mood = 'sleeping';
+  else if (pet.hunger <= 30) mood = 'hungry';
+  else if (pet.energy <= 20) mood = 'tired';
+  else if (pet.happiness <= 30) mood = 'sad';
 
   setPetImage(mood);
 }
 
+// Update <img> element
+function setPetImage(mood) {
+  const img = document.getElementById('petImage');
+  if (!img || !pet.pet_type) return;
 
+  img.src = `static/images/${pet.pet_type}_${mood}.png`;
+}
 
 
 function computeAgeDays(createdAtString) {
@@ -534,7 +535,7 @@ async function updateStats() {
     }
 
     // update image and local state
-    setPetImage();
+    setPetImage(pet.sleeping ? 'sleeping' : 'happy');
 
   } catch (err) {
     console.error('Failed to update stats:', err);
@@ -747,19 +748,17 @@ function getCooldownEmoji() {
 
 function getPlayKey(pet_id) { return `play_count_${pet_id}`; }
 function incrementPlayCounter(pet_id) {
-  const key = `play_count_${pet_id}`;
+  const key = getPlayKey(pet_id);
   let count = parseInt(localStorage.getItem(key) || '0', 10);
   count += 1;
   localStorage.setItem(key, String(count));
-
+  // if reaches 3, mark dirty and reset counter
   if (count >= 3) {
     markPetDirtyLocal(pet_id);
-    localStorage.setItem(key, '0'); // reset counter
+    showToast('💩 Your pet got dirty after playing a lot—time to clean!');
+    localStorage.setItem(key, '0');
   }
 }
-
-// Example: call this every 5 seconds
-setInterval(startPetMoodMonitor, 5000);
 function resetPlayCounter(pet_id) { const key = getPlayKey(pet_id); localStorage.setItem(key, '0'); }
 
 // try to persist dirty state on server if endpoint exists; otherwise keep client-side
@@ -1045,34 +1044,46 @@ function isBabyPetLocal() {
   return (pet?.ageDays ?? 0) < 10;
 }
 
-function setPetImage(forcedMood = null) {
-  if (!pet) return;
+function setPetImage(forcedState = null) {
+  const petImg = document.getElementById("petImage");
+  if (!petImg || !pet) return;
 
-  let mood = forcedMood;
+  const baseType = (localStorage.getItem("pet_type") || pet.pet_type || "cat").toLowerCase();
+  // Determine if baby or adult
+  const ageDays = (typeof pet.ageDays === "number") ? pet.ageDays :
+                  (pet.created_at ? computeAgeDays(pet.created_at) : 999);
+  const isBaby = ageDays < 10;
 
-  if (!mood) {
-    // Priority order: sleeping > dirty > hungry > tired > sad > happy
-    if (pet.sleeping) {
-      mood = 'sleeping';
-    } else if (pet.is_dirty) {
-      mood = 'dirty';
-    } else if (pet.hunger <= 30) {
-      mood = 'hungry';
-    } else if (pet.energy <= 20) {
-      mood = 'tired';
-    } else if (pet.happiness <= 30) {
-      mood = 'sad';
-    } else {
-      mood = 'happy';
-    }
+  // Stats
+  const hunger = Number(pet.hunger ?? 100);
+  const energy = Number(pet.energy ?? 100);
+  const happiness = Number(pet.happiness ?? 100);
+  const sleeping = pet.sleeping || pet.is_sleeping || false;
+  const is_dirty = pet.is_dirty || pet.isDirty || false;
+
+  // Decide which state image to use
+  let filenameState = "happy";
+  if (sleeping) {
+    filenameState = "sleeping";
+  } else if (is_dirty) {
+    filenameState = "dirty";
+  } else if (baseType === "cat" && hunger <= 40) {
+    filenameState = "hungry";
+  } else if (baseType === "dog" && (happiness <= 40 || hunger <= 40)) {
+    // For dogs, use `sad` for baby, `sad1` for adult
+    filenameState = isBaby ? "sad" : "sad1";
+  } else if (energy <= 15) {
+    filenameState = "tired";
+  } else {
+    filenameState = "happy";
   }
 
-  // Determine image based on baby/adult + mood
-  const stage = pet.age_days < 10 ? 'baby' : 'adult';
-  const imageName = `${stage}_${mood}.png`;
+  // Build image paths
+  const babyPath = `static/images/baby_${baseType}_${filenameState}.png`;
+  const adultPath = `static/images/${baseType}_${filenameState}.png`;
 
-  const petImg = document.getElementById('petImg');
-  if (petImg) petImg.src = `/static/images/${imageName}`;
+  // Try loading baby first if baby; otherwise adult. Use safeSetPetImage for fallback.
+  safeSetPetImage(petImg, isBaby ? babyPath : adultPath);
 }
 
 
@@ -1093,8 +1104,7 @@ window.addEventListener('load', () => setPetImage('happy'));
 
 function startPetMoodMonitor() {
   if (!pet) return;
-
-  setPetImage(); // no argument: uses priority logic above
+  setPetImage(pet.sleeping ? 'sleeping' : 'happy');
 }
 
 // -----------------------
@@ -1199,7 +1209,6 @@ async function loadpet() {
 })();
 
 // End of main.js
-
 
 
 
