@@ -1109,7 +1109,7 @@ function chooseImageFilename({ pet_type = 'cat', isBaby = true, state = 'happy',
   }
 
   if (hunger !== null && Number(hunger) <= 10) {
-    if (type === 'cat') return isBaby ? 'baby_cat_hungry.png' : 'hungry_cat.png';
+    if (type === 'cat') return isBaby ? 'baby_cat_hungry.png' : 'cat_hungry.png';
     if (type === 'dog') return isBaby ? 'baby_dog_sad.png' : 'sad_dog2.png';
   }
 
@@ -1245,6 +1245,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
