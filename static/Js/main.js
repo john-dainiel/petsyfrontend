@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   logoutBtn?.addEventListener('click', () => {
     localStorage.clear();
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
   });
 
   shopBtn?.addEventListener('click', async () => {
@@ -371,7 +371,7 @@ async function loadMain() {
 
   if (!user_id) {
     console.log('❌ No user_id found, redirecting to login...');
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
     return;
   }
 
@@ -1245,6 +1245,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
