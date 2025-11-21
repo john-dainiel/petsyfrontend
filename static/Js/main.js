@@ -7,6 +7,8 @@
 // - Clean, Options modal (rename, mute)
 // - Pet image / mood logic (baby/adult)
 // - Background by time of day
+
+
 // - Hunger, dirty/clean logic, play counter (dirty after 3 plays/pets)
 // - Small sparkle animation on cleaning
 // - FIXES: play button local-only lock, wakePet(), hourly energy restore while sleeping
@@ -1020,6 +1022,7 @@ function disableAllActions(disabled) {
   });
 }
 
+
 // Keep a background check for server sleep status
 setInterval(checkSleepStatus, 60000);
 
@@ -1039,25 +1042,24 @@ function isBabyPetLocal() {
   return (pet?.ageDays ?? 0) < 10;
 }
 
-// single authoritative image setter used everywhere
 function setPetImage(forcedState = null) {
   const petImg = document.getElementById("petImage");
   if (!petImg || !pet) return;
 
   const baseType = (localStorage.getItem("pet_type") || pet.pet_type || "cat").toLowerCase();
 
-  // Use the canonical ageDays value (ensure it's set in loadMain)
+  // Use the canonical ageDays value
   const ageDays = (typeof pet.ageDays === 'number') ? pet.ageDays :
                   (pet.created_at ? computeAgeDays(pet.created_at) : 999);
-  const isBaby = ageDays < 10; // single threshold everywhere
+  const isBaby = ageDays < 10; // single threshold
 
-  // Allow external forced state (e.g., 'dirty','sleeping','happy','playing', etc.)
- if (forcedState) {
-  const babyPath = `static/images/${isBaby ? 'baby_' + baseType : baseType}_${forcedState}.png`;
-  const adultPath = `static/images/${baseType}_${forcedState}.png`;
-  safeSetPetImage(petImg, babyPath);
-  return;
-}
+  // Allow external forced state
+  if (forcedState) {
+    const babyPath = `static/images/${isBaby ? 'baby_' + baseType : baseType}_${forcedState}.png`;
+    const adultPath = `static/images/${baseType}_${forcedState}.png`;
+    safeSetPetImage(petImg, babyPath);
+    return;
+  }
 
   // Safely extract stats
   const hunger = Number(pet.hunger ?? 100);
@@ -1066,30 +1068,31 @@ function setPetImage(forcedState = null) {
   const sleeping = pet.sleeping || pet.is_sleeping || false;
   const is_dirty = pet.is_dirty || pet.isDirty || false;
 
-  // Determine image name priority
+  // Determine image name based on pet type and condition
   let filenameState = 'happy';
+
   if (sleeping) filenameState = 'sleeping';
   else if (is_dirty) filenameState = 'dirty';
-  else if (hunger <= 10) filenameState = 'hungry';
+  else if (baseType === 'cat' && hunger <= 40) filenameState = 'hungry';
+  else if (baseType === 'dog' && (happiness <= 40 || hunger <= 40)) filenameState = isBaby ? 'sad' : 'sad1';
   else if (energy <= 15) filenameState = 'tired';
-  else if (happiness <= 20) filenameState = 'sad';
   else filenameState = 'happy';
 
-  // Compose candidate paths (try baby first for images that exist)
-  const babyPath = `static/images/baby_${baseType}_${filenameState}.png`;
-  const adultPath = `static/images/${baseType}_${filenameState}.png`;
+  // Compose candidate paths
+  let imagePath = '';
+  if (baseType === 'cat') {
+    imagePath = `static/images/${isBaby ? 'baby_' + baseType : baseType}_${filenameState}.png`;
+  } else if (baseType === 'dog') {
+    imagePath = `static/images/${isBaby ? 'baby_' + baseType : baseType}_${filenameState}.png`;
+  } else {
+    // fallback for any other type
+    imagePath = `static/images/${baseType}_happy.png`;
+  }
 
   const probe = new Image();
-  probe.onload = () => { petImg.src = isBaby ? babyPath : adultPath; };
-  probe.onerror = () => {
-    // Fallback: try adult path, then generic fallback
-    const fallback = new Image();
-    fallback.onload = () => petImg.src = adultPath;
-    fallback.onerror = () => petImg.src = `static/images/${baseType}_happy.png`;
-    fallback.src = adultPath;
-  };
-  // Start probe with baby if baby else adult
-  probe.src = isBaby ? babyPath : adultPath;
+  probe.onload = () => { petImg.src = imagePath; };
+  probe.onerror = () => { petImg.src = `static/images/${baseType}_happy.png`; };
+  probe.src = imagePath;
 }
 
 
@@ -1214,6 +1217,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
