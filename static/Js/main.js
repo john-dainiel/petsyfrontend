@@ -1094,37 +1094,6 @@ function setPetImage(forcedState = null) {
 
 
 
-function chooseImageFilename({ pet_type = 'cat', isBaby = true, state = 'happy', hunger = null, energy = null, is_dirty = false }) {
-  const type = (pet_type || 'cat').toLowerCase();
-
-  // Priority: sleeping > dirty > hungry/sad > tired > happy
-  if (state === 'sleeping' || (pet && (pet.sleeping || pet.is_sleeping)) || (energy !== null && Number(energy) <= 10)) {
-    if (type === 'cat') return isBaby ? 'baby_cat_sleeping.png' : 'cat_sleeping.png';
-    if (type === 'dog') return isBaby ? 'baby_dog_sleeping.png' : 'dog_sleeping.png';
-  }
-
-  if (is_dirty === 1 || is_dirty === true) {
-    if (type === 'cat') return isBaby ? 'baby_cat_dirty.png' : 'cat_dirty.png';
-    if (type === 'dog') return isBaby ? 'baby_dog_dirty.png' : 'sad_dog1.png';
-  }
-
-  if (hunger !== null && Number(hunger) <= 10) {
-    if (type === 'cat') return isBaby ? 'baby_cat_hungry.png' : 'cat_hungry.png';
-    if (type === 'dog') return isBaby ? 'baby_dog_sad.png' : 'sad_dog2.png';
-  }
-
-  if (energy !== null && Number(energy) < 20) {
-    if (type === 'cat') return isBaby ? 'baby_cat_sleeping.png' : 'cat_sleeping.png';
-    if (type === 'dog') return isBaby ? 'baby_dog_sleeping.png' : 'dog_sleeping.png';
-  }
-
-  // Default happy images
-  if (type === 'cat') return isBaby ? 'baby_cat_happy.png' : 'cat_happy.png';
-  if (type === 'dog') return isBaby ? 'baby_dog_happy.png' : 'dog_happy1.png';
-
-  return 'paw.png';
-}
-
 let idleTimeout;
 function returnToHappy() { clearTimeout(idleTimeout); idleTimeout = setTimeout(() => setPetImage('happy'), 3000); }
 function animatePetAction(action) { setPetImage(action); returnToHappy(); }
@@ -1245,6 +1214,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
