@@ -483,13 +483,7 @@ function startPetMoodMonitor() {
   setPetImage(mood);
 }
 
-// Update <img> element
-function setPetImage(mood) {
-  const img = document.getElementById('petImage');
-  if (!img || !pet.pet_type) return;
 
-  img.src = `static/images/${pet.pet_type}_${mood}.png`;
-}
 
 
 function computeAgeDays(createdAtString) {
@@ -1205,6 +1199,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
