@@ -6,82 +6,18 @@
 
   <title>PETSY - Login</title>
 
+  <!-- External CSS -->
   <link rel="stylesheet" href="static/css/login.css">
+
+  <!-- Login JS -->
   <script defer src="static/Js/login.js"></script>
-
-  <style>
-    body {
-      background: #3a1d0a;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      color: #ffe0c2;
-    }
-
-    .container {
-      background: #4a2a12;
-      padding: 30px;
-      border-radius: 12px;
-      width: 350px;
-      text-align: center;
-      box-shadow: 0 0 12px rgba(0,0,0,0.4);
-    }
-
-    h1 {
-      margin-bottom: 20px;
-      font-size: 32px;
-      font-weight: bold;
-    }
-
-    input, button {
-      width: 90%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 6px;
-      border: none;
-    }
-
-    button {
-      cursor: pointer;
-      background: #a05d2f;
-      color: #fff;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background: #c07036;
-    }
-
-    #otpForm,
-    #resetForm {
-      display: none;
-    }
-
-    #forgotPassLink {
-      color: #87b2ff;
-      text-decoration: underline;
-      font-size: 14px;
-      cursor: pointer;
-      display: block;
-      margin-top: 10px;
-    }
-
-    #message {
-      margin-top: 12px;
-      min-height: 20px;
-      font-size: 15px;
-    }
-  </style>
 </head>
 
 <body>
 
   <div class="container">
 
-    <h1>PETSY</h1>
+    <h1 class="title-main">PETSY</h1>
 
     <!-- ========================= -->
     <!--     LOGIN FORM           -->
@@ -89,10 +25,10 @@
     <form id="loginForm">
       <h2>Login</h2>
 
-      <input id="username" type="text" placeholder="Username" required />
-      <input id="password" type="password" placeholder="Password" required />
+      <input id="username" type="text" placeholder="Username" required>
+      <input id="password" type="password" placeholder="Password" required>
 
-      <div style="text-align:left; width:90%; margin:auto; color:#ccc;">
+      <div class="remember-row">
         <input type="checkbox" id="rememberPC"> Remember this PC
       </div>
 
@@ -105,7 +41,7 @@
     <!-- ========================= -->
     <!--     OTP FORM             -->
     <!-- ========================= -->
-    <form id="otpForm">
+    <form id="otpForm" class="hidden">
       <h2>Enter OTP</h2>
 
       <input id="otpCode" type="text" placeholder="Enter OTP">
@@ -118,16 +54,16 @@
     <!-- ========================= -->
     <!--   RESET PASSWORD FORM    -->
     <!-- ========================= -->
-    <form id="resetForm">
+    <form id="resetForm" class="hidden">
       <h2>Reset Password</h2>
 
-      <input id="resetUsername" type="text" placeholder="Enter Username" />
+      <input id="resetUsername" type="text" placeholder="Enter Username">
 
-      <input id="resetOtp" type="text" placeholder="Enter Reset OTP" style="display:none;" />
+      <input id="resetOtp" type="text" placeholder="Enter Reset OTP" class="hidden">
 
-      <input id="newPassword" type="password" placeholder="New Password" style="display:none;" />
+      <input id="newPassword" type="password" placeholder="New Password" class="hidden">
 
-      <button id="resetConfirmBtn" type="button" style="display:none;">Confirm Reset</button>
+      <button id="resetConfirmBtn" type="button" class="hidden">Confirm Reset</button>
 
       <button type="button" id="resetBackBtn">Back to Login</button>
     </form>
@@ -135,22 +71,6 @@
     <div id="message"></div>
 
   </div>
-
-  <script>
-    // Back button for reset form (matches your JS logic)
-    document.getElementById("resetBackBtn").addEventListener("click", () => {
-      document.getElementById("resetForm").style.display = "none";
-      document.getElementById("loginForm").style.display = "block";
-      document.getElementById("message").textContent = "";
-    });
-
-    // Back button inside OTP form (matches JS)
-    document.getElementById("backToLogin").addEventListener("click", () => {
-      document.getElementById("otpForm").style.display = "none";
-      document.getElementById("loginForm").style.display = "block";
-      document.getElementById("message").textContent = "";
-    });
-  </script>
 
 </body>
 </html>
