@@ -6,66 +6,69 @@
 
   <title>PETSY - Login</title>
 
-  <!-- External CSS -->
   <link rel="stylesheet" href="static/css/login.css">
-
-  <!-- Login JS -->
   <script defer src="static/Js/login.js"></script>
 </head>
 
 <body>
 
-  <div class="container">
+  <div class="panel">
 
-    <h1 class="title-main">PETSY</h1>
+    <div class="brand">PETSY</div>
 
     <!-- ========================= -->
-    <!--     LOGIN FORM           -->
+    <!--        LOGIN FORM        -->
     <!-- ========================= -->
     <form id="loginForm">
       <h2>Login</h2>
 
-      <input id="username" type="text" placeholder="Username" required>
-      <input id="password" type="password" placeholder="Password" required>
+      <input id="username" type="text" placeholder="Username" required />
+      <input id="password" type="password" placeholder="Password" required />
 
       <div class="remember-row">
-        <input type="checkbox" id="rememberPC"> Remember this PC
+        <input type="checkbox" id="rememberPC">
+        <label for="rememberPC">Remember this PC</label>
       </div>
 
-      <button type="submit">Login</button>
-      <button type="button" onclick="window.location.href='register.html'">Register</button>
+      <div class="button-row">
+        <button type="submit" class="primary">Login</button>
+        <button type="button" class="secondary" onclick="window.location.href='register.html'">Register</button>
+      </div>
 
-      <a id="forgotPassLink">Forgot Password?</a>
+      <a id="forgotPassLink" style="cursor:pointer; display:block; margin-top:10px; color:#6b4226; text-decoration:underline;">
+        Forgot Password?
+      </a>
     </form>
 
     <!-- ========================= -->
-    <!--     OTP FORM             -->
+    <!--        OTP FORM          -->
     <!-- ========================= -->
     <form id="otpForm" class="hidden">
       <h2>Enter OTP</h2>
 
       <input id="otpCode" type="text" placeholder="Enter OTP">
 
-      <button type="submit">Verify OTP</button>
-
-      <button type="button" id="backToLogin">Back to Login</button>
+      <div class="button-row">
+        <button type="submit" class="primary">Verify OTP</button>
+        <button type="button" id="backToLogin" class="secondary">Back</button>
+      </div>
     </form>
 
     <!-- ========================= -->
-    <!--   RESET PASSWORD FORM    -->
+    <!--    RESET PASSWORD FORM   -->
     <!-- ========================= -->
     <form id="resetForm" class="hidden">
       <h2>Reset Password</h2>
 
-      <input id="resetUsername" type="text" placeholder="Enter Username">
+      <input id="resetUsername" type="text" placeholder="Enter Username" />
 
-      <input id="resetOtp" type="text" placeholder="Enter Reset OTP" class="hidden">
+      <input id="resetOtp" type="text" placeholder="Enter Reset OTP" class="hidden" />
+      <input id="newPassword" type="password" placeholder="New Password" class="hidden" />
 
-      <input id="newPassword" type="password" placeholder="New Password" class="hidden">
-
-      <button id="resetConfirmBtn" type="button" class="hidden">Confirm Reset</button>
-
-      <button type="button" id="resetBackBtn">Back to Login</button>
+      <div class="button-row">
+        <button id="resetConfirmBtn" type="button" class="primary hidden">Confirm</button>
+        <button type="button" id="resetBackBtn" class="secondary">Back</button>
+      </div>
     </form>
 
     <div id="message"></div>
