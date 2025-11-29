@@ -220,7 +220,13 @@ if (petImage) {
         resetPlayCounter(pet_id);
         if (pet) { pet.is_dirty = false; pet.isDirty = false; }
         await updateStats();
+        const petImg = document.getElementById('petImage');
+        if (petImg) {
+        petImg.classList.add('pet-washing');
+        setTimeout(() => petImg.classList.remove('pet-washing'), 800); // Remove after animation
+        }
         sparklesOnClean();
+        playCleanSound();
         showToast('✨ Your pet has been cleaned!');
       } else {
         alert((data && data.error) ? (`❌ ${data.error}`) : '❌ Cleaning failed or not supported on server.');
@@ -949,6 +955,7 @@ function startSleepTimer() {
   // mark local state too
   if (pet) { pet.sleeping = true; pet.is_sleeping = true; }
   setPetImage('sleeping');
+  playSleepSound();
 }
 
 async function wakePet() {
@@ -1220,6 +1227,19 @@ function playPetSound() {
   const soundFile = type === 'dog' ? 'static/sounds/bark.mp3' : 'static/sounds/meow.mp3';
   playSound(soundFile);
 }
+
+// Play sound on washing (cleaning)
+function playCleanSound() {
+  playSound('static/sounds/clean.mp3');
+}
+// Play sound on patting (playing)
+function playPatSound() {
+  playSound('static/sounds/pat.mp3');
+}
+// Play sound when pet starts sleeping
+function playSleepSound() {
+  playSound('static/sounds/sleep.mp3');
+}
 // Generic sound player (respects mute)
 function playSound(src) {
   if (localStorage.getItem('muted') === 'true') return;
@@ -1256,6 +1276,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
