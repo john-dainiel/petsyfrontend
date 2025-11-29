@@ -48,14 +48,20 @@
     </form>
 
     <!-- RESET PASSWORD FORM -->
+   <!-- RESET PASSWORD -->
     <form id="resetForm" class="hidden">
       <h2>Reset Password</h2>
-
+    
+      <!-- Step 1: Enter username -->
       <input id="resetUsername" type="text" placeholder="Enter Username">
-
+    
+      <!-- Step 1 button -->
+      <button id="sendResetOtpBtn" type="button" class="primary">Send Reset OTP</button>
+    
+      <!-- Step 2: Enter OTP + new password -->
       <input id="resetOtp" type="text" class="hidden" placeholder="Enter Reset OTP">
       <input id="newPassword" type="password" class="hidden" placeholder="New Password">
-
+    
       <div class="button-row">
         <button id="resetConfirmBtn" type="button" class="primary hidden">Confirm</button>
         <button id="resetBackBtn" type="button" class="secondary">Back</button>
@@ -68,3 +74,4 @@
 
 </body>
 </html>
+
