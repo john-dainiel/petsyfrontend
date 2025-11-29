@@ -84,7 +84,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* Progress Bars */
+/* Progress Bars (UPDATED: Added color variables for dynamic coloring) */
 progress {
   appearance: none;
   -webkit-appearance: none;
@@ -94,6 +94,7 @@ progress {
   overflow: hidden;
   background-color: #222;
   border: 1px solid #444;
+  --progress-color: #ff7b00; /* Default fallback color */
 }
 
 progress::-webkit-progress-bar {
@@ -102,12 +103,12 @@ progress::-webkit-progress-bar {
 }
 
 progress::-webkit-progress-value {
-  background: linear-gradient(90deg, #ff7b00, #ffb84d);
+  background: var(--progress-color); /* Dynamic color set by JS */
   border-radius: 8px;
 }
 
 progress::-moz-progress-bar {
-  background: linear-gradient(90deg, #ff7b00, #ffb84d);
+  background: var(--progress-color); /* Dynamic color set by JS */
   border-radius: 8px;
 }
 
