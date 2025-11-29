@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PETSY - Login</title>
 
   <link rel="stylesheet" href="static/css/login.css">
@@ -16,14 +15,12 @@
 
     <div class="brand">PETSY</div>
 
-    <!-- ========================= -->
-    <!--        LOGIN FORM        -->
-    <!-- ========================= -->
+    <!-- LOGIN -->
     <form id="loginForm">
       <h2>Login</h2>
 
-      <input id="username" type="text" placeholder="Username" required />
-      <input id="password" type="password" placeholder="Password" required />
+      <input id="username" type="text" placeholder="Username" required>
+      <input id="password" type="password" placeholder="Password" required>
 
       <div class="remember-row">
         <input type="checkbox" id="rememberPC">
@@ -35,14 +32,10 @@
         <button type="button" class="secondary" onclick="window.location.href='register.html'">Register</button>
       </div>
 
-      <a id="forgotPassLink" style="cursor:pointer; display:block; margin-top:10px; color:#6b4226; text-decoration:underline;">
-        Forgot Password?
-      </a>
+      <a id="forgotPassLink" style="cursor:pointer; margin-top:10px; display:block;">Forgot Password?</a>
     </form>
 
-    <!-- ========================= -->
-    <!--        OTP FORM          -->
-    <!-- ========================= -->
+    <!-- OTP -->
     <form id="otpForm" class="hidden">
       <h2>Enter OTP</h2>
 
@@ -54,20 +47,18 @@
       </div>
     </form>
 
-    <!-- ========================= -->
-    <!--    RESET PASSWORD FORM   -->
-    <!-- ========================= -->
+    <!-- RESET PASSWORD -->
     <form id="resetForm" class="hidden">
       <h2>Reset Password</h2>
 
-      <input id="resetUsername" type="text" placeholder="Enter Username" />
+      <input id="resetUsername" type="text" placeholder="Enter Username">
 
-      <input id="resetOtp" type="text" placeholder="Enter Reset OTP" class="hidden" />
-      <input id="newPassword" type="password" placeholder="New Password" class="hidden" />
+      <input id="resetOtp" type="text" class="hidden" placeholder="Enter Reset OTP">
+      <input id="newPassword" type="password" class="hidden" placeholder="New Password">
 
       <div class="button-row">
         <button id="resetConfirmBtn" type="button" class="primary hidden">Confirm</button>
-        <button type="button" id="resetBackBtn" class="secondary">Back</button>
+        <button id="resetBackBtn" type="button" class="secondary">Back</button>
       </div>
     </form>
 
