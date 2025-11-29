@@ -102,59 +102,118 @@ window.addEventListener("DOMContentLoaded", async () => {
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const rememberPC = document.getElementById("rememberPC").checked;
+ // ==============================
+// 🔧 RESET PASSWORD FLOW (FULLY FIXED)
+// ==============================
 
-  if (!username || !password) {
-    showMessage("Please fill in both fields.", "warn");
-    return;
-  }
+const resetForm = document.getElementById("resetForm");
+const forgotPassLink = document.getElementById("forgotPassLink");
+const resetOtpField = document.getElementById("resetOtp");
+const newPasswordField = document.getElementById("newPassword");
+const resetConfirmBtn = document.getElementById("resetConfirmBtn");
 
-  currentUsername = username;
+let resetUsernameCache = "";
+
+// Step 1 — User clicks "Forgot password?"
+forgotPassLink.addEventListener("click", () => {
+  loginForm.style.display = "none";
+  otpForm.style.display = "none";
+  resetForm.style.display = "block";
+  showMessage("Enter your username to reset your password.", "info");
+
+  resetOtpField.style.display = "none";
+  newPasswordField.style.display = "none";
+  resetConfirmBtn.style.display = "none";
+});
+
+// Step 2 — User requests a reset OTP
+resetForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("resetUsername").value.trim();
+  resetUsernameCache = username;
+
+  if (!username) return showMessage("Enter your username.", "warn");
 
   try {
-    // ✅ Login check
-    const res = await fetch(`${backendUrl}/login`, {
+    const res = await fetch(`${backendUrl}/forgot_password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username })
     });
     const data = await res.json();
 
-    if (!res.ok) {
-      showMessage(data.message || "Wrong username or password.", "error");
-      return;
+    if (res.ok && data.success) {
+      showMessage("Reset OTP sent to your email!", "success");
+
+      // Show OTP input only
+      resetOtpField.style.display = "block";
+      newPasswordField.style.display = "none";
+      resetConfirmBtn.style.display = "none";
+    } else {
+      showMessage(data.message || "Failed to send reset OTP.", "error");
     }
 
-    // ✅ Request OTP
-    const otpRes = await fetch(`${backendUrl}/request_otp`, {
+  } catch {
+    showMessage("Server unavailable.", "warn");
+  }
+});
+
+// Step 3 — Verify OTP (auto triggers when OTP reaches 6 digits)
+resetOtpField.addEventListener("input", async () => {
+  const otp = resetOtpField.value.trim();
+  if (otp.length !== 6) return;
+
+  try {
+    const res = await fetch(`${backendUrl}/verify_reset_otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, remember_pc: rememberPC }),
+      body: JSON.stringify({ username: resetUsernameCache, otp })
     });
-    const otpData = await otpRes.json();
+    const data = await res.json();
 
-    if (otpRes.ok && otpData.success) {
-      if (rememberPC && otpData.remember_token) {
-        localStorage.setItem("remember_token", otpData.remember_token);
-        localStorage.setItem("remember_username", username);
-      }
-      showMessage("OTP sent to your email!", "info");
+    if (res.ok && data.success) {
+      showMessage("OTP verified! Set your new password.", "success");
 
-      loginForm.style.display = "none";
-      otpForm.style.display = "block";
-
-      // DEBUG: log OTP for testing
-      // console.log("DEBUG OTP:", otpData.otp);
-
+      newPasswordField.style.display = "block";
+      resetConfirmBtn.style.display = "block";
     } else {
-      showMessage(otpData.message || "Failed to send OTP.", "error");
+      showMessage(data.message || "Invalid OTP.", "error");
     }
 
-  } catch (err) {
-    console.error("Login error:", err);
-    showMessage("Server unavailable. Try again later.", "warn");
+  } catch {
+    showMessage("Server unavailable.", "warn");
+  }
+});
+
+// Step 4 — Submit new password
+resetConfirmBtn.addEventListener("click", async () => {
+  const newPass = newPasswordField.value.trim();
+  const otp = resetOtpField.value.trim();
+
+  if (!newPass) return showMessage("Enter a new password.", "warn");
+
+  try {
+    const res = await fetch(`${backendUrl}/reset_password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: resetUsernameCache,
+        new_password: newPass
+      })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showMessage("Password reset successful! Please log in.", "success");
+
+      resetForm.style.display = "none";
+      loginForm.style.display = "block";
+    } else {
+      showMessage(data.message || "Reset failed.", "error");
+    }
+
+  } catch {
+    showMessage("Server unavailable.", "warn");
   }
 });
 
@@ -296,4 +355,5 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
 
