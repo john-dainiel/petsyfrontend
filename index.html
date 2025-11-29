@@ -15,12 +15,12 @@
 
     <div class="brand">PETSY</div>
 
-    <!-- LOGIN -->
+    <!-- LOGIN FORM -->
     <form id="loginForm">
       <h2>Login</h2>
 
-      <input id="username" type="text" placeholder="Username" required>
-      <input id="password" type="password" placeholder="Password" required>
+      <input id="username" type="text" placeholder="Username" autocomplete="off">
+      <input id="password" type="password" placeholder="Password">
 
       <div class="remember-row">
         <input type="checkbox" id="rememberPC">
@@ -32,10 +32,10 @@
         <button type="button" class="secondary" onclick="window.location.href='register.html'">Register</button>
       </div>
 
-      <a id="forgotPassLink" style="cursor:pointer; margin-top:10px; display:block;">Forgot Password?</a>
+      <a id="forgotPassLink" class="small-link">Forgot Password?</a>
     </form>
 
-    <!-- OTP -->
+    <!-- OTP FORM -->
     <form id="otpForm" class="hidden">
       <h2>Enter OTP</h2>
 
@@ -47,7 +47,7 @@
       </div>
     </form>
 
-    <!-- RESET PASSWORD -->
+    <!-- RESET PASSWORD FORM -->
     <form id="resetForm" class="hidden">
       <h2>Reset Password</h2>
 
