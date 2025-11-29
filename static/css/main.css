@@ -443,3 +443,18 @@ progress::-moz-progress-bar {
     transform: rotate(0deg);
   }
 }
+
+/* Washing animation: Shake and sparkle */
+@keyframes washShake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  10% { transform: translateX(-5px) rotate(-2deg); }
+  20% { transform: translateX(5px) rotate(2deg); }
+  30% { transform: translateX(-5px) rotate(-2deg); }
+  40% { transform: translateX(5px) rotate(2deg); }
+  50% { transform: translateX(0) rotate(0deg); }
+}
+.pet-washing {
+  animation: washShake 0.8s ease-in-out;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)); /* Gold sparkle effect */
+}
+
