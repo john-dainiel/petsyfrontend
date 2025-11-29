@@ -123,3 +123,5 @@ button.secondary:hover {
 .msg.error { color: #dc3545; }
 .msg.warn { color: #ffc107; }
 .msg.info { color: #007bff; }
+
+.hidden { display: none !important; }
