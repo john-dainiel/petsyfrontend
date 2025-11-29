@@ -44,18 +44,20 @@ async function redirectUser(userId, role) {
 
   try {
     const res = await fetch(`${backendUrl}/get_pet/${userId}`);
-    if (res.status === 404) {
-      window.location.href = "create_pet.html";
-      return;
-    }
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.id) {
-        localStorage.setItem("pet_id", data.id);
+    const data = await res.json();
+    
+    if (res.ok && data) {
+      // If backend returns array
+      const pet = Array.isArray(data) ? data[0] : data;
+    
+      if (pet && pet.id) {
+        localStorage.setItem("pet_id", pet.id);
         window.location.href = "greet.html";
         return;
       }
     }
+    
+    // If no pet found
     window.location.href = "create_pet.html";
   } catch (err) {
     console.error("Pet check failed:", err);
@@ -198,6 +200,74 @@ otpForm.addEventListener("submit", async (e) => {
   }
 });
 
+const resetForm = document.getElementById("resetForm");
+const forgotPassLink = document.getElementById("forgotPassLink");
+const resetConfirmBtn = document.getElementById("resetConfirmBtn");
+const resetOtpField = document.getElementById("resetOtp");
+const newPasswordField = document.getElementById("newPassword");
+
+// Step 1 — show reset form
+forgotPassLink.addEventListener("click", () => {
+  loginForm.style.display = "none";
+  otpForm.style.display = "none";
+  resetForm.style.display = "block";
+  showMessage("", "info");
+});
+
+// Step 2 — Send reset OTP
+resetForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("resetUsername").value.trim();
+
+  try {
+    const res = await fetch(`${backendUrl}/forgot_password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showMessage("Reset OTP sent to your email!", "info");
+      resetOtpField.style.display = "block";
+      newPasswordField.style.display = "block";
+      resetConfirmBtn.style.display = "block";
+    } else {
+      showMessage(data.message || "Failed to send reset OTP.", "error");
+    }
+
+  } catch {
+    showMessage("Server unavailable.", "warn");
+  }
+});
+
+// Step 3 — Confirm reset
+resetConfirmBtn.addEventListener("click", async () => {
+  const username = document.getElementById("resetUsername").value.trim();
+  const otp = resetOtpField.value.trim();
+  const newPass = newPasswordField.value.trim();
+
+  try {
+    const res = await fetch(`${backendUrl}/reset_password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, otp, new_password: newPass })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      showMessage("Password reset successful! Please log in.", "success");
+      resetForm.style.display = "none";
+      loginForm.style.display = "block";
+    } else {
+      showMessage(data.message || "Reset failed.", "error");
+    }
+
+  } catch {
+    showMessage("Server unavailable.", "warn");
+  }
+});
+
 // 🔙 Back to login button
 const backBtn = document.createElement("button");
 backBtn.type = "button";
@@ -226,3 +296,4 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
