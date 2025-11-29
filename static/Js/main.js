@@ -546,6 +546,12 @@ async function updateStats() {
     if (energy) energy.value = data.energy ?? energy.value;
     if (happiness) happiness.value = data.happiness ?? happiness.value;
 
+    // Apply color coding to bars
+    updateBarColor(hunger, data.hunger ?? hunger.value);
+    updateBarColor(energy, data.energy ?? energy.value);
+    updateBarColor(happiness, data.happiness ?? happiness.value);
+
+
     $('#petCoins') && ($('#petCoins').textContent = data.coins ?? 0);
     displayAge();
 
@@ -775,11 +781,6 @@ function incrementPlayCounter(pet_id) {
   count += 1;
   localStorage.setItem(key, String(count));
   // if reaches 3, mark dirty and reset counter
-  if (count >= 3) {
-    markPetDirtyLocal(pet_id);
-    showToast('💩 Your pet got dirty after playing a lot—time to clean!');
-    localStorage.setItem(key, '0');
-  }
 }
 function resetPlayCounter(pet_id) { const key = getPlayKey(pet_id); localStorage.setItem(key, '0'); }
 
@@ -1201,6 +1202,17 @@ function sparklesOnClean() {
   setTimeout(() => s.remove(), 1200);
 }
 
+function updateBarColor(bar, value) {
+  if (!bar) return;
+  bar.setAttribute('value', value); // Ensure value is set
+  if (value >= 70) {
+    bar.style.setProperty('--progress-color', '#4CAF50'); // Green
+  } else if (value >= 30) {
+    bar.style.setProperty('--progress-color', '#FFC107'); // Yellow
+  } else {
+    bar.style.setProperty('--progress-color', '#F44336'); // Red
+  }
+}
 
 // Play pet sound on click (meow for cat, bark for dog)
 function playPetSound() {
@@ -1244,6 +1256,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
