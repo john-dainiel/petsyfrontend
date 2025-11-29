@@ -24,6 +24,10 @@
   </div>
 </form>
 
+<p style="text-align:center; margin-top:10px;">
+  <a href="#" id="forgotPassLink">Forgot Password?</a>
+</p>
+    
 <form id="otpForm" style="display:none;">
   <input type="text" id="otpCode" placeholder="Enter OTP" maxlength="6" required><br>
   <div class="button-row">
@@ -31,6 +35,18 @@
   </div>
 </form>
 
+<form id="resetForm" style="display:none;">
+  <h3>Reset Password</h3>
+  <input type="text" id="resetUsername" placeholder="Enter your username" required />
+  <button type="submit">Send Reset OTP</button>
+
+  <input type="text" id="resetOtp" placeholder="Enter OTP" style="margin-top:10px; display:none;" />
+  <input type="password" id="newPassword" placeholder="New Password" style="display:none;" />
+
+  <button id="resetConfirmBtn" type="button" style="margin-top:10px; display:none;">
+    Confirm Reset
+  </button>
+</form>   
 <!-- Single message area -->
 <p id="message"></p>
 
@@ -39,6 +55,7 @@
   <script src="https://petsyfrontend.onrender.com/static/Js/login.js"></script>
 </body>
 </html>
+
 
 
 
