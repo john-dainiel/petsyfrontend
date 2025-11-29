@@ -68,6 +68,27 @@ document.addEventListener('DOMContentLoaded', () => {
   const muteToggle = $('#muteToggle');
   const muteStatus = $('#muteStatus');
 
+  // Background music element
+const bgMusic = document.getElementById('bgMusic');
+if (bgMusic) {
+  bgMusic.volume = 0.5; // Set to 50% volume for subtlety
+  const muted = localStorage.getItem('muted') === 'true';
+  bgMusic.muted = muted;
+  if (!muted) {
+    bgMusic.play().catch(err => console.log('Background music autoplay blocked:', err));
+  }
+}
+// Pet image interaction: cursor change on hover, sound on click
+if (petImage) {
+  petImage.addEventListener('mouseenter', () => {
+    petImage.style.cursor = 'pointer'; // Change to pointer (hand) on hover
+  });
+  petImage.addEventListener('mouseleave', () => {
+    petImage.style.cursor = 'default'; // Revert to default on leave
+  });
+  petImage.addEventListener('click', playPetSound); // Play sound on click
+}
+
   // UI tweaks: ensure restBtn text fits circle and is centered if present
   if (restBtn) {
     restBtn.style.fontSize = '12px';
@@ -296,8 +317,9 @@ saveNameBtn?.addEventListener('click', async () => {
   // Mute toggle
   muteToggle?.addEventListener('click', () => {
     const muted = localStorage.getItem('muted') === 'true';
-    localStorage.setItem('muted', (!muted).toString());
-    updateMuteUI(!muted);
+  localStorage.setItem('muted', (!muted).toString());
+  updateMuteUI(!muted);
+  if (bgMusic) bgMusic.muted = !muted; // Mute/unmute background music
   });
   function updateMuteUI(muted) {
     if (muteStatus) muteStatus.textContent = muted ? 'On' : 'Off';
@@ -1179,6 +1201,20 @@ function sparklesOnClean() {
   setTimeout(() => s.remove(), 1200);
 }
 
+
+// Play pet sound on click (meow for cat, bark for dog)
+function playPetSound() {
+  const type = getPetType().toLowerCase();
+  const soundFile = type === 'dog' ? 'static/sounds/bark.mp3' : 'static/sounds/meow.mp3';
+  playSound(soundFile);
+}
+// Generic sound player (respects mute)
+function playSound(src) {
+  if (localStorage.getItem('muted') === 'true') return;
+  const audio = new Audio(src);
+  audio.play().catch(err => console.log('Sound play failed:', err));
+}
+
 // -----------------------
 // Misc dev helpers
 // -----------------------
@@ -1208,6 +1244,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
