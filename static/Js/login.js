@@ -206,78 +206,26 @@ const resetConfirmBtn = document.getElementById("resetConfirmBtn");
 const resetOtpField = document.getElementById("resetOtp");
 const newPasswordField = document.getElementById("newPassword");
 
-// Step 1 — show reset form
+// ==============================
+// 🧩 FORGOT PASSWORD & RESET
+// Step 1 — Show reset form
 forgotPassLink.addEventListener("click", () => {
   loginForm.style.display = "none";
   otpForm.style.display = "none";
   resetForm.style.display = "block";
   showMessage("", "info");
 });
-
-// Step 2 — Send reset OTP
-resetForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+// Step 2 — Send reset OTP (attach to button, not form submit)
+document.getElementById("sendResetOtpBtn").addEventListener("click", async () => {
   const username = document.getElementById("resetUsername").value.trim();
-
+  if (!username) {
+    showMessage("Please enter your username.", "warn");
+    return;
+  }
   try {
     const res = await fetch(`${backendUrl}/forgot_password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username })
-    });
-    const data = await res.json();
-
-    if (res.ok && data.success) {
-      showMessage("Reset OTP sent to your email!", "info");
-      resetOtpField.style.display = "block";
-      newPasswordField.style.display = "block";
-      resetConfirmBtn.style.display = "block";
-    } else {
-      showMessage(data.message || "Failed to send reset OTP.", "error");
-    }
-
-  } catch {
-    showMessage("Server unavailable.", "warn");
-  }
-});
-
-// Step 3 — Confirm reset
-resetConfirmBtn.addEventListener("click", async () => {
-  const username = document.getElementById("resetUsername").value.trim();
-  const otp = resetOtpField.value.trim();
-  const newPass = newPasswordField.value.trim();
-
-  try {
-    const res = await fetch(`${backendUrl}/reset_password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, otp, new_password: newPass })
-    });
-    const data = await res.json();
-
-    if (res.ok && data.success) {
-      showMessage("Password reset successful! Please log in.", "success");
-      resetForm.style.display = "none";
-      loginForm.style.display = "block";
-    } else {
-      showMessage(data.message || "Reset failed.", "error");
-    }
-
-  } catch {
-    showMessage("Server unavailable.", "warn");
-  }
-});
-
-// 🔙 Back to login button
-const backBtn = document.createElement("button");
-backBtn.type = "button";
-backBtn.textContent = "Back to Login";
-backBtn.onclick = () => {
-  otpForm.style.display = "none";
-  loginForm.style.display = "block";
-  showMessage("", "info");
-};
-otpForm.appendChild(backBtn);
 
 // ==============================
 // 🚪 LOGOUT
@@ -296,4 +244,5 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
 
