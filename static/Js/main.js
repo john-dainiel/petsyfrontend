@@ -1398,7 +1398,7 @@ function feedPet(treatName, treatSize) {
   fetch(`${backendUrl}/feed`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ petId: petData.id, treatName, treatSize })
+    body: JSON.stringify({ petId: pet.id, treatName, treatSize })
   })
     .then(res => res.json())
     .then(data => {
@@ -1409,7 +1409,7 @@ function feedPet(treatName, treatSize) {
 }
 
 // Example: fetch inventory from backend on load
-fetch(`${backendUrl}/pet/${petData.id}/inventory`)
+fetch(`${backendUrl}/pet/${pet.id}/inventory`)
   .then(res => res.json())
   .then(inventory => updateEatMenu(inventory));
 
@@ -1536,6 +1536,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
