@@ -1463,6 +1463,75 @@ async function loadShopItems() {
     console.error("Failed to load shop items:", err);
   }
 }
+
+const cart = {};
+const cartList = document.getElementById("cartList");
+const cartTotal = document.getElementById("cartTotal");
+const checkoutBtn = document.getElementById("checkoutBtn");
+
+// Add item to cart
+shopItemsContainer.addEventListener("click", e => {
+  if (e.target.classList.contains("shop-btn")) {
+    const shopItem = e.target.closest(".shop-item");
+    const name = shopItem.dataset.name;
+    const price = parseInt(shopItem.dataset.price);
+    const emoji = shopItem.textContent.split(" ")[0]; // Extract emoji
+
+    if (cart[name]) {
+      cart[name].quantity += 1;
+    } else {
+      cart[name] = { price, quantity: 1, emoji };
+    }
+    updateCartUI();
+  }
+});
+
+// Update cart UI
+function updateCartUI() {
+  cartList.innerHTML = "";
+  let total = 0;
+  for (const name in cart) {
+    const item = cart[name];
+    const li = document.createElement("li");
+    li.textContent = `${item.emoji} ${name} x${item.quantity}`;
+    const span = document.createElement("span");
+    span.textContent = `${item.price * item.quantity}🪙`;
+    li.appendChild(span);
+    cartList.appendChild(li);
+    total += item.price * item.quantity;
+  }
+  cartTotal.textContent = total;
+}
+
+// Checkout button
+checkoutBtn.addEventListener("click", () => {
+  if (Object.keys(cart).length === 0) {
+    alert("Your cart is empty!");
+    return;
+  }
+
+  // Example: send cart to backend
+  fetch("http://localhost:5000/api/buy_items", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cart),
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("Purchase successful! 🎉");
+        // Clear cart
+        for (const key in cart) delete cart[key];
+        updateCartUI();
+      } else {
+        alert("Purchase failed: " + data.message);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Error processing purchase");
+    });
+});
 // -----------------------
 // Misc dev helpers
 // -----------------------
@@ -1492,6 +1561,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
