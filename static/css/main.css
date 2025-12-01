@@ -458,3 +458,88 @@ progress::-moz-progress-bar {
   filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)); /* Gold sparkle effect */
 }
 
+
+.shop-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.shop-items h3 {
+  margin: 8px 0 4px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.shop-btn {
+  background: #ffb347;
+  border: none;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+  width: 100%;
+  text-align: left;
+}
+
+.shop-btn:hover {
+  background: #ff9800;
+}
+
+#cart {
+  background: #fff3e0;
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+#cartList {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+#cartList li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+#checkoutBtn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#checkoutBtn:hover {
+  background: #45a049;
+}
+
+.result {
+  font-weight: 600;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.close-btn {
+  margin-top: 10px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.close-btn:hover {
+  background: #c0392b;
+}
