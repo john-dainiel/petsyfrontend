@@ -29,6 +29,16 @@ let petMoodInterval = null;
 let energyRestoreInterval = null; // restores energy each hour while sleeping
 let playFrameInterval = null; // interval for play animation frames
 
+// 🎵 Sound files
+const bgMusic = new Audio("static/sounds/background.mp3");
+bgMusic.loop = true;
+bgMusic.volume = 0.4;
+
+const sClick = new Audio("static/sounds/click.mp3");
+const sEat = new Audio("static/sounds/eat.mp3");
+const sPlay = new Audio("static/sounds/play.mp3");
+const sClean = new Audio("static/sounds/clean.mp3");
+const sSleep = new Audio("static/sounds/sleep.mp3");
 // Safe selector helper
 const $ = (sel, root = document) => (root || document).querySelector(sel);
 
@@ -221,6 +231,7 @@ if (petImage) {
         if (pet) { pet.is_dirty = false; pet.isDirty = false; }
         await updateStats();
         sparklesOnClean();
+        sClean.play();
         showToast('✨ Your pet has been cleaned!');
       } else {
         alert((data && data.error) ? (`❌ ${data.error}`) : '❌ Cleaning failed or not supported on server.');
@@ -465,6 +476,12 @@ async function loadMain() {
   } catch (err) {
     console.error('Failed to load main:', err);
   }
+
+  if (bgMusic.paused) {
+    bgMusic.play().catch(() => {
+        console.log("🔇 Waiting for user interaction to start audio.");
+    });
+}
 }
 
 // Fetch latest pet stats from backend
@@ -537,14 +554,27 @@ async function updateStats() {
     pet.isDirty = pet.isDirty || pet.is_dirty || false;
     pet.is_dirty = pet.is_dirty || pet.isDirty || false;
     pet.sleeping = pet.sleeping || pet.is_sleeping || false;
-
+    
     const hunger = $('#hungerBar');
     const energy = $('#energyBar');
     const happiness = $('#happinessBar');
 
+    function setBarColor(bar, value) {
+    if (!bar) return;
+    if (value >= 70) bar.style.backgroundColor = "#4caf50";     // green
+    else if (value >= 40) bar.style.backgroundColor = "#ffb300"; // yellow
+    else bar.style.backgroundColor = "#ff3b30";                 // red
+    }
+
+
+
     if (hunger) hunger.value = data.hunger ?? hunger.value;
     if (energy) energy.value = data.energy ?? energy.value;
     if (happiness) happiness.value = data.happiness ?? happiness.value;
+
+    setBarColor(hunger, data.hunger);
+    setBarColor(energy, data.energy);
+    setBarColor(happiness, data.happiness);
 
     $('#petCoins') && ($('#petCoins').textContent = data.coins ?? 0);
     displayAge();
@@ -945,6 +975,7 @@ function startSleepTimer() {
   disableAllActions(true);
   startSleepEmoji();
   startEnergyRestore();
+  sSleep.play();
   // mark local state too
   if (pet) { pet.sleeping = true; pet.is_sleeping = true; }
   setPetImage('sleeping');
@@ -1244,6 +1275,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
