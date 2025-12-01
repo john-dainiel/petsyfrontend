@@ -1214,17 +1214,20 @@ function stopEnergyRestore() { if (energyRestoreInterval) { clearInterval(energy
 // -----------------------
 // UI & Toast helpers
 // -----------------------
-document.getElementById("drinkBtn").addEventListener("click", () => {
-    if (!petData) return;
-
-    petData.thirst = Math.min(100, petData.thirst + 20);
-
-    // update UI
-    updateBars();
-    showFloatingEmoji("💧");
-
-    playSound("drink"); // if you have a drink sound
-});
+async function drinkWater() {
+  const petId = localStorage.getItem("pet_id"); // or however you store current pet
+  const response = await fetch(`${backendUrl}/update_thirst`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pet_id: petId, amount: 10 })
+  });
+  
+  const data = await response.json();
+  if (data.success) {
+    console.log("💧 Thirst updated!");
+    loadPetData(); // refresh UI
+  }
+}
 
 
 function showToast(msg) {
@@ -1292,6 +1295,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
