@@ -1433,7 +1433,7 @@ modalOverlay.addEventListener("click", () => shopModal.classList.add("hidden"));
 async function loadShopItems() {
   shopItemsContainer.innerHTML = ""; // Clear existing items
   try {
-    const res = await fetch("http://localhost:5000/api/food_items"); // Your backend endpoint
+    const res = await fetch("https://petsy-dow7.onrender.com/api/food_items"); // Your backend endpoint
     const items = await res.json();
 
     const sizes = ["small", "medium", "large"];
@@ -1486,7 +1486,7 @@ checkoutBtn.addEventListener("click", () => {
   }
 
   // Example: send cart to backend
-  fetch("http://localhost:5000/api/buy_items", {
+  fetch("https://petsy-dow7.onrender.com/api/buy_items", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cart),
@@ -1536,39 +1536,4 @@ async function loadpet() {
 })();
 
 // End of main.js
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
