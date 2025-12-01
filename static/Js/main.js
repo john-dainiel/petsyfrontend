@@ -99,6 +99,7 @@ if (petImage) {
   petImage.addEventListener('click', playPetSound); // Play sound on click
 }
 
+  
   // UI tweaks: ensure restBtn text fits circle and is centered if present
   if (restBtn) {
     restBtn.style.fontSize = '12px';
@@ -121,7 +122,7 @@ if (petImage) {
     localStorage.clear();
     window.location.href = 'index.html';
   });
-
+  
   shopBtn?.addEventListener('click', async () => {
     await loadTreatInventory();
     updateTreatMenu();
@@ -260,6 +261,117 @@ if (petImage) {
     document.body.style.overflow = '';
   }
 
+
+  let foods = []; // Will fetch from backend or mock
+let cart = [];
+let cartTotal = 0;
+
+// MOCK DATA for testing if backend not ready
+foods = [
+  {id:1, name:'Apple', emoji:'🍎', size:'small', price:5},
+  {id:2, name:'Carrot', emoji:'🥕', size:'small', price:4},
+  {id:3, name:'Cookie', emoji:'🍪', size:'small', price:6},
+  {id:4, name:'Cheese', emoji:'🧀', size:'small', price:5},
+  {id:5, name:'Banana', emoji:'🍌', size:'small', price:5},
+
+  {id:6, name:'Burger', emoji:'🍔', size:'medium', price:15},
+  {id:7, name:'Pizza', emoji:'🍕', size:'medium', price:18},
+  {id:8, name:'Sushi', emoji:'🍣', size:'medium', price:20},
+  {id:9, name:'Sandwich', emoji:'🥪', size:'medium', price:16},
+  {id:10, name:'Pasta', emoji:'🍝', size:'medium', price:17},
+
+  {id:11, name:'Cake', emoji:'🍰', size:'large', price:30},
+  {id:12, name:'Steak', emoji:'🥩', size:'large', price:35},
+  {id:13, name:'Pineapple', emoji:'🍍', size:'large', price:25},
+  {id:14, name:'Watermelon', emoji:'🍉', size:'large', price:28},
+  {id:15, name:'Turkey', emoji:'🦃', size:'large', price:40},
+];
+
+const sizes = ['small', 'medium', 'large'];
+
+function renderShop() {
+  const container = document.getElementById('foodCategories');
+  container.innerHTML = '';
+
+  sizes.forEach(size => {
+    const categoryDiv = document.createElement('div');
+    categoryDiv.classList.add('foodCategory');
+
+    const title = document.createElement('h3');
+    title.textContent = size.toUpperCase();
+    categoryDiv.appendChild(title);
+
+    foods.filter(f => f.size === size).forEach(food => {
+      const itemDiv = document.createElement('div');
+      itemDiv.classList.add('foodItem');
+
+      const emojiSpan = document.createElement('span');
+      emojiSpan.classList.add('foodEmoji');
+      emojiSpan.textContent = food.emoji;
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = `${food.name} - ${food.price} coins`;
+
+      const addBtn = document.createElement('button');
+      addBtn.classList.add('addBtn');
+      addBtn.textContent = 'Add';
+      addBtn.onclick = () => addToCart(food);
+
+      itemDiv.appendChild(emojiSpan);
+      itemDiv.appendChild(nameSpan);
+      itemDiv.appendChild(addBtn);
+
+      categoryDiv.appendChild(itemDiv);
+    });
+
+    container.appendChild(categoryDiv);
+  });
+}
+
+function addToCart(food) {
+  const existing = cart.find(c => c.id === food.id);
+  if(existing) {
+    existing.quantity++;
+  } else {
+    cart.push({...food, quantity:1});
+  }
+  updateCart();
+}
+
+function updateCart() {
+  const cartList = document.getElementById('cartList');
+  cartList.innerHTML = '';
+  cartTotal = 0;
+
+  cart.forEach(item => {
+    const li = document.createElement('li');
+    li.textContent = `${item.name} x${item.quantity}`;
+    const priceSpan = document.createElement('span');
+    priceSpan.textContent = item.price * item.quantity;
+    li.appendChild(priceSpan);
+    cartList.appendChild(li);
+
+    cartTotal += item.price * item.quantity;
+  });
+
+  document.getElementById('cartTotal').textContent = cartTotal;
+}
+
+document.getElementById('checkoutBtn').addEventListener('click', () => {
+  if(cart.length === 0) {
+    alert('Your cart is empty!');
+    return;
+  }
+
+  // TODO: send cart to backend for processing purchase
+  console.log('Buying cart:', cart);
+
+  alert(`Purchased ${cart.length} items for ${cartTotal} coins!`);
+  cart = [];
+  updateCart();
+});
+
+renderShop();
   // Rename pet (options modal)
   // -----------------------
 // Rename pet with 1-day cooldown
@@ -1298,6 +1410,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
