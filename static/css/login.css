@@ -84,12 +84,7 @@ button.secondary:hover {
   background: #d4b297;
 }
 
-/* Message text */
-#loginMessage {
-  margin-top: 1rem;
-  color: #6b4226;
-}
-
+/* Remember row (checkbox and label) */
 .remember-row {
   display: flex;
   align-items: center;
@@ -108,9 +103,9 @@ button.secondary:hover {
   font-size: 14px;
   cursor: pointer;
   color: #333;
-
 }
 
+/* Message text (matches HTML id="message") */
 #message {
   margin-top: 10px;
   font-size: 15px;
@@ -124,4 +119,5 @@ button.secondary:hover {
 .msg.warn { color: #ffc107; }
 .msg.info { color: #007bff; }
 
+/* Hidden class for forms */
 .hidden { display: none !important; }
