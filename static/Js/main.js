@@ -987,6 +987,7 @@ function startSleepTimer() {
 }
 
 async function wakePet() {
+  
   // Unified wake logic — used by rest button and auto-wake
   const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
@@ -1007,6 +1008,8 @@ async function wakePet() {
       if (pet) { pet.sleeping = false; pet.is_sleeping = false; }
       setPetImage('happy');
       await updateStats();
+      sleepingSound.pause();  // stops the sound
+      sleepingSound.currentTime = 0; // reset to start
       showToast('☀️ Your pet woke up!');
       return;
     }
@@ -1295,6 +1298,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
