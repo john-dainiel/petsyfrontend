@@ -63,35 +63,15 @@
     </footer>
   </div>
 
- <!-- Shop Modal (Updated) -->
 <!-- Shop Modal -->
 <div id="shopModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-overlay"></div>
   <div class="modal-content">
     <h2>🏪 Treat Shop</h2>
     <p>Buy treats for your pet using coins!</p>
 
-    <div class="shop-grid">
-      <!-- Small Treats -->
-      <div class="shop-item" data-type="small" data-name="Cookie" data-price="10">🍪 Cookie — 10🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="small" data-name="Carrot" data-price="8">🥕 Carrot — 8🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="small" data-name="Apple" data-price="6">🍎 Apple — 6🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="small" data-name="Banana" data-price="7">🍌 Banana — 7🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="small" data-name="Cheese" data-price="9">🧀 Cheese — 9🪙 <button class="shop-btn">Buy</button></div>
-
-      <!-- Medium Treats -->
-      <div class="shop-item" data-type="medium" data-name="Burger" data-price="20">🍔 Burger — 20🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="medium" data-name="Pizza" data-price="25">🍕 Pizza — 25🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="medium" data-name="Sushi" data-price="30">🍣 Sushi — 30🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="medium" data-name="Sandwich" data-price="22">🥪 Sandwich — 22🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="medium" data-name="Pasta" data-price="28">🍝 Pasta — 28🪙 <button class="shop-btn">Buy</button></div>
-
-      <!-- Large Treats -->
-      <div class="shop-item" data-type="large" data-name="Cake" data-price="50">🍰 Cake — 50🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="large" data-name="Steak" data-price="60">🥩 Steak — 60🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="large" data-name="Watermelon" data-price="45">🍉 Watermelon — 45🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="large" data-name="Pineapple" data-price="48">🍍 Pineapple — 48🪙 <button class="shop-btn">Buy</button></div>
-      <div class="shop-item" data-type="large" data-name="Turkey" data-price="70">🦃 Turkey — 70🪙 <button class="shop-btn">Buy</button></div>
-    </div>
+    <!-- Items will be injected here dynamically -->
+    <div id="shopItemsContainer" class="shop-items"></div>
 
     <!-- Cart -->
     <div id="cart">
@@ -105,19 +85,6 @@
     <button id="closeShopBtn" class="close-btn">❌ Close</button>
   </div>
 </div>
-
-    <div id="cart">
-      <h3>Cart Summary</h3>
-      <ul id="cartList"></ul>
-      <div>Total: <span id="cartTotal">0</span> 🪙</div>
-      <button id="checkoutBtn" class="shop-btn">Buy Now</button>
-    </div>
-
-    <div id="shopResult" class="result hidden"></div>
-    <button id="closeShopBtn" class="close-btn">❌ Close</button>
-  </div>
-</div>
-
 
   <!-- Options Modal -->
   <div id="optionsModal" class="modal hidden" aria-hidden="true">
@@ -167,6 +134,7 @@
   
 </body>
 </html>
+
 
 
 
