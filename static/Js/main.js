@@ -1381,6 +1381,42 @@ function playSound(src) {
   audio.play().catch(err => console.log('Sound play failed:', err));
 }
 
+function updateEatMenu(inventory) {
+  const treatOptions = document.getElementById('treatOptions');
+  treatOptions.innerHTML = ''; // clear existing
+
+  // Filter only items the pet has
+  inventory.forEach(item => {
+    if (item.quantity > 0) {
+      const div = document.createElement('div');
+      div.classList.add('treat-option');
+      div.dataset.size = item.size;
+      div.dataset.name = item.name;
+      div.textContent = `${item.emoji} ${item.name} (x${item.quantity})`;
+      div.addEventListener('click', () => feedPet(item.name, item.size));
+      treatOptions.appendChild(div);
+    }
+  });
+}
+
+function feedPet(treatName, treatSize) {
+  fetch(`${backendUrl}/feed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ petId: petData.id, treatName, treatSize })
+  })
+    .then(res => res.json())
+    .then(data => {
+      // Backend should return updated inventory and pet stats
+      updateEatMenu(data.inventory);
+      updateBars(data.petStats);
+    });
+}
+
+// Example: fetch inventory from backend on load
+fetch(`${backendUrl}/pet/${petData.id}/inventory`)
+  .then(res => res.json())
+  .then(inventory => updateEatMenu(inventory));
 // -----------------------
 // Misc dev helpers
 // -----------------------
@@ -1410,6 +1446,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
