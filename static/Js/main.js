@@ -545,36 +545,41 @@ function displayAge() {
 async function updateStats() {
   const pet_id = localStorage.getItem('pet_id');
   if (!pet_id) return;
+
   try {
     const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
     const data = await res.json();
     if (!res.ok || data.error) return;
-    // update local pet with normalized keys
+
     pet = Object.assign({}, pet || {}, data);
     pet.isDirty = pet.isDirty || pet.is_dirty || false;
     pet.is_dirty = pet.is_dirty || pet.isDirty || false;
     pet.sleeping = pet.sleeping || pet.is_sleeping || false;
-    
+
     const hunger = $('#hungerBar');
     const energy = $('#energyBar');
     const happiness = $('#happinessBar');
+    const thirst = $('#thirstBar'); // <-- added
 
     function setBarColor(bar, value) {
-    if (!bar) return;
-    if (value >= 70) bar.style.backgroundColor = "#4caf50";     // green
-    else if (value >= 40) bar.style.backgroundColor = "#ffb300"; // yellow
-    else bar.style.backgroundColor = "#ff3b30";                 // red
+      if (!bar) return;
+      if (value > 70) bar.style.setProperty("--progress-color", "#4caf50");
+      else if (value > 35) bar.style.setProperty("--progress-color", "#ffb300");
+      else bar.style.setProperty("--progress-color", "#ff3d00");
     }
 
-
-
+    // set values
     if (hunger) hunger.value = data.hunger ?? hunger.value;
     if (energy) energy.value = data.energy ?? energy.value;
     if (happiness) happiness.value = data.happiness ?? happiness.value;
 
+    if (thirst) thirst.value = data.thirst ?? thirst.value; // <-- added
+
+    // set colors
     setBarColor(hunger, data.hunger);
     setBarColor(energy, data.energy);
     setBarColor(happiness, data.happiness);
+    setBarColor(thirst, data.thirst); // <-- added
 
     $('#petCoins') && ($('#petCoins').textContent = data.coins ?? 0);
     displayAge();
@@ -586,13 +591,13 @@ async function updateStats() {
       updateTreatMenu();
     }
 
-    // update image and local state
     setPetImage(pet.sleeping ? 'sleeping' : 'happy');
 
   } catch (err) {
     console.error('Failed to update stats:', err);
   }
 }
+
 
 function updateBackground() {
   const hour = new Date().getHours();
@@ -1209,6 +1214,18 @@ function stopEnergyRestore() { if (energyRestoreInterval) { clearInterval(energy
 // -----------------------
 // UI & Toast helpers
 // -----------------------
+document.getElementById("drinkBtn").addEventListener("click", () => {
+    if (!petData) return;
+
+    petData.thirst = Math.min(100, petData.thirst + 20);
+
+    // update UI
+    updateBars();
+    showFloatingEmoji("💧");
+
+    playSound("drink"); // if you have a drink sound
+});
+
 
 function showToast(msg) {
   const toast = document.createElement('div');
@@ -1275,6 +1292,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
