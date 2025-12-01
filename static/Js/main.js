@@ -30,9 +30,7 @@ let energyRestoreInterval = null; // restores energy each hour while sleeping
 let playFrameInterval = null; // interval for play animation frames
 
 // 🎵 Sound files
-const bgMusic = new Audio("static/sounds/background.mp3");
-bgMusic.loop = true;
-bgMusic.volume = 0.4;
+
 
 const sClick = new Audio("static/sounds/click.mp3");
 const sEat = new Audio("static/sounds/eat.mp3");
@@ -1275,6 +1273,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
