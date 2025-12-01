@@ -1464,27 +1464,7 @@ async function loadShopItems() {
   }
 }
 
-const cart = {};
-const cartList = document.getElementById("cartList");
-const cartTotal = document.getElementById("cartTotal");
-const checkoutBtn = document.getElementById("checkoutBtn");
 
-// Add item to cart
-shopItemsContainer.addEventListener("click", e => {
-  if (e.target.classList.contains("shop-btn")) {
-    const shopItem = e.target.closest(".shop-item");
-    const name = shopItem.dataset.name;
-    const price = parseInt(shopItem.dataset.price);
-    const emoji = shopItem.textContent.split(" ")[0]; // Extract emoji
-
-    if (cart[name]) {
-      cart[name].quantity += 1;
-    } else {
-      cart[name] = { price, quantity: 1, emoji };
-    }
-    updateCartUI();
-  }
-});
 
 // Update cart UI
 function updateCartUI() {
@@ -1561,6 +1541,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
