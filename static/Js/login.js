@@ -1,5 +1,5 @@
 // ==============================
-// 🐾 PETSY LOGIN.JS — CLEAN & FIXED
+// 🐾 PETSY LOGIN.JS — COMPLETE & CORRECTED
 // ==============================
 
 const backendUrl = "https://petsy-dow7.onrender.com";
@@ -210,7 +210,8 @@ const resetOtpField = document.getElementById("resetOtp");
 const newPasswordField = document.getElementById("newPassword");
 
 // Step 1 — Show reset form
-forgotPassLink.addEventListener("click", () => {
+forgotPassLink.addEventListener("click", (e) => {
+  e.preventDefault();  // Prevent default link behavior
   loginForm.classList.add("hidden");
   otpForm.classList.add("hidden");
   resetForm.classList.remove("hidden");
