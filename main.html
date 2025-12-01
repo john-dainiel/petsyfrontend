@@ -65,20 +65,47 @@
     </footer>
   </div>
 
-  <!-- Shop Modal -->
-  <div id="shopModal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content">
-      <h2>🏪 Treat Shop</h2>
-      <p>Buy treats for your pet using coins!</p>
-      <div class="shop-items">
-        <button class="shop-btn" data-type="small">🍪 Small Treat — 10🪙</button>
-        <button class="shop-btn" data-type="medium">🥩 Medium Treat — 25🪙</button>
-        <button class="shop-btn" data-type="large">🍗 Large Treat — 50🪙</button>
-      </div>
-      <div id="shopResult" class="result hidden"></div>
-      <button id="closeShopBtn" class="close-btn">❌ Close</button>
+ <!-- Shop Modal (Updated) -->
+<div id="shopModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-content">
+    <h2>🏪 Treat Shop</h2>
+    <p>Buy treats for your pet using coins!</p>
+    
+    <div class="shop-items">
+      <h3>Small Treats</h3>
+      <button class="shop-btn" data-type="small" data-name="Cookie" data-price="10">🍪 Cookie — 10🪙</button>
+      <button class="shop-btn" data-type="small" data-name="Carrot" data-price="8">🥕 Carrot — 8🪙</button>
+      <button class="shop-btn" data-type="small" data-name="Apple" data-price="6">🍎 Apple — 6🪙</button>
+      <button class="shop-btn" data-type="small" data-name="Banana" data-price="7">🍌 Banana — 7🪙</button>
+      <button class="shop-btn" data-type="small" data-name="Cheese" data-price="9">🧀 Cheese — 9🪙</button>
+
+      <h3>Medium Treats</h3>
+      <button class="shop-btn" data-type="medium" data-name="Burger" data-price="20">🍔 Burger — 20🪙</button>
+      <button class="shop-btn" data-type="medium" data-name="Pizza" data-price="25">🍕 Pizza — 25🪙</button>
+      <button class="shop-btn" data-type="medium" data-name="Sushi" data-price="30">🍣 Sushi — 30🪙</button>
+      <button class="shop-btn" data-type="medium" data-name="Sandwich" data-price="22">🥪 Sandwich — 22🪙</button>
+      <button class="shop-btn" data-type="medium" data-name="Pasta" data-price="28">🍝 Pasta — 28🪙</button>
+
+      <h3>Large Treats</h3>
+      <button class="shop-btn" data-type="large" data-name="Cake" data-price="50">🍰 Cake — 50🪙</button>
+      <button class="shop-btn" data-type="large" data-name="Steak" data-price="60">🥩 Steak — 60🪙</button>
+      <button class="shop-btn" data-type="large" data-name="Watermelon" data-price="45">🍉 Watermelon — 45🪙</button>
+      <button class="shop-btn" data-type="large" data-name="Pineapple" data-price="48">🍍 Pineapple — 48🪙</button>
+      <button class="shop-btn" data-type="large" data-name="Turkey" data-price="70">🦃 Turkey — 70🪙</button>
     </div>
+
+    <div id="cart">
+      <h3>Cart Summary</h3>
+      <ul id="cartList"></ul>
+      <div>Total: <span id="cartTotal">0</span> 🪙</div>
+      <button id="checkoutBtn" class="shop-btn">Buy Now</button>
+    </div>
+
+    <div id="shopResult" class="result hidden"></div>
+    <button id="closeShopBtn" class="close-btn">❌ Close</button>
   </div>
+</div>
+
 
   <!-- Options Modal -->
   <div id="optionsModal" class="modal hidden" aria-hidden="true">
@@ -128,6 +155,7 @@
   
 </body>
 </html>
+
 
 
 
