@@ -1417,6 +1417,52 @@ function feedPet(treatName, treatSize) {
 fetch(`${backendUrl}/pet/${petData.id}/inventory`)
   .then(res => res.json())
   .then(inventory => updateEatMenu(inventory));
+
+
+
+const shopModal = document.getElementById("shopModal");
+const shopItemsContainer = document.getElementById("shopItemsContainer");
+const shopBtn = document.getElementById("shopBtn");
+const closeShopBtn = document.getElementById("closeShopBtn");
+const modalOverlay = shopModal.querySelector(".modal-overlay");
+
+shopBtn.addEventListener("click", () => {
+  shopModal.classList.remove("hidden");
+  loadShopItems(); // Load items when shop opens
+});
+
+closeShopBtn.addEventListener("click", () => shopModal.classList.add("hidden"));
+modalOverlay.addEventListener("click", () => shopModal.classList.add("hidden"));
+
+// Load shop items dynamically
+async function loadShopItems() {
+  shopItemsContainer.innerHTML = ""; // Clear existing items
+  try {
+    const res = await fetch("http://localhost:5000/api/food_items"); // Your backend endpoint
+    const items = await res.json();
+
+    const sizes = ["small", "medium", "large"];
+    sizes.forEach(size => {
+      const sizeHeader = document.createElement("h3");
+      sizeHeader.textContent = size.charAt(0).toUpperCase() + size.slice(1) + " Treats";
+      shopItemsContainer.appendChild(sizeHeader);
+
+      items
+        .filter(item => item.size === size)
+        .forEach(item => {
+          const itemDiv = document.createElement("div");
+          itemDiv.classList.add("shop-item");
+          itemDiv.dataset.type = item.size;
+          itemDiv.dataset.name = item.name;
+          itemDiv.dataset.price = item.price;
+          itemDiv.innerHTML = `${item.emoji} ${item.name} — ${item.price}🪙 <button class="shop-btn">Buy</button>`;
+          shopItemsContainer.appendChild(itemDiv);
+        });
+    });
+  } catch (err) {
+    console.error("Failed to load shop items:", err);
+  }
+}
 // -----------------------
 // Misc dev helpers
 // -----------------------
@@ -1446,6 +1492,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
