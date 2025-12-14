@@ -108,65 +108,130 @@ function runGameLoop(){
 }
 
 /* ==================== QUIZ GAME ==================== */
-let quizCoins=0;
 
-function initQuiz(){
-  quizCoins=0;
-  alert("Quiz Instructions:\nSolve math questions.\nClick your choice.\nCorrect answers give coins!");
+let quizCoins = 0;
+let currentQuestion = null;
+let quizStarted = false;
+
+/* ---------- INIT ---------- */
+function initQuiz() {
+  quizCoins = 0;
+  quizStarted = false;
+  currentQuestion = null;
+
+  document.getElementById('quizCoins').innerText = 'Coins 🪙 0';
+  document.getElementById('quizQuestion').innerText =
+    'Click ▶ Start Quiz to begin';
+
+  document.getElementById('quizAnswers').innerHTML = '';
+  document.getElementById('quizControls').innerHTML = '';
+
+  document.getElementById('quizStartBtn').disabled = false;
+}
+
+/* ---------- START BUTTON ---------- */
+document.getElementById('quizStartBtn').onclick = () => {
+  quizStarted = true;
+  document.getElementById('quizStartBtn').disabled = true;
   showQuizQuestion();
-}
+};
 
-function generateQuizQuestion(){
-  const nums=[1+Math.floor(Math.random()*10),1+Math.floor(Math.random()*10),1+Math.floor(Math.random()*10)];
-  const ops=[Math.random()<0.5?'+':'-', Math.random()<0.5?'+':'-'];
-  const question=`What is ${nums[0]} ${ops[0]} ${nums[1]} ${ops[1]} ${nums[2]}?`;
-  let answer=nums[0]; 
-  answer=ops[0]==='+'?answer+nums[1]:answer-nums[1]; 
-  answer=ops[1]==='+'?answer+nums[2]:answer-nums[2];
-  let options=[answer];
-  while(options.length<3){
-    let r=answer+Math.floor(Math.random()*6)-3;
-    if(!options.includes(r)) options.push(r);
+/* ---------- QUESTION GENERATOR ---------- */
+function generateQuizQuestion() {
+  const a = 1 + Math.floor(Math.random() * 10);
+  const b = 1 + Math.floor(Math.random() * 10);
+  const c = 1 + Math.floor(Math.random() * 10);
+
+  const ops = ['+', '-'];
+  const op1 = ops[Math.floor(Math.random() * 2)];
+  const op2 = ops[Math.floor(Math.random() * 2)];
+
+  let answer = a;
+  answer = op1 === '+' ? answer + b : answer - b;
+  answer = op2 === '+' ? answer + c : answer - c;
+
+  let options = [answer];
+  while (options.length < 4) {
+    let r = answer + Math.floor(Math.random() * 10) - 5;
+    if (!options.includes(r)) options.push(r);
   }
-  options.sort(()=>Math.random()-0.5);
-  return {question,answer,options};
+
+  options.sort(() => Math.random() - 0.5);
+
+  return {
+    question: `What is ${a} ${op1} ${b} ${op2} ${c}?`,
+    answer,
+    options
+  };
 }
 
-function showQuizQuestion(){
-  const q=generateQuizQuestion();
-  const qDiv=document.getElementById('quizQuestion');
-  qDiv.innerText=q.question;
-  qDiv.style.fontSize='36px';
+/* ---------- SHOW QUESTION ---------- */
+function showQuizQuestion() {
+  currentQuestion = generateQuizQuestion();
 
-  const answersDiv=document.getElementById('quizAnswers');
-  answersDiv.innerHTML='';
-  q.options.forEach(opt=>{
-    const btn=document.createElement('button');
-    btn.innerText=opt;
-    btn.style.fontSize='28px';
-    btn.style.padding='12px 20px';
-    btn.style.margin='5px';
-    btn.style.backgroundColor='#FFD700';
-    btn.style.border='2px solid #FFA500';
-    btn.style.borderRadius='10px';
-    btn.onclick=()=>checkQuizAnswer(opt,q.answer);
+  const qDiv = document.getElementById('quizQuestion');
+  qDiv.innerText = currentQuestion.question;
+
+  const answersDiv = document.getElementById('quizAnswers');
+  answersDiv.innerHTML = '';
+
+  currentQuestion.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-btn';
+    btn.innerText = opt;
+
+    btn.onclick = () => checkQuizAnswer(opt);
     answersDiv.appendChild(btn);
   });
+
+  document.getElementById('quizControls').innerHTML = '';
 }
 
-function checkQuizAnswer(selected,correct){
-  if(selected===correct){
-    alert("✅ Correct! +1 Coin");
-    quizCoins+=1;
+/* ---------- CHECK ANSWER ---------- */
+function checkQuizAnswer(selected) {
+  const correct = currentQuestion.answer;
+  const feedback = document.getElementById('quizQuestion');
+
+  document.querySelectorAll('.quiz-btn').forEach(b => b.disabled = true);
+
+  if (selected === correct) {
+    quizCoins++;
+    feedback.innerText = '✅ Correct!';
   } else {
-    alert(`❌ Wrong! Correct answer was: ${correct}`);
+    feedback.innerText = `❌ Wrong! Correct answer was ${correct}`;
   }
-  if(confirm("Do you want to continue to the next question?")){
-    showQuizQuestion();
-  } else {
-    alert(`You earned ${quizCoins} coins in total!`);
-  }
+
+  document.getElementById('quizCoins').innerText =
+    `Coins 🪙 ${quizCoins}`;
+
+  showQuizControls();
 }
+
+/* ---------- PLAY AGAIN / STOP ---------- */
+function showQuizControls() {
+  const controls = document.getElementById('quizControls');
+  controls.innerHTML = '';
+
+  const playAgain = document.createElement('button');
+  playAgain.innerText = '▶ Play Again';
+  playAgain.className = 'quiz-control-btn';
+  playAgain.onclick = showQuizQuestion;
+
+  const stop = document.createElement('button');
+  stop.innerText = '⏹ Stop';
+  stop.className = 'quiz-control-btn stop';
+  stop.onclick = () => {
+    document.getElementById('quizQuestion').innerText =
+      `🏁 Quiz ended! Total coins earned: 🪙 ${quizCoins}`;
+    document.getElementById('quizAnswers').innerHTML = '';
+    controls.innerHTML = '';
+    document.getElementById('quizStartBtn').disabled = false;
+  };
+
+  controls.appendChild(playAgain);
+  controls.appendChild(stop);
+}
+
 /* ==================== MEMORY GAME ==================== */
 
 let memoryCards = [];
@@ -343,4 +408,5 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
 
