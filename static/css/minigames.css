@@ -168,3 +168,30 @@ canvas {
   color: white;
 }
 
+#leaderboardContainer {
+  position: fixed;
+  right: 20px;
+  top: 80px;
+  width: 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: #fffbe6;
+  border: 2px solid #ffcc80;
+  border-radius: 12px;
+  padding: 12px;
+  z-index: 2000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-size: 16px;
+}
+
+#leaderboardContainer h3 {
+  margin-top: 0;
+  font-size: 18px;
+  text-align: center;
+}
+
+#leaderboard div {
+  padding: 4px 0;
+  border-bottom: 1px solid #ffd699;
+}
+
