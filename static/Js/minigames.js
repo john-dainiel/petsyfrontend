@@ -234,13 +234,14 @@ function startMemoryLevel() {
 
   timeLeft = Math.max(10, 30 - memoryLevel * 3);
 
-  updateTimerUI();
-  startTimer();
+  startTimer();      // ✅ timer starts correctly
   renderMemory();
 }
 
-/* ---------- TIMER ---------- */
+/* ---------- TIMER (FIXED) ---------- */
 function startTimer() {
+  updateTimerUI();   // 👈 shows 30 immediately
+
   timerInterval = setInterval(() => {
     timeLeft--;
     updateTimerUI();
@@ -256,11 +257,10 @@ function startTimer() {
 }
 
 function updateTimerUI() {
-  const timerEl = document.getElementById('memoryTimer');
-  timerEl.innerText = `⏱️ ${timeLeft}s`;
+  document.getElementById('memoryTimer').innerText = `⏱️ ${timeLeft}s`;
 }
 
-/* ---------- RENDER GRID ---------- */
+/* ---------- RENDER ---------- */
 function renderMemory() {
   const grid = document.getElementById('memoryGrid');
   grid.innerHTML = '';
@@ -342,5 +342,3 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
-
-
