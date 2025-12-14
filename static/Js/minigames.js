@@ -21,7 +21,9 @@ let score = 0;
 let gameInterval = null;
 let gameRunning = false;
 let countdown = 30; // seconds
-let timerInterval = null;
+let runnerTimerInterval = null;
+
+
 
 // Load pet and asset images
 const petImg = new Image();
@@ -54,12 +56,11 @@ function initRunner(petType = 'cat') {
 
   imagesLoaded = 0;
 
-  loadImage(petImg, petType === 'cat' ? 'static/images/cat_happy.png' : 'static/images/dog_happy.png');
-  loadImage(coinImg, 'static/images/coin.png');
-  loadImage(boneImg, 'static/images/bone.png');
-  loadImage(puddleImg, 'static/images/puddle.png');
+  loadImage(petImg, petType === 'cat' ? '/static/images/cat_happy.png' : '/static/images/dog_happy.png');
+  loadImage(coinImg, '/static/images/coin.png');
+  loadImage(boneImg, '/static/images/bone.png');
+  loadImage(puddleImg, '/static/images/puddle.png');
 
-  drawStartScreen();
   updateTimerDisplay();
 }
 
@@ -105,7 +106,7 @@ function startGame() {
   updateTimerDisplay();
 
   gameInterval = setInterval(gameLoop, 20);
-  timerInterval = setInterval(() => {
+  runnertimerInterval = setInterval(() => {
     countdown--;
     updateTimerDisplay();
     if (countdown <= 0) endGame();
@@ -179,7 +180,7 @@ function gameLoop() {
 // End game
 function endGame() {
   clearInterval(gameInterval);
-  clearInterval(timerInterval);
+  clearInterval(runnertimerInterval);
   gameRunning = false;
 
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -347,7 +348,7 @@ let memoryMatched = [];
 let memoryLevel = 1;
 let memoryCoins = 0;
 let timeLeft = 30;
-let timerInterval = null;
+let memorytimerInterval = null;
 
 /* 🔹 IMAGE PATHS */
 const memoryImages = [
@@ -367,7 +368,7 @@ const memoryImages = [
 
 /* ---------- INIT (NO AUTO START) ---------- */
 function initMemory() {
-  clearInterval(timerInterval);
+  clearInterval(memorytimerInterval);
 
   memoryLevel = 1;
   memoryCoins = 0;
@@ -395,7 +396,7 @@ document.getElementById('memoryStartBtn').onclick = () => {
 
 /* ---------- START LEVEL ---------- */
 function startMemoryLevel() {
-  clearInterval(timerInterval);
+  clearInterval(memorytimerInterval);
 
   const pairs = Math.min(2 + memoryLevel, memoryImages.length);
   const selected = memoryImages.slice(0, pairs);
@@ -415,12 +416,12 @@ function startMemoryLevel() {
 function startTimer() {
   updateTimerUI();   // 👈 shows 30 immediately
 
-  timerInterval = setInterval(() => {
+  memorytimerInterval = setInterval(() => {
     timeLeft--;
     updateTimerUI();
 
     if (timeLeft <= 0) {
-      clearInterval(timerInterval);
+      clearInterval(memorytimerInterval);
       showPopup(
         `⏰ Time's up!<br>Coins earned: 🪙 ${memoryCoins}`,
         () => initMemory()
@@ -478,7 +479,7 @@ function flipCard(index) {
       memoryFlipped = [];
 
       if (memoryMatched.length === memoryCards.length) {
-        clearInterval(timerInterval);
+        clearInterval(memorytimerInterval);
         showPopup(
           `🎉 Level ${memoryLevel} Complete!<br>Coins: 🪙 ${memoryCoins}`,
           () => {
@@ -515,6 +516,7 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
 
 
 
