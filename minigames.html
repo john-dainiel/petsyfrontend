@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PETSY Minigames</title>
   <link rel="stylesheet" href="https://petsyfrontend.onrender.com/static/css/minigames.css">
-  <style>
-    #playerInfo { font-size: 18px; margin-bottom: 10px; }
-    #leaderboardContainer { position: fixed; right: 20px; top: 80px; background: #fff; border: 1px solid #ccc; padding: 10px; width: 200px; max-height: 400px; overflow-y: auto; }
-    .game-container { margin-top: 20px; }
-  </style>
 </head>
 <body>
-  <div id="playerInfo">Loading player info...</div>
+  <!-- PLAYER INFO -->
+  <div id="playerInfo" style="font-size:18px; margin-bottom:10px;">Loading player info...</div>
 
+  <!-- GAME MENU -->
   <div class="game-menu">
     <h1>🐾 PETSY Minigames</h1>
     <button onclick="showGame('runner')">Coin Catcher</button>
@@ -21,7 +18,7 @@
     <button onclick="showGame('memory')">Memory 🃏</button>
   </div>
 
-  <!-- Coin Catcher Game -->
+  <!-- RUNNER GAME -->
   <div id="runner" class="game-container" style="display:none;">
     <div id="runnerCoins" style="font-size:20px; margin-top:5px;">Coins 🪙 0</div>
     <button id="runnerStartBtn">▶ Start Game</button>
@@ -30,24 +27,22 @@
     <div id="gameTimer" style="font-size:20px; margin-top:5px;"></div>
   </div>
 
-  <!-- Quiz Game -->
+  <!-- QUIZ GAME -->
   <div id="quiz" class="game-container" style="display:none;">
     <h2>❓ Quiz Challenge</h2>
-    <div id="quizTop">
+    <div id="quizTop" style="display:flex; align-items:center; gap:20px;">
       <button id="quizStartBtn">▶ Start Quiz</button>
       <div id="quizCoins">Coins 🪙 0</div>
     </div>
-    <div id="quizQuestion" class="quiz-question">
-      Click ▶ Start Quiz to begin
-    </div>
+    <div id="quizQuestion" class="quiz-question">Click ▶ Start Quiz to begin</div>
     <div id="quizAnswers" class="quiz-answers"></div>
     <div id="quizControls"></div>
   </div>
 
-  <!-- Memory Game -->
+  <!-- MEMORY GAME -->
   <div id="memory" class="game-container" style="display:none;">
     <h2>🧠 Memory Match</h2>
-    <div id="memoryTop">
+    <div id="memoryTop" style="display:flex; align-items:center; gap:20px;">
       <button id="memoryStartBtn">▶ Start Memory</button>
       <div id="memoryTimer">⏱️ 30s</div>
       <div id="memoryInfo">Level 1 • Coins 🪙 0</div>
@@ -55,12 +50,13 @@
     <div id="memoryGrid"></div>
   </div>
 
-  <!-- Floating Leaderboard -->
-  <div id="leaderboardContainer">
+  <!-- LEADERBOARD -->
+  <div id="leaderboardContainer" style="margin-top:20px;">
     <h3>🏆 Leaderboard</h3>
     <div id="leaderboard">Loading...</div>
   </div>
 
+  <!-- JS -->
   <script src="https://petsyfrontend.onrender.com/static/Js/minigames.js"></script>
 </body>
 </html>
