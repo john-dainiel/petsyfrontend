@@ -3,8 +3,32 @@ body {
   text-align: center;
   background: #fff3e6;
   color: #333;
+  margin: 0;
+  padding: 0;
 }
 
+header#playerInfo {
+  background: #ffcc80;
+  padding: 12px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Container */
+.container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+/* Games Column */
+.games {
+  flex: 1;
+  max-width: 600px;
+}
+
+/* Game Menu Buttons */
 .game-menu button {
   padding: 10px 20px;
   margin: 10px;
@@ -20,18 +44,19 @@ body {
   background-color: #ffa726;
 }
 
+/* Game Containers */
 .game-container {
   display: none;
   margin-top: 20px;
 }
 
+/* Runner Canvas */
 canvas {
   border: 2px solid #333;
   background-color: #e0f7fa;
 }
 
-/* ===== MEMORY GAME ===== */
-
+/* Memory Game */
 #memoryGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
@@ -65,22 +90,58 @@ canvas {
   pointer-events: none;
 }
 
-/* TOP BAR */
-#memoryTop {
-  display: flex;
-  justify-content: space-between;
-  max-width: 520px;
-  margin: auto;
-  font-weight: bold;
+/* Quiz Game */
+.quiz-btn {
+  padding: 15px;
+  font-size: 22px;
+  border-radius: 12px;
+  border: none;
+  background: #ffd966;
+  cursor: pointer;
+  margin: 6px;
 }
 
-/* TIMER DANGER */
-#memoryTimer.danger {
-  color: red;
-  animation: shake 0.3s infinite;
+.quiz-btn:disabled {
+  background: #ddd;
 }
 
-/* POPUP */
+.quiz-control-btn {
+  padding: 12px 18px;
+  font-size: 18px;
+  margin: 10px 6px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.quiz-control-btn.stop {
+  background: #ff6b6b;
+  color: white;
+}
+
+/* Leaderboards Column */
+.leaderboards {
+  width: 220px;
+  max-height: 600px;
+  overflow-y: auto;
+  background: #fffbe6;
+  border: 2px solid #ffcc80;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 16px;
+}
+
+.leaderboards h3 {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.leaderboards div {
+  padding: 4px 0;
+  border-bottom: 1px solid #ffd699;
+}
+
+/* Popup */
 .popup-overlay {
   position: fixed;
   inset: 0;
@@ -108,90 +169,3 @@ canvas {
   border-radius: 12px;
   cursor: pointer;
 }
-
-/* SHAKE */
-@keyframes shake {
-  0% { transform: translateX(0); }
-  25% { transform: translateX(-4px); }
-  50% { transform: translateX(4px); }
-  75% { transform: translateX(-4px); }
-  100% { transform: translateX(0); }
-}
-
-
-.quiz-question {
-  font-size: 32px;
-  margin: 20px 0;
-  font-weight: bold;
-}
-
-.quiz-answers {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.quiz-btn {
-  padding: 15px;
-  font-size: 22px;
-  border-radius: 12px;
-  border: none;
-  background: #ffd966;
-  cursor: pointer;
-}
-
-.quiz-btn:disabled {
-  background: #ddd;
-}
-
-#quizTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#quizControls {
-  margin-top: 20px;
-}
-
-.quiz-control-btn {
-  padding: 12px 18px;
-  font-size: 18px;
-  margin-right: 10px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-}
-
-.quiz-control-btn.stop {
-  background: #ff6b6b;
-  color: white;
-}
-
-#leaderboardContainer {
-  position: fixed;
-  right: 20px;
-  top: 80px;
-  width: 220px;
-  max-height: 400px;
-  overflow-y: auto;
-  background: #fffbe6;
-  border: 2px solid #ffcc80;
-  border-radius: 12px;
-  padding: 12px;
-  z-index: 2000;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  font-size: 16px;
-}
-
-#leaderboardContainer h3 {
-  margin-top: 0;
-  font-size: 18px;
-  text-align: center;
-}
-
-#leaderboard div {
-  padding: 4px 0;
-  border-bottom: 1px solid #ffd699;
-}
-
