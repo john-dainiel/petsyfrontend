@@ -208,6 +208,7 @@ const forgotPassLink = document.getElementById("forgotPassLink");
 const resetConfirmBtn = document.getElementById("resetConfirmBtn");
 const resetOtpField = document.getElementById("resetOtp");
 const newPasswordField = document.getElementById("newPassword");
+const confirmPasswordField = document.getElementById("confirmPassword");
 
 // Step 1 — Show reset form
 forgotPassLink.addEventListener("click", (e) => {
@@ -238,6 +239,7 @@ document.getElementById("sendResetOtpBtn").addEventListener("click", async () =>
       showMessage("Reset OTP sent to your email!", "info");
       resetOtpField.classList.remove("hidden");
       newPasswordField.classList.remove("hidden");
+      confirmPasswordField.classList.remove("hidden");
       resetConfirmBtn.classList.remove("hidden");
     } else {
       showMessage(data.message || "Failed to send reset OTP.", "error");
@@ -253,9 +255,23 @@ resetConfirmBtn.addEventListener("click", async () => {
   const username = document.getElementById("resetUsername").value.trim();
   const otp = resetOtpField.value.trim();
   const newPass = newPasswordField.value.trim();
+  const confirmPass = confirmPasswordField.value.trim();
 
-  if (!username || !otp || !newPass) {
+  if (!username || !otp || !newPass || !confirmPass) {
     showMessage("Please fill in all fields.", "warn");
+    return;
+  }
+
+  // ✅ Password match check
+  if (newPass !== confirmPass) {
+    showMessage("Passwords do not match.", "warn");
+    return;
+  }
+
+  // ✅ Password security check: at least 1 uppercase, 1 lowercase, 1 number, 1 symbol, min 8 chars
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+  if (!passwordRegex.test(newPass)) {
+    showMessage("Password must be 8+ chars with uppercase, lowercase, number & symbol.", "warn");
     return;
   }
 
@@ -271,6 +287,16 @@ resetConfirmBtn.addEventListener("click", async () => {
       showMessage("Password reset successful! Please log in.", "success");
       resetForm.classList.add("hidden");
       loginForm.classList.remove("hidden");
+
+      // Clear fields
+      resetOtpField.value = "";
+      newPasswordField.value = "";
+      confirmPasswordField.value = "";
+      document.getElementById("resetUsername").value = "";
+      resetOtpField.classList.add("hidden");
+      newPasswordField.classList.add("hidden");
+      confirmPasswordField.classList.add("hidden");
+      resetConfirmBtn.classList.add("hidden");
     } else {
       showMessage(data.message || "Reset failed.", "error");
     }
@@ -278,19 +304,6 @@ resetConfirmBtn.addEventListener("click", async () => {
     console.error("Reset confirm error:", err);
     showMessage("Server unavailable.", "warn");
   }
-});
-
-// Back buttons
-document.getElementById("backToLogin").addEventListener("click", () => {
-  otpForm.classList.add("hidden");
-  loginForm.classList.remove("hidden");
-  showMessage("", "info");
-});
-
-document.getElementById("resetBackBtn").addEventListener("click", () => {
-  resetForm.classList.add("hidden");
-  loginForm.classList.remove("hidden");
-  showMessage("", "info");
 });
 
 // ==============================
@@ -310,3 +323,4 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
