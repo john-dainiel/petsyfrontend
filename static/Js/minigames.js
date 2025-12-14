@@ -167,7 +167,6 @@ function checkQuizAnswer(selected,correct){
     alert(`You earned ${quizCoins} coins in total!`);
   }
 }
-
 /* ==================== MEMORY GAME ==================== */
 
 let memoryCards = [];
@@ -178,7 +177,7 @@ let memoryCoins = 0;
 let timeLeft = 30;
 let timerInterval = null;
 
-// 🔹 MAKE SURE THESE FILES EXIST ON RENDER
+/* 🔹 IMAGE PATHS */
 const memoryImages = [
   '/static/images/memory1.png',
   '/static/images/memory2.png',
@@ -194,16 +193,35 @@ const memoryImages = [
   '/static/images/memory12.png'
 ];
 
-/* ---------- INIT ---------- */
-
+/* ---------- INIT (NO AUTO START) ---------- */
 function initMemory() {
+  clearInterval(timerInterval);
+
   memoryLevel = 1;
   memoryCoins = 0;
-  startMemoryLevel();
+  memoryCards = [];
+  memoryFlipped = [];
+  memoryMatched = [];
+
+  timeLeft = 30;
+
+  document.getElementById('memoryTimer').innerText = '⏱️ 30s';
+  document.getElementById('memoryInfo').innerText =
+    'Level 1 • Coins 🪙 0';
+
+  document.getElementById('memoryGrid').innerHTML =
+    '<p style="font-size:20px;">Click ▶ Start Memory to begin</p>';
+
+  document.getElementById('memoryStartBtn').disabled = false;
 }
 
-/* ---------- LEVEL ---------- */
+/* ---------- START BUTTON ---------- */
+document.getElementById('memoryStartBtn').onclick = () => {
+  document.getElementById('memoryStartBtn').disabled = true;
+  startMemoryLevel();
+};
 
+/* ---------- START LEVEL ---------- */
 function startMemoryLevel() {
   clearInterval(timerInterval);
 
@@ -215,14 +233,13 @@ function startMemoryLevel() {
   memoryMatched = [];
 
   timeLeft = Math.max(10, 30 - memoryLevel * 3);
+
   updateTimerUI();
   startTimer();
-
   renderMemory();
 }
 
 /* ---------- TIMER ---------- */
-
 function startTimer() {
   timerInterval = setInterval(() => {
     timeLeft--;
@@ -232,11 +249,7 @@ function startTimer() {
       clearInterval(timerInterval);
       showPopup(
         `⏰ Time's up!<br>Coins earned: 🪙 ${memoryCoins}`,
-        () => {
-          memoryLevel = 1;
-          memoryCoins = 0;
-          startMemoryLevel();
-        }
+        () => initMemory()
       );
     }
   }, 1000);
@@ -245,16 +258,9 @@ function startTimer() {
 function updateTimerUI() {
   const timerEl = document.getElementById('memoryTimer');
   timerEl.innerText = `⏱️ ${timeLeft}s`;
-
-  if (timeLeft <= 10) {
-    timerEl.classList.add('danger');
-  } else {
-    timerEl.classList.remove('danger');
-  }
 }
 
-/* ---------- RENDER ---------- */
-
+/* ---------- RENDER GRID ---------- */
 function renderMemory() {
   const grid = document.getElementById('memoryGrid');
   grid.innerHTML = '';
@@ -280,7 +286,6 @@ function renderMemory() {
 }
 
 /* ---------- GAME LOGIC ---------- */
-
 function flipCard(index) {
   if (
     memoryFlipped.length === 2 ||
@@ -319,7 +324,6 @@ function flipCard(index) {
 }
 
 /* ---------- POPUP ---------- */
-
 function showPopup(html, onClose) {
   const overlay = document.createElement('div');
   overlay.className = 'popup-overlay';
@@ -338,4 +342,5 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
 
