@@ -21,7 +21,7 @@ let speed = 6;
 let runnerInterval = null;
 let runnerRunning = false;
 
-/* IMAGES (LOAD ONCE) */
+/* ---------- IMAGE PRELOAD ---------- */
 const petImg = new Image();
 const coinImg = new Image();
 const boneImg = new Image();
@@ -29,10 +29,16 @@ const puddleImg = new Image();
 
 let imagesLoaded = 0;
 const TOTAL_IMAGES = 4;
+let forceStartAllowed = false;
 
 function loadImage(img, src) {
   img.src = src;
+
   img.onload = () => imagesLoaded++;
+  img.onerror = () => {
+    console.warn('Failed to load:', src);
+    imagesLoaded++; // prevent infinite loading
+  };
 }
 
 /* ---------- INIT (NO AUTO START) ---------- */
@@ -42,6 +48,9 @@ function initRunner(petType = 'cat') {
 
   canvas.width = 800;
   canvas.height = 400;
+
+  imagesLoaded = 0;
+  forceStartAllowed = false;
 
   loadImage(
     petImg,
@@ -53,10 +62,15 @@ function initRunner(petType = 'cat') {
   loadImage(boneImg, 'static/images/bone.png');
   loadImage(puddleImg, 'static/images/puddle.png');
 
+  // ⏳ Force start after 2 seconds (safety net)
+  setTimeout(() => {
+    forceStartAllowed = true;
+  }, 2000);
+
   resetRunner();
 }
 
-/* ---------- RESET GAME STATE ---------- */
+/* ---------- RESET GAME ---------- */
 function resetRunner() {
   clearInterval(runnerInterval);
 
@@ -74,8 +88,8 @@ function resetRunner() {
 document.getElementById('runnerStartBtn').onclick = () => {
   if (runnerRunning) return;
 
-  if (imagesLoaded < TOTAL_IMAGES) {
-    alert('Images still loading, please wait...');
+  if (imagesLoaded < TOTAL_IMAGES && !forceStartAllowed) {
+    drawLoadingScreen();
     return;
   }
 
@@ -107,7 +121,7 @@ function runGameLoop() {
     runnerVy = 0;
   }
 
-  // Spawn
+  // Spawn obstacles
   if (Math.random() < 0.02)
     obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'bone' });
 
@@ -117,7 +131,7 @@ function runGameLoop() {
   if (Math.random() < 0.01)
     obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'puddle' });
 
-  // Move & Draw
+  // Move & draw obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const ob = obstacles[i];
     ob.x -= speed;
@@ -171,7 +185,7 @@ function endRunnerGame() {
   ctx.fillText(`Score: ${score}`, canvas.width / 2 - 50, canvas.height / 2 + 30);
 }
 
-/* ---------- START SCREEN ---------- */
+/* ---------- UI SCREENS ---------- */
 function drawStartScreen() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#000';
@@ -179,6 +193,12 @@ function drawStartScreen() {
   ctx.fillText('Click ▶ Start Runner to Play', 220, 200);
 }
 
+function drawLoadingScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#000';
+  ctx.font = '24px Arial';
+  ctx.fillText('Loading assets...', 300, 200);
+}
 
 /* ==================== QUIZ GAME ==================== */
 
@@ -481,6 +501,7 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
 
 
 
