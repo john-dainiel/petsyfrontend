@@ -38,29 +38,32 @@ async function loadUserData() {
 /* ==================== BACKEND COIN UPDATE ==================== */
 function updateCoinsOnServer(coinsEarned, gameType) {
   const token = localStorage.getItem('userToken');
-  const petId = localStorage.getItem('petId');
-  const userId = localStorage.getItem('userId');
+  if (!token) return;
 
-  if (!token || !petId || !userId) return;
-
-  fetch(`${backendUrl}/mini_game/win/${petId}`, {
+  fetch(`${backendUrl}/mini_game/win`, {   // ✅ FIXED URL
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     },
-    body: JSON.stringify({ coins_earned: coinsEarned, user_id: userId, game_type: gameType })
+    body: JSON.stringify({
+      coins_earned: coinsEarned,
+      game_type: gameType
+    })
   })
   .then(res => res.json())
   .then(data => {
     if (data.success) {
       localStorage.setItem('totalCoins', data.coins || 0);
       loadPlayerInfo();
-      updateAllLeaderboards(); // refresh all leaderboards
+      updateAllLeaderboards();
+    } else {
+      console.error("Win rejected:", data);
     }
   })
   .catch(err => console.error('Error updating coins:', err));
 }
+
 
 /* ==================== LEADERBOARD ==================== */
 async function updateLeaderboard(gameType) {
@@ -319,7 +322,7 @@ function flipMemoryCard(index){
       if(memoryMatched.length===memoryCards.length){
         clearInterval(memorytimerInterval);
         showPopup(`🎉 Level ${memoryLevel} Complete! Coins: 🪙 ${memoryCoins}`,()=>{
-          memoryLevel++; startMemoryLevel(); updateCoinsOnServer(memoryCoins,'memory');
+          memoryLevel++; startMemoryLevel();
         });
       }
     } else setTimeout(()=>{ memoryFlipped=[]; renderMemory(); },700);
@@ -353,4 +356,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateLeaderboard('quiz');
   updateLeaderboard('memory');
 });
+
 
