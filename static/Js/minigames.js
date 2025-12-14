@@ -178,7 +178,7 @@ let memoryCoins = 0;
 let timeLeft = 30;
 let timerInterval = null;
 
-// ✅ MAKE SURE THESE FILES EXIST
+// 🔹 MAKE SURE THESE FILES EXIST ON RENDER
 const memoryImages = [
   '/static/images/memory1.png',
   '/static/images/memory2.png',
@@ -194,50 +194,75 @@ const memoryImages = [
   '/static/images/memory12.png'
 ];
 
+function showGame(game) {
+  document.querySelectorAll('.game-container')
+    .forEach(g => g.style.display = 'none');
+
+  document.getElementById(game).style.display = 'block';
+
+  if (game === 'memory') initMemory();
+}
+
+/* ---------- INIT ---------- */
+
 function initMemory() {
   memoryLevel = 1;
   memoryCoins = 0;
   startMemoryLevel();
 }
 
+/* ---------- LEVEL ---------- */
+
 function startMemoryLevel() {
   clearInterval(timerInterval);
 
   const pairs = Math.min(2 + memoryLevel, memoryImages.length);
   const selected = memoryImages.slice(0, pairs);
-  memoryCards = [...selected, ...selected].sort(() => Math.random() - 0.5);
 
+  memoryCards = [...selected, ...selected].sort(() => Math.random() - 0.5);
   memoryFlipped = [];
   memoryMatched = [];
 
   timeLeft = Math.max(10, 30 - memoryLevel * 3);
+  updateTimerUI();
   startTimer();
 
   renderMemory();
 }
 
-function startTimer() {
-  const timerEl = document.getElementById('memoryTimer');
+/* ---------- TIMER ---------- */
 
+function startTimer() {
   timerInterval = setInterval(() => {
     timeLeft--;
-    timerEl.innerText = `⏱️ Time: ${timeLeft}s`;
-
-    if (timeLeft <= 10) {
-      timerEl.style.color = 'red';
-      timerEl.style.animation = 'shake 0.3s infinite';
-    }
+    updateTimerUI();
 
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
-      showPopup(`⏰ Time's up!\nCoins earned: ${memoryCoins}`, () => {
-        memoryLevel = 1;
-        memoryCoins = 0;
-        startMemoryLevel();
-      });
+      showPopup(
+        `⏰ Time's up!<br>Coins earned: 🪙 ${memoryCoins}`,
+        () => {
+          memoryLevel = 1;
+          memoryCoins = 0;
+          startMemoryLevel();
+        }
+      );
     }
   }, 1000);
 }
+
+function updateTimerUI() {
+  const timerEl = document.getElementById('memoryTimer');
+  timerEl.innerText = `⏱️ ${timeLeft}s`;
+
+  if (timeLeft <= 10) {
+    timerEl.classList.add('danger');
+  } else {
+    timerEl.classList.remove('danger');
+  }
+}
+
+/* ---------- RENDER ---------- */
 
 function renderMemory() {
   const grid = document.getElementById('memoryGrid');
@@ -258,7 +283,12 @@ function renderMemory() {
     card.onclick = () => flipCard(index);
     grid.appendChild(card);
   });
+
+  document.getElementById('memoryInfo').innerText =
+    `Level ${memoryLevel} • Coins 🪙 ${memoryCoins}`;
 }
+
+/* ---------- GAME LOGIC ---------- */
 
 function flipCard(index) {
   if (
@@ -280,17 +310,40 @@ function flipCard(index) {
 
       if (memoryMatched.length === memoryCards.length) {
         clearInterval(timerInterval);
-        showPopup(`🎉 Level ${memoryLevel} Complete!\nCoins: ${memoryCoins}`, () => {
-          memoryLevel++;
-          startMemoryLevel();
-        });
+        showPopup(
+          `🎉 Level ${memoryLevel} Complete!<br>Coins: 🪙 ${memoryCoins}`,
+          () => {
+            memoryLevel++;
+            startMemoryLevel();
+          }
+        );
       }
     } else {
       setTimeout(() => {
         memoryFlipped = [];
         renderMemory();
-      }, 800);
+      }, 700);
     }
   }
 }
 
+/* ---------- POPUP ---------- */
+
+function showPopup(html, onClose) {
+  const overlay = document.createElement('div');
+  overlay.className = 'popup-overlay';
+
+  overlay.innerHTML = `
+    <div class="popup-box">
+      <div class="popup-text">${html}</div>
+      <button class="popup-btn">OK</button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('button').onclick = () => {
+    overlay.remove();
+    if (onClose) onClose();
+  };
+}
