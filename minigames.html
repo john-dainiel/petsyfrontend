@@ -1,23 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🐾 PETSY Pet Runner</title>
-<link rel="stylesheet" href="https://petsyfrontend.onrender.com/static/css/minigames.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PETSY Minigames</title>
+  <link rel="stylesheet" href="games.css">
 </head>
 <body>
-<header>
-  <h1>🐾 PETSY Pet Runner</h1>
-  <div id="score">Coins: 0 🪙</div>
-</header>
-<canvas id="gameCanvas" width="800" height="400"></canvas>
-<div class="instructions">
-  <p>Use <strong>←</strong> / <strong>→</strong> arrows to move. Collect coins, avoid rocks, bones, and puddles!</p>
-</div>
-<script src="https://petsyfrontend.onrender.com/static/Js/minigames.js"></script>
+  <div class="game-menu">
+    <h1>🐾 PETSY Minigames</h1>
+    <button onclick="showGame('runner')">Runner 🏃</button>
+    <button onclick="showGame('quiz')">Quiz ❓</button>
+    <button onclick="showGame('memory')">Memory 🃏</button>
+  </div>
+
+  <!-- Runner Game -->
+  <div id="runner" class="game-container">
+    <canvas id="runnerCanvas" width="600" height="400"></canvas>
+    <p>Press SPACE to jump and collect treats!</p>
+  </div>
+
+  <!-- Quiz Game -->
+  <div id="quiz" class="game-container">
+    <div id="quizQuestion"></div>
+    <div id="quizAnswers"></div>
+    <p id="quizFeedback"></p>
+  </div>
+
+  <!-- Memory Game -->
+  <div id="memory" class="game-container">
+    <div id="memoryGrid"></div>
+    <p id="memoryFeedback"></p>
+  </div>
+
+  <script src="games.js"></script>
 </body>
 </html>
-
-
-
