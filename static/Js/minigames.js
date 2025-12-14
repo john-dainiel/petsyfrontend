@@ -1,16 +1,8 @@
-// ===============================
-// 🐾 PETSY MINIGAMES.JS — with dynamic re-randomizing on Play Again
-// ===============================
-
 const backendUrl = "https://petsy-dow7.onrender.com";
-
 const pet_id = localStorage.getItem("pet_id") || 1;
-
-// short selectors
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => Array.from(document.querySelectorAll(s));
 
-// Elements
 const petCoinsEl = $("#petCoins");
 const popupToast = $("#popupMessage");
 const gamePanel = $("#gamePanel");
@@ -20,316 +12,159 @@ const closePanelBtn = $("#closePanel");
 const playAgainBtn = $("#playAgain");
 const claimRewardBtn = $("#claimReward");
 const gameResultEl = $("#gameResult");
+const petFaceEl = document.getElementById("petFace");
 
-let currentGame = null; // 🆕 track which game is active
+let currentGame = null;
+let petType = "default"; // for expressions
 
-// ==== Added helpers ====
-function disableInteractive() {
-  $$(".choice-btn").forEach((b) => {
-    b.disabled = true;
-    b.classList.add("disabled");
-    b.style.opacity = "0.6";
-    b.style.cursor = "not-allowed";
-  });
-  const inputs = gameBody.querySelectorAll("input");
-  inputs.forEach((i) => {
-    i.disabled = true;
-    i.style.opacity = "0.8";
-  });
-  const inlineBtns = gameBody.querySelectorAll("#guessBtn, #mathBtn");
-  inlineBtns.forEach((b) => {
-    b.disabled = true;
-    b.style.opacity = "0.6";
-    b.style.cursor = "not-allowed";
-  });
-}
-
-function enableInteractive() {
-  $$(".choice-btn").forEach((b) => {
-    b.disabled = false;
-    b.classList.remove("disabled");
-    b.style.opacity = "";
-    b.style.cursor = "";
-  });
-  const inputs = gameBody.querySelectorAll("input");
-  inputs.forEach((i) => {
-    i.disabled = false;
-    i.style.opacity = "";
-  });
-  const inlineBtns = gameBody.querySelectorAll("#guessBtn, #mathBtn");
-  inlineBtns.forEach((b) => {
-    b.disabled = false;
-    b.style.opacity = "";
-    b.style.cursor = "";
-  });
-}
-// ========================
-
-// Load coins
-async function loadPetCoins() {
+// ===============================
+// PET FACE LOADER
+// ===============================
+async function loadPetFace() {
   try {
     const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
-    if (!res.ok) throw new Error(`get_pet_by_id failed: ${res.status}`);
-    const data = await res.json();
-    if (petCoinsEl) petCoinsEl.textContent = `Your Coins: ${data.coins ?? 0} 🪙`;
-    console.log("pet coins loaded:", data.coins);
+    if (!res.ok) throw new Error("Failed to fetch pet info");
+    const pet = await res.json();
+
+    petType = pet.type?.toLowerCase() || "default";
+
+    let imgSrc = "https://petsyfrontend.onrender.com/static/images/default_pet.png";
+    if (petType === "cat") imgSrc = "https://petsyfrontend.onrender.com/static/images/cat.png";
+    else if (petType === "dog") imgSrc = "https://petsyfrontend.onrender.com/static/images/dog.png";
+    else if (pet.image) imgSrc = `https://petsyfrontend.onrender.com/static/images/${pet.image}`;
+
+    petFaceEl.src = imgSrc;
   } catch (err) {
-    console.error("loadPetCoins error:", err);
-    if (petCoinsEl) petCoinsEl.textContent = "Your Coins: 0 🪙";
+    console.error("loadPetFace error:", err);
   }
 }
 
-
-// Load game stats
-async function loadGameStats() {
-  try {
-    const res = await fetch(`${backendUrl}/get_game_stats/${pet_id}?t=${Date.now()}`);
-    if (!res.ok) throw new Error(`get_game_stats failed: ${res.status}`);
-    const data = await res.json();
-
-    const easyRaw = data.easy_wins ?? 0;
-    const mediumRaw = data.medium_wins ?? 0;
-    const hardRaw = data.hard_wins ?? 0;
-
-    const easy = easyRaw % 10 || (easyRaw === 0 ? 0 : 10);
-    const medium = mediumRaw % 10 || (mediumRaw === 0 ? 0 : 10);
-    const hard = hardRaw % 10 || (hardRaw === 0 ? 0 : 10);
-
-    $("#easyWins").textContent = `Easy Wins: ${easy} / 10 🎁 Small Treat`;
-    $("#mediumWins").textContent = `Medium Wins: ${medium} / 10 🎁 Medium Treat`;
-    $("#hardWins").textContent = `Hard Wins: ${hard} / 10 🎁 Large Treat`;
-
-    if (easyRaw > 0 && easyRaw % 10 === 0)
-      showToast("🎁 You earned a Small Treat for 10 Easy Wins!");
-    if (mediumRaw > 0 && mediumRaw % 10 === 0)
-      showToast("🎁 You earned a Medium Treat for 10 Medium Wins!");
-    if (hardRaw > 0 && hardRaw % 10 === 0)
-      showToast("🎁 You earned a Large Treat for 10 Hard Wins!");
-
-    console.log("Game stats loaded", data);
-  } catch (err) {
-    console.error("loadGameStats error:", err);
-  }
-}
-
-// Record win
-async function recordWin(difficulty) {
-  try {
-    const res = await fetch(`${backendUrl}/record_game_win/${pet_id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ difficulty }),
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(`record_game_win failed: ${res.status} ${txt}`);
-    }
-    const data = await res.json();
-    if (data.success) {
-      await new Promise((r) => setTimeout(r, 220));
-      await loadGameStats();
-      await loadPetCoins();
-      if (data.treat) showToast(`🎉 You earned a free ${data.treat} treat!`);
-      return data;
-    } else {
-      showToast("⚠️ Couldn't record win.");
-      return data;
-    }
-  } catch (err) {
-    console.error("recordWin error:", err);
-    showToast("⚠️ Could not record win. Check console.");
-    return { success: false };
-  }
-}
-
-// Toast
+// ===============================
+// TOAST
+// ===============================
 let toastTimer = null;
 function showToast(msg, ms = 2200) {
-  if (!popupToast) return alert(msg);
   popupToast.textContent = msg;
   popupToast.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    popupToast.classList.remove("show");
-  }, ms);
-}
-
-// Panel helpers
-function openPanel(title) {
-  if (!gamePanel) return;
-  gameTitle.textContent = title;
-  gamePanel.classList.remove("hidden");
-  gameResultEl.textContent = "";
-  playAgainBtn.classList.add("hidden");
-  claimRewardBtn.classList.remove("hidden");
-  enableInteractive();
-}
-
-function closePanel() {
-  if (!gamePanel) return;
-  gamePanel.classList.add("hidden");
-  gameBody.innerHTML = `<p class="muted">Choose a game on the left to begin — results and actions appear here.</p>`;
-  gameResultEl.textContent = "";
-  currentGame = null;
-}
-
-function renderChoices(html) {
-  gameBody.innerHTML = html;
+  toastTimer = setTimeout(() => popupToast.classList.remove("show"), ms);
 }
 
 // ===============================
-// GAME LOGICS
+// ENABLE / DISABLE INTERACTION
 // ===============================
-function startEasyGame() {
-  currentGame = "easy";
-  const correct = Math.random() < 0.5 ? "heads" : "tails";
-  openPanel("🪙 Heads or Tails");
-  renderChoices(`
-    <p>Pick heads or tails — win a small coin reward!</p>
-    <div class="choice-row">
-      <button class="choice-btn" data-choice="heads">Heads</button>
-      <button class="choice-btn" data-choice="tails">Tails</button>
-    </div>
-  `);
-
-  const choices = gameBody.querySelectorAll(".choice-btn");
-  choices.forEach((b) =>
-    b.addEventListener(
-      "click",
-      async () => {
-        const choice = b.dataset.choice;
-        if (choice === correct) {
-          gameResultEl.textContent = "🎉 You won!";
-          showToast("🎉 Correct — you won!");
-          await recordWin("easy");
-        } else {
-          gameResultEl.textContent = `😢 You lost — it was ${correct}.`;
-          showToast(`😢 It was ${correct}.`);
-        }
-        disableInteractive();
-        playAgainBtn.classList.remove("hidden");
-      },
-      { once: true }
-    )
-  );
+function disableInteractive() {
+  $$(".choice-btn").forEach((b) => { b.disabled = true; b.style.opacity = 0.6; });
+  gameBody.querySelectorAll("input").forEach((i) => { i.disabled = true; i.style.opacity = 0.8; });
 }
-
-function startMediumGame() {
-  currentGame = "medium";
-  const number = Math.floor(Math.random() * 3) + 1;
-  openPanel("🎯 Guess the Number (1–3)");
-  renderChoices(`
-    <p>Guess a number from <strong>1</strong> to <strong>3</strong>:</p>
-    <div class="input-inline">
-      <input id="guessInput" type="number" min="1" max="3" placeholder="1" aria-label="Guess number 1 to 3"/>
-      <button id="guessBtn" class="choice-btn">Guess</button>
-    </div>
-  `);
-
-  const guessBtn = gameBody.querySelector("#guessBtn");
-  const guessInput = gameBody.querySelector("#guessInput");
-  guessBtn?.addEventListener(
-    "click",
-    async () => {
-      const val = parseInt(guessInput.value, 10);
-      if (!Number.isFinite(val) || val < 1 || val > 3) {
-        showToast("Enter a number between 1 and 3");
-        return;
-      }
-      if (val === number) {
-        gameResultEl.textContent = "🎉 Correct!";
-        showToast("🎉 Correct!");
-        await recordWin("medium");
-      } else {
-        gameResultEl.textContent = `😢 Wrong — it was ${number}.`;
-        showToast(`😢 It was ${number}.`);
-      }
-      disableInteractive();
-      playAgainBtn.classList.remove("hidden");
-    },
-    { once: true }
-  );
-}
-
-function startHardGame() {
-  currentGame = "hard";
-  const a = Math.floor(Math.random() * 10) + 1;
-  const b = Math.floor(Math.random() * 10) + 1;
-  const c = Math.floor(Math.random() * 10) + 1;
-  const sum = a + b + c;
-  openPanel("🧮 Add 3 Numbers");
-  renderChoices(`
-    <p class="muted">${a} + ${b} + ${c} = ?</p>
-    <div class="input-inline">
-      <input id="mathInput" type="number" placeholder="0" aria-label="Sum of three numbers"/>
-      <button id="mathBtn" class="choice-btn">Submit</button>
-    </div>
-  `);
-
-  const mathBtn = gameBody.querySelector("#mathBtn");
-  const mathInput = gameBody.querySelector("#mathInput");
-  mathBtn?.addEventListener(
-    "click",
-    async () => {
-      const val = parseInt(mathInput.value, 10);
-      if (!Number.isFinite(val)) {
-        showToast("Enter a valid number");
-        return;
-      }
-      if (val === sum) {
-        gameResultEl.textContent = "🎉 Correct!";
-        showToast("🎉 Correct!");
-        await recordWin("hard");
-      } else {
-        gameResultEl.textContent = `😢 Wrong! It was ${sum}.`;
-        showToast(`😢 Wrong! It was ${sum}.`);
-      }
-      disableInteractive();
-      playAgainBtn.classList.remove("hidden");
-    },
-    { once: true }
-  );
+function enableInteractive() {
+  $$(".choice-btn").forEach((b) => { b.disabled = false; b.style.opacity = ""; });
+  gameBody.querySelectorAll("input").forEach((i) => { i.disabled = false; i.style.opacity = ""; });
 }
 
 // ===============================
-// DOMContentLoaded
+// LOAD COINS & STATS
 // ===============================
-document.addEventListener("DOMContentLoaded", () => {
-  loadPetCoins();
-  loadGameStats();
+async function loadPetCoins() {
+  try {
+    const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
+    const data = await res.json();
+    petCoinsEl.textContent = `Your Coins: ${data.coins ?? 0} 🪙`;
+  } catch { petCoinsEl.textContent = "Your Coins: 0 🪙"; }
+}
 
-  $("#easyGame")?.addEventListener("click", startEasyGame);
-  $("#mediumGame")?.addEventListener("click", startMediumGame);
-  $("#hardGame")?.addEventListener("click", startHardGame);
+async function loadGameStats() {
+  try {
+    const res = await fetch(`${backendUrl}/get_game_stats/${pet_id}?t=${Date.now()}`);
+    const data = await res.json();
+    const easy = data.easy_wins ?? 0;
+    const medium = data.medium_wins ?? 0;
+    const hard = data.hard_wins ?? 0;
+    $("#easyWins").textContent = `Easy Wins: ${easy % 10 || (easy===0?0:10)} / 10 🎁 Small Treat`;
+    $("#mediumWins").textContent = `Medium Wins: ${medium % 10 || (medium===0?0:10)} / 10 🎁 Medium Treat`;
+    $("#hardWins").textContent = `Hard Wins: ${hard % 10 || (hard===0?0:10)} / 10 🎁 Large Treat`;
+  } catch (err) { console.error(err); }
+}
 
-  closePanelBtn?.addEventListener("click", closePanel);
-  $("#backToPetMenu")?.addEventListener("click", () => (window.location.href = "main.html"));
-
-  // 🆕 Updated play again: restart the same game type fresh
-  playAgainBtn?.addEventListener("click", () => {
-    enableInteractive();
-    gameResultEl.textContent = "";
-    playAgainBtn.classList.add("hidden");
-    if (currentGame === "easy") startEasyGame();
-    else if (currentGame === "medium") startMediumGame();
-    else if (currentGame === "hard") startHardGame();
-    else showToast("Choose a game first!");
-  });
-
-  // claimRewardBtn now acts as cancel
-  if (claimRewardBtn) {
-    claimRewardBtn.textContent = "Cancel Game";
-    claimRewardBtn.addEventListener("click", () => {
-      closePanel();
-      showToast("Game cancelled.");
+// ===============================
+// RECORD WIN
+// ===============================
+async function recordWin(difficulty) {
+  try {
+    const res = await fetch(`${backendUrl}/record_game_win/${pet_id}`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({difficulty})
     });
-  }
+    const data = await res.json();
+    if(data.success){ loadGameStats(); loadPetCoins(); return data; }
+    else showToast("⚠️ Couldn't record win.");
+  } catch { showToast("⚠️ Could not record win."); }
+}
 
-  // debug missing element warnings
-  if (!$("#easyGame")) console.warn("easyGame button not found");
-  if (!$("#mediumGame")) console.warn("mediumGame button not found");
-  if (!$("#hardGame")) console.warn("hardGame button not found");
-  if (!$("#gamePanel")) console.warn("gamePanel element not found");
-  if (!$("#popupMessage")) console.warn("popupMessage element not found");
+// ===============================
+// PANEL HELPERS
+// ===============================
+function openPanel(title){ gameTitle.textContent=title; gamePanel.classList.remove("hidden"); gameResultEl.textContent=""; playAgainBtn.classList.add("hidden"); claimRewardBtn.classList.remove("hidden"); enableInteractive(); }
+function closePanel(){ gamePanel.classList.add("hidden"); gameBody.innerHTML=`<img id="petFace" class="pet-face" alt="Your Pet" width="80" height="80"/><p class="muted">Choose a game on the left to begin — results and actions appear here.</p>`; document.getElementById("petFace").src=petFaceEl.src; currentGame=null; }
+function renderChoices(html){ gameBody.innerHTML=`<img id="petFace" class="pet-face" alt="Your Pet" width="80" height="80"/>`+html; document.getElementById("petFace").src=petFaceEl.src; }
+
+// ===============================
+// PET EXPRESSION
+// ===============================
+function setPetExpression(win=true){
+  if(petType==="cat") petFaceEl.src=win?"https://petsyfrontend.onrender.com/static/images/cat_happy.png":"https://petsyfrontend.onrender.com/static/images/cat_sad.png";
+  else if(petType==="dog") petFaceEl.src=win?"https://petsyfrontend.onrender.com/static/images/dog_happy.png":"https://petsyfrontend.onrender.com/static/images/dog_sad.png";
+}
+
+// ===============================
+// GAMES
+// ===============================
+function startEasyGame(){
+  currentGame="easy"; const correct=Math.random()<0.5?"heads":"tails"; openPanel("🪙 Heads or Tails");
+  renderChoices(`<p>Pick heads or tails — win a small coin reward!</p><div class="choice-row"><button class="choice-btn" data-choice="heads">Heads</button><button class="choice-btn" data-choice="tails">Tails</button></div>`);
+  gameBody.querySelectorAll(".choice-btn").forEach(b=>b.addEventListener("click",async ()=>{
+    const choice=b.dataset.choice; disableInteractive();
+    if(choice===correct){ gameResultEl.textContent="🎉 You won!"; showToast("🎉 Correct!"); setPetExpression(true); await recordWin("easy"); } 
+    else{ gameResultEl.textContent=`😢 You lost — it was ${correct}`; showToast(`😢 It was ${correct}`); setPetExpression(false); }
+    playAgainBtn.classList.remove("hidden");
+  },{once:true}));
+}
+
+function startMediumGame(){
+  currentGame="medium"; const number=Math.floor(Math.random()*3)+1; openPanel("🎯 Guess Number (1–3)");
+  renderChoices(`<p>Guess a number from <strong>1</strong> to <strong>3</strong>:</p><div class="input-inline"><input id="guessInput" type="number" min="1" max="3"/><button id="guessBtn" class="choice-btn">Guess</button></div>`);
+  const guessBtn=gameBody.querySelector("#guessBtn"), guessInput=gameBody.querySelector("#guessInput");
+  guessBtn.addEventListener("click", async ()=>{
+    const val=parseInt(guessInput.value,10); disableInteractive();
+    if(val===number){ gameResultEl.textContent="🎉 Correct!"; showToast("🎉 Correct!"); setPetExpression(true); await recordWin("medium"); }
+    else{ gameResultEl.textContent=`😢 Wrong — it was ${number}`; showToast(`😢 It was ${number}`); setPetExpression(false); }
+    playAgainBtn.classList.remove("hidden");
+  },{once:true});
+}
+
+function startHardGame(){
+  currentGame="hard"; const a=Math.floor(Math.random()*10)+1, b=Math.floor(Math.random()*10)+1, c=Math.floor(Math.random()*10)+1, sum=a+b+c;
+  openPanel("🧮 Add 3 Numbers");
+  renderChoices(`<p class="muted">${a} + ${b} + ${c} = ?</p><div class="input-inline"><input id="mathInput" type="number"/><button id="mathBtn" class="choice-btn">Submit</button></div>`);
+  const mathBtn=gameBody.querySelector("#mathBtn"), mathInput=gameBody.querySelector("#mathInput");
+  mathBtn.addEventListener("click",async ()=>{
+    const val=parseInt(mathInput.value,10); disableInteractive();
+    if(val===sum){ gameResultEl.textContent="🎉 Correct!"; showToast("🎉 Correct!"); setPetExpression(true); await recordWin("hard"); }
+    else{ gameResultEl.textContent=`😢 Wrong! It was ${sum}`; showToast(`😢 Wrong! It was ${sum}`); setPetExpression(false); }
+    playAgainBtn.classList.remove("hidden");
+  },{once:true});
+}
+
+// ===============================
+// INIT
+// ===============================
+document.addEventListener("DOMContentLoaded",()=>{
+  loadPetFace(); loadPetCoins(); loadGameStats();
+  $("#easyGame")?.addEventListener("click",startEasyGame);
+  $("#mediumGame")?.addEventListener("click",startMediumGame);
+  $("#hardGame")?.addEventListener("click",startHardGame);
+  closePanelBtn?.addEventListener("click",closePanel);
+  $("#backToPetMenu")?.addEventListener("click",()=>window.location.href="main.html");
+  playAgainBtn?.addEventListener("click",()=>{ enableInteractive(); gameResultEl.textContent=""; playAgainBtn.classList.add("hidden"); if(currentGame==="easy") startEasyGame(); else if(currentGame==="medium") startMediumGame(); else if(currentGame==="hard") startHardGame(); else showToast("Choose a game first!"); });
+  if(claimRewardBtn) claimRewardBtn.addEventListener("click",()=>{ closePanel(); showToast("Game cancelled."); });
 });
-
