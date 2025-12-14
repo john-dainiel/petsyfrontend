@@ -9,16 +9,18 @@
 <body>
   <div class="game-menu">
     <h1>🐾 PETSY Minigames</h1>
-    <button onclick="showGame('collect')">Runner 🏃</button>
+    <button onclick="showGame('collect')">Falling coin game</button>
     <button onclick="showGame('quiz')">Quiz ❓</button>
     <button onclick="showGame('memory')">Memory 🃏</button>
   </div>
 
- <div id="runner" class="game-container" style="display:none;">
+<div id="runner" class="game-container" style="display:none;">
   <button id="runnerStartBtn">▶ Start Game</button>
   <canvas id="runnerCanvas" width="800" height="400"></canvas>
-  <p>Use LEFT & RIGHT arrows to move your pet and catch coins!</p>
+  <p>Use LEFT & RIGHT arrows to move your pet and catch coins. Avoid bones and puddles!</p>
+  <div id="gameTimer" style="font-size:20px; margin-top:5px;"></div>
 </div>
+
 
 
   <!-- Quiz Game -->
@@ -55,6 +57,7 @@
   <script src="https://petsyfrontend.onrender.com/static/Js/minigames.js"></script>
 </body>
 </html>
+
 
 
 
