@@ -335,10 +335,22 @@ function showPopup(html,onClose){
 }
 
 /* ==================== INITIALIZE ==================== */
-document.addEventListener('DOMContentLoaded', async()=>{
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load user info
   await loadUserData();
   loadPlayerInfo();
+
+  // Show Runner game by default
+  showGame('runner');
+
+  // Initialize all games
   initRunner('cat');
   initQuiz();
   initMemory();
+
+  // Update all leaderboards on load
+  updateLeaderboard('runner');
+  updateLeaderboard('quiz');
+  updateLeaderboard('memory');
 });
+
