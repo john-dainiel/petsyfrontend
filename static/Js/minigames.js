@@ -200,8 +200,9 @@ function endRunnerGame(){
   ctx.fillText(`Coins collected: ${score}`,canvas.width/2-90,canvas.height/2+20);
 
   showPopup(`Game Over! You earned 🪙 ${score}`, () => {
-    updateCoinsOnServer(score,'runner');   // ✅ SAVE HERE
-    initRunner('cat');                     // retry
+    // ✅ Save coins immediately
+    updateCoinsOnServer(score,'runner');   
+    initRunner('cat'); // restart the runner
   });
 }
 
@@ -406,6 +407,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateLeaderboard('quiz');
   updateLeaderboard('memory');
 });
+
 
 
 
