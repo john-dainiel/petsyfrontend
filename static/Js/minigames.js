@@ -12,21 +12,53 @@ function showGame(game, petType = 'cat') {
 }
 
 /* ==================== RUNNER GAME ==================== */
-let runnerInterval, runnerY, runnerVy, obstacles, score, canvas, ctx, speed;
-let petImg = new Image(), coinImg = new Image();
-let boneImg = new Image(), puddleImg = new Image();
+
+let canvas, ctx;
+let runnerY, runnerVy;
+let obstacles = [];
+let score = 0;
+let speed = 6;
+let runnerInterval = null;
 let runnerRunning = false;
 
-function initRunner(petType='cat'){
+/* IMAGES (LOAD ONCE) */
+const petImg = new Image();
+const coinImg = new Image();
+const boneImg = new Image();
+const puddleImg = new Image();
+
+let imagesLoaded = 0;
+const TOTAL_IMAGES = 4;
+
+function loadImage(img, src) {
+  img.src = src;
+  img.onload = () => imagesLoaded++;
+}
+
+/* ---------- INIT (NO AUTO START) ---------- */
+function initRunner(petType = 'cat') {
   canvas = document.getElementById('runnerCanvas');
-  canvas.width = 800;
-  canvas.height = 400;
   ctx = canvas.getContext('2d');
 
-  petImg.src = petType==='cat'?'static/images/cat_happy.png':'static/images/dog_happy.png';
-  coinImg.src = 'static/images/coin.png';
-  boneImg.src = 'static/images/bone.png';
-  puddleImg.src = 'static/images/puddle.png';
+  canvas.width = 800;
+  canvas.height = 400;
+
+  loadImage(
+    petImg,
+    petType === 'cat'
+      ? 'static/images/cat_happy.png'
+      : 'static/images/dog_happy.png'
+  );
+  loadImage(coinImg, 'static/images/coin.png');
+  loadImage(boneImg, 'static/images/bone.png');
+  loadImage(puddleImg, 'static/images/puddle.png');
+
+  resetRunner();
+}
+
+/* ---------- RESET GAME STATE ---------- */
+function resetRunner() {
+  clearInterval(runnerInterval);
 
   runnerY = canvas.height - 80;
   runnerVy = 0;
@@ -35,77 +67,118 @@ function initRunner(petType='cat'){
   speed = 6;
   runnerRunning = false;
 
-  document.getElementById('runnerStartBtn').onclick = () => {
-    if(!runnerRunning){
-      runnerRunning = true;
-      alert("Runner Instructions:\nPress SPACE to jump.\nCollect coins.\nAvoid obstacles!");
-      runnerInterval = setInterval(runGameLoop, 20);
-    }
-  };
-
-  document.onkeydown = function(e){
-    if(e.code==='Space'){
-      e.preventDefault();
-      if(runnerY>=canvas.height-80) runnerVy = -12;
-    }
-  };
+  drawStartScreen();
 }
 
-function runGameLoop(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+/* ---------- START BUTTON ---------- */
+document.getElementById('runnerStartBtn').onclick = () => {
+  if (runnerRunning) return;
 
-  // Draw ground
+  if (imagesLoaded < TOTAL_IMAGES) {
+    alert('Images still loading, please wait...');
+    return;
+  }
+
+  runnerRunning = true;
+  runnerInterval = setInterval(runGameLoop, 20);
+};
+
+/* ---------- INPUT ---------- */
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && runnerRunning) {
+    e.preventDefault();
+    if (runnerY >= canvas.height - 80) runnerVy = -12;
+  }
+});
+
+/* ---------- GAME LOOP ---------- */
+function runGameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Ground
   ctx.fillStyle = '#cce0ff';
-  ctx.fillRect(0,canvas.height-40,canvas.width,40);
+  ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
 
   // Gravity
   runnerVy += 0.6;
   runnerY += runnerVy;
-  if(runnerY>canvas.height-80) runnerY=canvas.height-80, runnerVy=0;
+  if (runnerY > canvas.height - 80) {
+    runnerY = canvas.height - 80;
+    runnerVy = 0;
+  }
 
-  // Spawn obstacles and coins
-  if(Math.random() < 0.02){ obstacles.push({x:canvas.width, y:canvas.height-70, w:30, h:30, type:'bone'}); }
-  if(Math.random() < 0.01){ obstacles.push({x:canvas.width, y:canvas.height-120-Math.random()*50, w:25, h:25, type:'coin'}); }
-  if(Math.random() < 0.01){ obstacles.push({x:canvas.width, y:canvas.height-70, w:30, h:30, type:'puddle'}); }
+  // Spawn
+  if (Math.random() < 0.02)
+    obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'bone' });
 
-  // Move and draw obstacles
-  for(let i=obstacles.length-1;i>=0;i--){
+  if (Math.random() < 0.01)
+    obstacles.push({ x: canvas.width, y: canvas.height - 120, w: 25, h: 25, type: 'coin' });
+
+  if (Math.random() < 0.01)
+    obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'puddle' });
+
+  // Move & Draw
+  for (let i = obstacles.length - 1; i >= 0; i--) {
     const ob = obstacles[i];
     ob.x -= speed;
 
-    if(ob.type==='bone') ctx.drawImage(boneImg, ob.x, ob.y, ob.w, ob.h);
-    else if(ob.type==='puddle') ctx.drawImage(puddleImg, ob.x, ob.y, ob.w, ob.h);
-    else if(ob.type==='coin') ctx.drawImage(coinImg, ob.x, ob.y, ob.w, ob.h);
+    if (ob.type === 'bone') ctx.drawImage(boneImg, ob.x, ob.y, ob.w, ob.h);
+    if (ob.type === 'coin') ctx.drawImage(coinImg, ob.x, ob.y, ob.w, ob.h);
+    if (ob.type === 'puddle') ctx.drawImage(puddleImg, ob.x, ob.y, ob.w, ob.h);
 
-    // Collision detection
-    if(50+25 > ob.x && 50-25 < ob.x+ob.w && runnerY+50 > ob.y && runnerY < ob.y+ob.h){
-      if(ob.type==='coin'){ score+=1; alert("💰 Coin collected!"); }
-      else { 
-        alert(`💥 Game Over! Score: ${score}`);
-        clearInterval(runnerInterval);
-        runnerRunning = false;
-        initRunner(); // reset game
+    // Collision
+    if (
+      50 + 25 > ob.x &&
+      50 - 25 < ob.x + ob.w &&
+      runnerY + 50 > ob.y &&
+      runnerY < ob.y + ob.h
+    ) {
+      if (ob.type === 'coin') {
+        score++;
+        obstacles.splice(i, 1);
+      } else {
+        endRunnerGame();
         return;
       }
-      obstacles.splice(i,1);
     }
 
-    // Remove off-screen
-    if(ob.x + ob.w < 0) obstacles.splice(i,1);
+    if (ob.x + ob.w < 0) obstacles.splice(i, 1);
   }
 
-  // Increase speed gradually
-  speed = 6 + Math.floor(score/5);
+  speed = 6 + Math.floor(score / 5);
 
-  // Pet bounce
-  let petOffsetY = runnerY + Math.sin(Date.now()/100)*2;
-  ctx.drawImage(petImg,50-25,petOffsetY-25,50,50);
+  // Draw pet
+  ctx.drawImage(petImg, 25, runnerY, 50, 50);
 
   // Score
-  ctx.fillStyle='black';
-  ctx.font='22px Arial';
-  ctx.fillText('Score: '+score,canvas.width-150,30);
+  ctx.fillStyle = '#000';
+  ctx.font = '22px Arial';
+  ctx.fillText(`Score: ${score}`, canvas.width - 140, 30);
 }
+
+/* ---------- END GAME ---------- */
+function endRunnerGame() {
+  clearInterval(runnerInterval);
+  runnerRunning = false;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '36px Arial';
+  ctx.fillText('Game Over', canvas.width / 2 - 90, canvas.height / 2 - 10);
+  ctx.font = '22px Arial';
+  ctx.fillText(`Score: ${score}`, canvas.width / 2 - 50, canvas.height / 2 + 30);
+}
+
+/* ---------- START SCREEN ---------- */
+function drawStartScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#000';
+  ctx.font = '28px Arial';
+  ctx.fillText('Click ▶ Start Runner to Play', 220, 200);
+}
+
 
 /* ==================== QUIZ GAME ==================== */
 
@@ -408,5 +481,6 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
 
 
