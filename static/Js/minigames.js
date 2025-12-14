@@ -24,7 +24,7 @@ function initRunner(petType = 'cat') {
   ctx = canvas.getContext('2d');
 
   // Load images depending on pet type
-  petImg.src = petType === 'cat' ? 'static/images/cat.png' : 'static/images/dog.png';
+  petImg.src = petType === 'cat' ? 'static/images/cat_happy.png' : 'static/images/dog_happy.png';
   coinImg.src = 'static/images/coin.png';
   bgImg.src = 'static/images/background.png';
 
@@ -198,3 +198,4 @@ function selectMemoryCard(i) {
   }
   renderMemory();
 }
+
