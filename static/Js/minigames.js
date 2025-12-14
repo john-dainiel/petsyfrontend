@@ -378,6 +378,7 @@ function showPopup(html,onClose){
 }
 
 
+
 /* ==================== POPUP ==================== */
 function showPopup(html,onClose){
   const overlay=document.createElement('div'); overlay.className='popup-overlay';
@@ -405,6 +406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateLeaderboard('quiz');
   updateLeaderboard('memory');
 });
+
 
 
 
