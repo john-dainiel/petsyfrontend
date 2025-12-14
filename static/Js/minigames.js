@@ -453,12 +453,33 @@ function refreshLeaderboard() {
     .then(res => res.json())
     .then(data => {
       const lbDiv = document.getElementById('leaderboard');
-      if(lbDiv) lbDiv.innerHTML = data.map(u => `${u.username}: 🪙 ${u.coins}`).join('<br>');
-    });
+      if(lbDiv) {
+        lbDiv.innerHTML = ''; // clear old content
+
+        // Sort users by coins descending
+        data.sort((a, b) => b.coins - a.coins);
+
+        data.forEach((user, index) => {
+          const userDiv = document.createElement('div');
+          const rank = index + 1; // 1-based ranking
+          userDiv.innerText = `${rank}. ${user.username}: 🪙 ${user.coins}`;
+
+          // Highlight current user
+          if(user.username === currentUser) {
+            userDiv.classList.add('me');
+          }
+
+          lbDiv.appendChild(userDiv);
+        });
+      }
+    })
+    .catch(err => console.error('Error fetching leaderboard:', err));
 }
+
 
 /* ==================== INITIALIZE ==================== */
 initRunner('cat');
 initQuiz();
 initMemory();
 refreshLeaderboard();
+
