@@ -287,146 +287,96 @@ function showQuizControls(){
   controls.appendChild(stop);
 }
 
-
 /* ==================== MEMORY GAME ==================== */
-let memoryCards = [],
-    memoryFlipped = [],
-    memoryMatched = [],
-    memoryLevel = 1,
-    memoryCoins = 0,
-    timeLeft = 30,
-    memorytimerInterval = null,
-    memoryGameEnded = false;
-
-const memoryImages = [
+let memoryCards=[], memoryFlipped=[], memoryMatched=[], memoryLevel=1, memoryCoins=0, timeLeft=30, memorytimerInterval=null;
+const memoryImages=[
   '/static/images/memory1.png','/static/images/memory2.png','/static/images/memory3.png','/static/images/memory4.png',
   '/static/images/memory5.png','/static/images/memory6.png','/static/images/memory7.png','/static/images/memory8.png'
 ];
 
 function initMemory(){
   clearInterval(memorytimerInterval);
-  memoryLevel = 1;
-  memoryCoins = 0;
-  memoryCards = [];
-  memoryFlipped = [];
-  memoryMatched = [];
-  timeLeft = 30;
-  memoryGameEnded = false;
-
-  document.getElementById('memoryTimer').innerText = '⏱️ 30s';
-  document.getElementById('memoryInfo').innerText = 'Level 1 • Coins 🪙 0';
-  document.getElementById('memoryGrid').innerHTML =
-    '<p style="font-size:20px;">Click ▶ Start Memory to begin</p>';
-  document.getElementById('memoryStartBtn').disabled = false;
+  memoryLevel=1; memoryCoins=0; memoryCards=[]; memoryFlipped=[]; memoryMatched=[];
+  timeLeft=30;
+  document.getElementById('memoryTimer').innerText='⏱️ 30s';
+  document.getElementById('memoryInfo').innerText='Level 1 • Coins 🪙 0';
+  document.getElementById('memoryGrid').innerHTML='<p style="font-size:20px;">Click ▶ Start Memory to begin</p>';
+  document.getElementById('memoryStartBtn').disabled=false;
 }
 
-document.getElementById('memoryStartBtn').onclick = () => {
-  document.getElementById('memoryStartBtn').disabled = true;
+document.getElementById('memoryStartBtn').onclick=()=>{
+  document.getElementById('memoryStartBtn').disabled=true;
   startMemoryLevel();
 };
 
 function startMemoryLevel(){
   clearInterval(memorytimerInterval);
-
-  const pairs = Math.min(2 + memoryLevel, memoryImages.length);
-  const selected = memoryImages.slice(0, pairs);
-
-  memoryCards = [...selected, ...selected].sort(() => Math.random() - 0.5);
-  memoryFlipped = [];
-  memoryMatched = [];
-
-  timeLeft = Math.max(10, 30 - (memoryLevel - 1) * 3);
-
-  startMemoryTimer();
-  renderMemory();
+  const pairs=Math.min(2+memoryLevel,memoryImages.length);
+  const selected=memoryImages.slice(0,pairs);
+  memoryCards=[...selected,...selected].sort(()=>Math.random()-0.5);
+  memoryFlipped=[]; memoryMatched=[];
+  timeLeft=Math.max(10,30-(memoryLevel-1)*3);
+  startMemoryTimer(); renderMemory();
 }
 
 function startMemoryTimer(){
   updateMemoryTimerUI();
-
-  memorytimerInterval = setInterval(() => {
-    timeLeft--;
-    updateMemoryTimerUI();
-
-    if (timeLeft <= 0 && !memoryGameEnded) {
-      memoryGameEnded = true;
+  memorytimerInterval=setInterval(()=>{
+    timeLeft--; updateMemoryTimerUI();
+    if(timeLeft<=0){
       clearInterval(memorytimerInterval);
-
-      showPopup(`⏰ Time's up! Coins: 🪙 ${memoryCoins}`, () => {
-        updateCoinsOnServer(memoryCoins, 'memory'); // ✅ SAVE HERE
-        initMemory();
-      });
+      // Save coins to server when time runs out
+      updateCoinsOnServer(memoryCoins,'memory');
+      showPopup(`⏰ Time's up! Coins: 🪙 ${memoryCoins}`,()=>initMemory());
     }
-  }, 1000);
+  },1000);
 }
 
-function updateMemoryTimerUI(){
-  document.getElementById('memoryTimer').innerText = `⏱️ ${timeLeft}s`;
-}
+function updateMemoryTimerUI(){ document.getElementById('memoryTimer').innerText=`⏱️ ${timeLeft}s`; }
 
 function renderMemory(){
-  const grid = document.getElementById('memoryGrid');
-  grid.innerHTML = '';
-
-  memoryCards.forEach((imgSrc, index) => {
-    const card = document.createElement('div');
-    card.className = 'memory-card';
-
-    if (memoryFlipped.includes(index) || memoryMatched.includes(index)) {
-      const img = document.createElement('img');
-      img.src = imgSrc;
-      card.appendChild(img);
-    } else {
-      card.innerText = '❓';
-    }
-
-    card.onclick = () => flipMemoryCard(index);
+  const grid=document.getElementById('memoryGrid'); grid.innerHTML='';
+  memoryCards.forEach((imgSrc,index)=>{
+    const card=document.createElement('div'); card.className='memory-card';
+    if(memoryFlipped.includes(index)||memoryMatched.includes(index)){ 
+      const img=document.createElement('img'); img.src=imgSrc; card.appendChild(img); 
+    } else card.innerText='❓';
+    card.onclick=()=>flipMemoryCard(index);
     grid.appendChild(card);
   });
-
-  document.getElementById('memoryInfo').innerText =
-    `Level ${memoryLevel} • Coins 🪙 ${memoryCoins}`;
+  document.getElementById('memoryInfo').innerText=`Level ${memoryLevel} • Coins 🪙 ${memoryCoins}`;
 }
 
 function flipMemoryCard(index){
-  if (
-    memoryFlipped.length === 2 ||
-    memoryFlipped.includes(index) ||
-    memoryMatched.includes(index) ||
-    memoryGameEnded
-  ) return;
-
-  memoryFlipped.push(index);
-  renderMemory();
-
-  if (memoryFlipped.length === 2) {
-    const [a, b] = memoryFlipped;
-
-    if (memoryCards[a] === memoryCards[b]) {
-      memoryMatched.push(a, b);
-      memoryCoins++;
-      memoryFlipped = [];
-
-      if (memoryMatched.length === memoryCards.length) {
+  if(memoryFlipped.length===2||memoryFlipped.includes(index)||memoryMatched.includes(index)) return;
+  memoryFlipped.push(index); renderMemory();
+  if(memoryFlipped.length===2){
+    const [a,b]=memoryFlipped;
+    if(memoryCards[a]===memoryCards[b]){
+      memoryMatched.push(a,b); memoryCoins++; memoryFlipped=[];
+      if(memoryMatched.length===memoryCards.length){
         clearInterval(memorytimerInterval);
-
-        // ✅ Final save ONLY when user confirms
-        showPopup(
-          `🎉 Level ${memoryLevel} Complete! Coins: 🪙 ${memoryCoins}`,
-          () => {
-            updateCoinsOnServer(memoryCoins, 'memory');
-            initMemory();
-          }
-        );
+        showPopup(`🎉 Level ${memoryLevel} Complete! Coins: 🪙 ${memoryCoins}`,()=>{
+          // Save coins to server before starting next level
+          updateCoinsOnServer(memoryCoins,'memory');
+          memoryLevel++; startMemoryLevel();
+        });
       }
-    } else {
-      setTimeout(() => {
-        memoryFlipped = [];
-        renderMemory();
-      }, 700);
-    }
+    } else setTimeout(()=>{ memoryFlipped=[]; renderMemory(); },700);
   }
 }
+
+/* ==================== POPUP ==================== */
+function showPopup(html,onClose){
+  const overlay=document.createElement('div'); overlay.className='popup-overlay';
+  overlay.innerHTML=`<div class="popup-box"><div class="popup-text">${html}</div><button class="popup-btn">OK</button></div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('button').onclick=()=>{ 
+    overlay.remove(); 
+    if(onClose) onClose(); 
+  };
+}
+
 
 /* ==================== POPUP ==================== */
 function showPopup(html,onClose){
@@ -455,6 +405,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateLeaderboard('quiz');
   updateLeaderboard('memory');
 });
+
 
 
 
