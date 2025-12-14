@@ -24,9 +24,14 @@ function getUserId() {
 /* ==================== PLAYER INFO ==================== */
 function loadPlayerInfo() {
   const playerDiv = document.getElementById('playerInfo');
-  const username = localStorage.getItem('username') || 'Guest';
-  const totalCoins = localStorage.getItem('totalCoins') || 0;
+  const username = localStorage.getItem('username');
+  const totalCoins = localStorage.getItem('totalCoins');
+  if (!username || totalCoins === null) {
+    playerDiv.innerText = "Loading player info...";
+    return false;
+  }
   playerDiv.innerText = `Player: ${username} • Total Coins: 🪙 ${totalCoins}`;
+  return true;
 }
 
 /* ==================== FETCH USER & PET INFO ==================== */
@@ -46,9 +51,73 @@ async function loadUserData() {
       localStorage.setItem('userId', data.id);
       localStorage.setItem('petId', data.pet_id);
       loadPlayerInfo();
+    } else {
+      console.error("Failed to load user info:", data.error);
     }
   } catch(err) {
     console.error("Error fetching user data:", err);
+  }
+}
+
+/* ==================== BACKEND UPDATE ==================== */
+function updateCoinsOnServer(coinsEarned, gameType) {
+  const userToken = localStorage.getItem('userToken'); 
+  const petId = localStorage.getItem('petId');
+  const userId = getUserId();
+
+  if (!userToken || !petId || !userId) {
+    console.error("Missing user info. Coins not updated.");
+    return;
+  }
+
+  fetch(`${backendUrl}/mini_game/win/${petId}`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken}`
+    },
+    body: JSON.stringify({ 
+      coins_earned: coinsEarned,
+      user_id: userId,
+      game_type: gameType
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success) {
+      localStorage.setItem('totalCoins', data.coins || 0);
+      loadPlayerInfo();
+      refreshLeaderboard(gameType);
+    } else {
+      console.error('Error updating coins:', data.error);
+    }
+  })
+  .catch(err => console.error('Error updating coins:', err));
+}
+
+/* ==================== LEADERBOARD ==================== */
+function refreshLeaderboard(gameType = 'runner') {
+  fetch(`${backendUrl}/leaderboard?game=${gameType}`)
+    .then(res => res.json())
+    .then(data => {
+      const lbDiv = document.getElementById('leaderboard');
+      if(lbDiv) {
+        if(data.length === 0) {
+          lbDiv.innerHTML = 'No scores yet';
+        } else {
+          lbDiv.innerHTML = data.slice(0, 10)
+            .map((u, i) => `${i + 1}. ${u.username}: 🪙 ${u.coins}`)
+            .join('<br>');
+        }
+      }
+    })
+    .catch(err => console.error('Error fetching leaderboard:', err));
+}
+
+/* ==================== PLAYER INFO DISPLAY ==================== */
+function displayPlayerInfo() {
+  if (!loadPlayerInfo()) {
+    setTimeout(displayPlayerInfo, 500); // wait until data loads
   }
 }
 
@@ -58,14 +127,14 @@ function showGame(game, petType = 'cat') {
   games.forEach(g => g.style.display = 'none');
   document.getElementById(game).style.display = 'block';
 
-  refreshLeaderboard(game); // refresh leaderboard for current game
+  refreshLeaderboard(game);
 
   if (game === 'runner') initRunner(petType);
   if (game === 'quiz') initQuiz();
   if (game === 'memory') initMemory();
 }
 
-/* ==================== COIN CATCHER (RUNNER) ==================== */
+/* ==================== RUNNER GAME ==================== */
 let canvas, ctx;
 let petX, petY, petWidth = 80, petHeight = 80;
 let coins = [], obstacles = [];
@@ -87,6 +156,7 @@ function loadImage(img, src) {
 
 function initRunner(petType = 'cat') {
   canvas = document.getElementById('runnerCanvas');
+  if(!canvas) return;
   ctx = canvas.getContext('2d');
 
   petX = canvas.width / 2 - petWidth / 2;
@@ -109,6 +179,7 @@ function initRunner(petType = 'cat') {
 }
 
 function drawStartScreen() {
+  if(!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#cce0ff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -118,14 +189,14 @@ function drawStartScreen() {
   ctx.fillText('Click ▶ Start Game', canvas.width / 2 - 150, canvas.height / 2);
 }
 
-document.getElementById('runnerStartBtn').onclick = () => {
+document.getElementById('runnerStartBtn')?.addEventListener('click', () => {
   if (gameRunning) return;
   if (imagesLoaded < TOTAL_IMAGES) {
     alert("Loading images, please wait...");
     return;
   }
-  startGame();
-};
+  startRunnerGame();
+});
 
 document.addEventListener('keydown', e => {
   if (!gameRunning) return;
@@ -146,27 +217,26 @@ function spawnObstacle() {
   obstacles.push({ x: x, y: -30, width: 50, height: 50, type: type });
 }
 
-function startGame() {
+function startRunnerGame() {
   gameRunning = true; score = 0; coins = []; obstacles = []; countdown = 30;
 
   updateTimerDisplay();
-  const coinsDiv = document.getElementById('runnerCoins');
-  if (coinsDiv) coinsDiv.innerText = `Coins 🪙 0`;
+  document.getElementById('runnerCoins').innerText = `Coins 🪙 0`;
 
-  gameInterval = setInterval(gameLoop, 20);
+  gameInterval = setInterval(runnerGameLoop, 20);
   timerInterval = setInterval(() => {
     countdown--;
     updateTimerDisplay();
-    if (countdown <= 0) endGame();
+    if (countdown <= 0) endRunnerGame();
   }, 1000);
 }
 
 function updateTimerDisplay() {
-  const timerEl = document.getElementById('gameTimer');
-  if (timerEl) timerEl.innerText = `Time left: ${countdown}s`;
+  document.getElementById('gameTimer')?.innerText = `Time left: ${countdown}s`;
 }
 
-function gameLoop() {
+function runnerGameLoop() {
+  if(!ctx) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#cce0ff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -176,6 +246,7 @@ function gameLoop() {
   if (Math.random() < 0.02) spawnCoin();
   if (Math.random() < 0.01) spawnObstacle();
 
+  // coins
   for (let i = coins.length - 1; i >= 0; i--) {
     const c = coins[i];
     c.y += 4;
@@ -187,13 +258,13 @@ function gameLoop() {
         c.y + c.height > petY) {
       score++;
       coins.splice(i, 1);
-      const coinsDiv = document.getElementById('runnerCoins');
-      if (coinsDiv) coinsDiv.innerText = `Coins 🪙 ${score}`;
+      document.getElementById('runnerCoins').innerText = `Coins 🪙 ${score}`;
     }
 
     if (c.y > canvas.height) coins.splice(i, 1);
   }
 
+  // obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const ob = obstacles[i];
     ob.y += 5;
@@ -205,7 +276,7 @@ function gameLoop() {
         ob.x + ob.width > petX &&
         ob.y < petY + petHeight &&
         ob.y + ob.height > petY) {
-      endGame();
+      endRunnerGame();
       return;
     }
 
@@ -213,11 +284,12 @@ function gameLoop() {
   }
 }
 
-function endGame() {
+function endRunnerGame() {
   clearInterval(gameInterval);
   clearInterval(timerInterval);
   gameRunning = false;
 
+  if(!ctx) return;
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -251,7 +323,7 @@ function endGame() {
 let quizCoins = 0, currentQuestion = null, quizStarted = false;
 
 function initQuiz() {
-  quizStarted = false; currentQuestion = null;
+  quizCoins = 0; quizStarted = false; currentQuestion = null;
   document.getElementById('quizCoins').innerText = 'Coins 🪙 0';
   document.getElementById('quizQuestion').innerText = 'Click ▶ Start Quiz to begin';
   document.getElementById('quizAnswers').innerHTML = '';
@@ -259,11 +331,11 @@ function initQuiz() {
   document.getElementById('quizStartBtn').disabled = false;
 }
 
-document.getElementById('quizStartBtn').onclick = () => {
+document.getElementById('quizStartBtn')?.addEventListener('click', () => {
   quizStarted = true;
   document.getElementById('quizStartBtn').disabled = true;
   showQuizQuestion();
-};
+});
 
 function generateQuizQuestion() {
   const a = 1 + Math.floor(Math.random() * 10);
@@ -313,8 +385,8 @@ function checkQuizAnswer(selected) {
   document.querySelectorAll('.quiz-btn').forEach(b => b.disabled = true);
 
   if (selected === correct) quizCoins++;
-  document.getElementById('quizCoins').innerText = `Coins 🪙 ${quizCoins}`;
   feedback.innerText = selected === correct ? '✅ Correct!' : `❌ Wrong! Correct: ${correct}`;
+  document.getElementById('quizCoins').innerText = `Coins 🪙 ${quizCoins}`;
 
   showQuizControls();
 }
@@ -350,10 +422,10 @@ let memoryCards = [], memoryFlipped = [], memoryMatched = [];
 let memoryLevel = 1, memoryCoins = 0, timeLeft = 30, memorytimerInterval = null;
 
 const memoryImages = [
-  '/static/images/memory1.png', '/static/images/memory2.png', '/static/images/memory3.png',
-  '/static/images/memory4.png', '/static/images/memory5.png', '/static/images/memory6.png',
-  '/static/images/memory7.png', '/static/images/memory8.png', '/static/images/memory9.png',
-  '/static/images/memory10.png', '/static/images/memory11.png', '/static/images/memory12.png'
+  '/static/images/memory1.png','/static/images/memory2.png','/static/images/memory3.png',
+  '/static/images/memory4.png','/static/images/memory5.png','/static/images/memory6.png',
+  '/static/images/memory7.png','/static/images/memory8.png','/static/images/memory9.png',
+  '/static/images/memory10.png','/static/images/memory11.png','/static/images/memory12.png'
 ];
 
 function initMemory() {
@@ -362,15 +434,15 @@ function initMemory() {
   timeLeft = 30;
 
   document.getElementById('memoryTimer').innerText = '⏱️ 30s';
-  document.getElementById('memoryInfo').innerText = `Level ${memoryLevel} • Coins 🪙 ${memoryCoins}`;
+  document.getElementById('memoryInfo').innerText = 'Level 1 • Coins 🪙 0';
   document.getElementById('memoryGrid').innerHTML = '<p style="font-size:20px;">Click ▶ Start Memory to begin</p>';
   document.getElementById('memoryStartBtn').disabled = false;
 }
 
-document.getElementById('memoryStartBtn').onclick = () => {
+document.getElementById('memoryStartBtn')?.addEventListener('click', () => {
   document.getElementById('memoryStartBtn').disabled = true;
   startMemoryLevel();
-};
+});
 
 function startMemoryLevel() {
   clearInterval(memorytimerInterval);
@@ -382,15 +454,15 @@ function startMemoryLevel() {
   memoryFlipped = []; memoryMatched = [];
 
   timeLeft = Math.max(10, 30 - (memoryLevel - 1) * 3);
-  startTimer();
+  startMemoryTimer();
   renderMemory();
 }
 
-function startTimer() {
-  updateTimerUI();
+function startMemoryTimer() {
+  updateMemoryTimerUI();
   memorytimerInterval = setInterval(() => {
     timeLeft--;
-    updateTimerUI();
+    updateMemoryTimerUI();
     if (timeLeft <= 0) {
       clearInterval(memorytimerInterval);
       showPopup(`⏰ Time's up!<br>Coins earned: 🪙 ${memoryCoins}`, () => initMemory());
@@ -399,7 +471,7 @@ function startTimer() {
   }, 1000);
 }
 
-function updateTimerUI() {
+function updateMemoryTimerUI() {
   document.getElementById('memoryTimer').innerText = `⏱️ ${timeLeft}s`;
 }
 
@@ -414,14 +486,14 @@ function renderMemory() {
       img.src = imgSrc;
       card.appendChild(img);
     } else card.innerText = '❓';
-    card.onclick = () => flipCard(index);
+    card.onclick = () => flipMemoryCard(index);
     grid.appendChild(card);
   });
 
   document.getElementById('memoryInfo').innerText = `Level ${memoryLevel} • Coins 🪙 ${memoryCoins}`;
 }
 
-function flipCard(index) {
+function flipMemoryCard(index) {
   if (memoryFlipped.length === 2 || memoryFlipped.includes(index) || memoryMatched.includes(index)) return;
   memoryFlipped.push(index);
   renderMemory();
@@ -444,7 +516,7 @@ function flipCard(index) {
   }
 }
 
-/* ---------- POPUP ---------- */
+/* ==================== POPUP ==================== */
 function showPopup(html, onClose) {
   const overlay = document.createElement('div');
   overlay.className = 'popup-overlay';
@@ -453,62 +525,14 @@ function showPopup(html, onClose) {
   overlay.querySelector('button').onclick = () => { overlay.remove(); if (onClose) onClose(); };
 }
 
-/* ==================== BACKEND UPDATES ==================== */
-function updateCoinsOnServer(coinsEarned, gameType) {
-  const userId = getUserId(); 
-  const petId = localStorage.getItem('petId'); 
-
-  if (!userId || !petId) return;
-
-  fetch
-
-(`${backendUrl}/mini_game/win/${petId}`, {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-    },
-    body: JSON.stringify({ 
-      coins_earned: coinsEarned,
-      user_id: userId,
-      game_type: gameType
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if(data.success) {
-      localStorage.setItem('totalCoins', data.coins || 0);
-      loadPlayerInfo();
-      refreshLeaderboard(gameType);
-    } else {
-      console.error('Error updating coins:', data.error);
-    }
-  })
-  .catch(err => console.error('Error updating coins:', err));
+/* ==================== INITIALIZE APP ==================== */
+async function initApp() {
+  await loadUserData();       // wait until user info is loaded
+  displayPlayerInfo();        // show user info
+  initRunner('cat');
+  initQuiz();
+  initMemory();
+  refreshLeaderboard('runner');
 }
 
-/* ==================== LEADERBOARD ==================== */
-function refreshLeaderboard(gameType = 'runner') {
-  fetch(`${backendUrl}/leaderboard?game=${gameType}`)
-    .then(res => res.json())
-    .then(data => {
-      const lbDiv = document.getElementById('leaderboard');
-      if(lbDiv) {
-        if(data.length === 0) {
-          lbDiv.innerHTML = 'No scores yet';
-        } else {
-          lbDiv.innerHTML = data.slice(0, 10)
-            .map((u, i) => `${i + 1}. ${u.username}: 🪙 ${u.coins}`)
-            .join('<br>');
-        }
-      }
-    })
-    .catch(err => console.error('Error fetching leaderboard:', err));
-}
-
-/* ==================== INITIALIZE ==================== */
-loadUserData();      // Fetch user & pet info first
-initRunner('cat');   // Initialize runner game
-initQuiz();          // Initialize quiz
-initMemory();        // Initialize memory game
-refreshLeaderboard('runner'); // Load leaderboard for runner
+initApp();
