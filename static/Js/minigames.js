@@ -11,7 +11,7 @@ function showGame(game, petType = 'cat') {
   if (game === 'memory') initMemory();
 }
 
-/* ==================== RUNNER GAME (PET VERSION) ==================== */
+/* ==================== RUNNER GAME FIXED ==================== */
 
 let canvas, ctx;
 let runnerY, runnerVy;
@@ -20,6 +20,7 @@ let score = 0;
 let speed = 6;
 let runnerInterval = null;
 let runnerRunning = false;
+let coinsCollected = 0;
 
 // Pet & asset images
 const petImg = new Image();
@@ -31,14 +32,11 @@ let imagesLoaded = 0;
 const TOTAL_IMAGES = 4;
 let forceStartAllowed = false;
 
-// Load images with onerror fallback
+// Load images
 function loadImage(img, src) {
   img.src = src;
   img.onload = () => imagesLoaded++;
-  img.onerror = () => {
-    console.warn('Failed to load:', src);
-    imagesLoaded++;
-  };
+  img.onerror = () => imagesLoaded++; // don't block
 }
 
 /* ---------- INIT ---------- */
@@ -51,24 +49,20 @@ function initRunner(petType = 'cat') {
 
   imagesLoaded = 0;
   forceStartAllowed = false;
+  coinsCollected = 0;
 
-  // Pet images
-  loadImage(petImg, petType === 'cat'
-    ? 'static/images/cat_happy.png'
-    : 'static/images/dog_happy.png'
-  );
-
+  loadImage(petImg, petType === 'cat' ? 'static/images/cat_happy.png' : 'static/images/dog_happy.png');
   loadImage(coinImg, 'static/images/coin.png');
   loadImage(boneImg, 'static/images/bone.png');
   loadImage(puddleImg, 'static/images/puddle.png');
 
-  // Safety net: force start after 2 seconds
+  // safety net: force start after 2 seconds
   setTimeout(() => { forceStartAllowed = true; }, 2000);
 
   resetRunner();
 }
 
-/* ---------- RESET GAME ---------- */
+/* ---------- RESET ---------- */
 function resetRunner() {
   clearInterval(runnerInterval);
   runnerY = canvas.height - 80;
@@ -93,9 +87,9 @@ document.getElementById('runnerStartBtn').onclick = () => {
 
 /* ---------- INPUT ---------- */
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && runnerRunning) {
-    e.preventDefault();
-    if (runnerY >= canvas.height - 80) runnerVy = -12;
+  if (e.code === 'Space') {
+    e.preventDefault(); // prevents page scrolling / reload
+    if (runnerRunning && runnerY >= canvas.height - 80) runnerVy = -12;
   }
 });
 
@@ -128,8 +122,14 @@ function runGameLoop() {
 
     // Collision
     if (50 + 25 > ob.x && 50 - 25 < ob.x + ob.w && runnerY + 50 > ob.y && runnerY < ob.y + ob.h) {
-      if (ob.type === 'coin') { score++; obstacles.splice(i, 1); }
-      else { endRunnerGame(); return; }
+      if (ob.type === 'coin') {
+        score++;
+        coinsCollected++;
+        obstacles.splice(i, 1);
+      } else {
+        endRunnerGame();
+        return;
+      }
     }
 
     if (ob.x + ob.w < 0) obstacles.splice(i, 1);
@@ -143,7 +143,7 @@ function runGameLoop() {
   // Score
   ctx.fillStyle = '#000';
   ctx.font = '22px Arial';
-  ctx.fillText(`Score: ${score}`, canvas.width - 140, 30);
+  ctx.fillText(`Score: ${score} • Coins: ${coinsCollected}`, canvas.width - 200, 30);
 }
 
 /* ---------- END GAME ---------- */
@@ -151,14 +151,32 @@ function endRunnerGame() {
   clearInterval(runnerInterval);
   runnerRunning = false;
 
+  // Overlay
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.fillStyle = '#fff';
   ctx.font = '36px Arial';
-  ctx.fillText('Game Over', canvas.width / 2 - 90, canvas.height / 2 - 10);
+  ctx.fillText('Game Over', canvas.width / 2 - 90, canvas.height / 2 - 40);
   ctx.font = '22px Arial';
-  ctx.fillText(`Score: ${score}`, canvas.width / 2 - 50, canvas.height / 2 + 30);
+  ctx.fillText(`Score: ${score} • Coins: ${coinsCollected}`, canvas.width / 2 - 90, canvas.height / 2);
+
+  // Retry button
+  const retryBtn = document.createElement('button');
+  retryBtn.innerText = 'Retry';
+  retryBtn.style.position = 'absolute';
+  retryBtn.style.left = canvas.getBoundingClientRect().left + canvas.width / 2 - 40 + 'px';
+  retryBtn.style.top = canvas.getBoundingClientRect().top + canvas.height / 2 + 30 + 'px';
+  retryBtn.style.padding = '10px 20px';
+  retryBtn.style.fontSize = '18px';
+  retryBtn.style.zIndex = 1000;
+
+  document.body.appendChild(retryBtn);
+
+  retryBtn.onclick = () => {
+    retryBtn.remove();
+    resetRunner();
+  };
 }
 
 /* ---------- UI SCREENS ---------- */
@@ -175,6 +193,9 @@ function drawLoadingScreen() {
   ctx.font = '24px Arial';
   ctx.fillText('Loading assets...', 300, 200);
 }
+
+// Initialize runner with cat by default
+initRunner('cat');
 
 
 /* ==================== QUIZ GAME ==================== */
@@ -478,6 +499,7 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
 
 
 
