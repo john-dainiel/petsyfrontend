@@ -232,9 +232,10 @@ function startMemoryLevel() {
   memoryFlipped = [];
   memoryMatched = [];
 
-  timeLeft = Math.max(10, 30 - memoryLevel * 3);
+  // ✅ FIXED LINE
+  timeLeft = Math.max(10, 30 - (memoryLevel - 1) * 3);
 
-  startTimer();      // ✅ timer starts correctly
+  startTimer();
   renderMemory();
 }
 
@@ -342,3 +343,4 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
