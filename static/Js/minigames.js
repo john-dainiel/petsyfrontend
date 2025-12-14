@@ -270,12 +270,19 @@ function showQuizControls(){
   stop.className = 'quiz-control-btn stop';
 
   stop.onclick = () => {
-    // Clear quiz UI
-    document.getElementById('quizQuestion').innerText =
-      `Quiz ended! Coins earned: 🪙 ${quizCoins}`;
-    document.getElementById('quizAnswers').innerHTML = '';
-    controls.innerHTML = '';
-    document.getElementById('quizStartBtn').disabled = false;
+  document.getElementById('quizQuestion').innerText =
+    `Quiz ended! Coins earned: 🪙 ${quizCoins}`;
+  document.getElementById('quizAnswers').innerHTML = '';
+  controls.innerHTML = '';
+  document.getElementById('quizStartBtn').disabled = false;
+
+  // ✅ Save coins only when user confirms stop
+  showPopup(`Quiz finished! You earned 🪙 ${quizCoins}`, () => {
+    updateCoinsOnServer(quizCoins, 'quiz');
+    initQuiz(); // reset quiz cleanly
+  });
+};
+
 
     // ✅ SAVE ONLY AFTER USER CONFIRMS
     showPopup(`Quiz finished! You earned 🪙 ${quizCoins}`, () => {
@@ -322,15 +329,16 @@ function startMemoryLevel(){
 
 function startMemoryTimer(){
   updateMemoryTimerUI();
-  memorytimerInterval=setInterval(()=>{
-    timeLeft--; updateMemoryTimerUI();
-    if(timeLeft<=0){
+  memorytimerInterval = setInterval(() => {
+    timeLeft--;
+    updateMemoryTimerUI();
+    if(timeLeft <= 0){
       clearInterval(memorytimerInterval);
-      // Save coins to server when time runs out
+      // ✅ Save coins only when time runs out
       updateCoinsOnServer(memoryCoins,'memory');
-      showPopup(`⏰ Time's up! Coins: 🪙 ${memoryCoins}`,()=>initMemory());
+      showPopup(`⏰ Time's up! Coins: 🪙 ${memoryCoins}`, () => initMemory());
     }
-  },1000);
+  }, 1000);
 }
 
 function updateMemoryTimerUI(){ document.getElementById('memoryTimer').innerText=`⏱️ ${timeLeft}s`; }
@@ -349,21 +357,24 @@ function renderMemory(){
 }
 
 function flipMemoryCard(index){
-  if(memoryFlipped.length===2||memoryFlipped.includes(index)||memoryMatched.includes(index)) return;
-  memoryFlipped.push(index); renderMemory();
-  if(memoryFlipped.length===2){
-    const [a,b]=memoryFlipped;
-    if(memoryCards[a]===memoryCards[b]){
-      memoryMatched.push(a,b); memoryCoins++; memoryFlipped=[];
-      if(memoryMatched.length===memoryCards.length){
-        clearInterval(memorytimerInterval);
-        showPopup(`🎉 Level ${memoryLevel} Complete! Coins: 🪙 ${memoryCoins}`,()=>{
-          // Save coins to server before starting next level
-          updateCoinsOnServer(memoryCoins,'memory');
-          memoryLevel++; startMemoryLevel();
-        });
-      }
-    } else setTimeout(()=>{ memoryFlipped=[]; renderMemory(); },700);
+  if(memoryFlipped.length === 2 || memoryFlipped.includes(index) || memoryMatched.includes(index)) return;
+  memoryFlipped.push(index); 
+  renderMemory();
+
+  if(memoryFlipped.length === 2){
+    const [a,b] = memoryFlipped;
+    if(memoryCards[a] === memoryCards[b]){
+      memoryMatched.push(a,b); 
+      memoryCoins++; 
+      memoryFlipped = [];
+      renderMemory();
+      // ⚠️ No saving here on level completion
+    } else {
+      setTimeout(() => { 
+        memoryFlipped = []; 
+        renderMemory(); 
+      }, 700);
+    }
   }
 }
 
@@ -407,6 +418,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateLeaderboard('quiz');
   updateLeaderboard('memory');
 });
+
 
 
 
