@@ -11,7 +11,7 @@ function showGame(game, petType = 'cat') {
   if (game === 'memory') initMemory();
 }
 
-/* ==================== RUNNER GAME ==================== */
+/* ==================== RUNNER GAME (PET VERSION) ==================== */
 
 let canvas, ctx;
 let runnerY, runnerVy;
@@ -21,7 +21,7 @@ let speed = 6;
 let runnerInterval = null;
 let runnerRunning = false;
 
-/* ---------- IMAGE PRELOAD ---------- */
+// Pet & asset images
 const petImg = new Image();
 const coinImg = new Image();
 const boneImg = new Image();
@@ -31,17 +31,17 @@ let imagesLoaded = 0;
 const TOTAL_IMAGES = 4;
 let forceStartAllowed = false;
 
+// Load images with onerror fallback
 function loadImage(img, src) {
   img.src = src;
-
   img.onload = () => imagesLoaded++;
   img.onerror = () => {
     console.warn('Failed to load:', src);
-    imagesLoaded++; // prevent infinite loading
+    imagesLoaded++;
   };
 }
 
-/* ---------- INIT (NO AUTO START) ---------- */
+/* ---------- INIT ---------- */
 function initRunner(petType = 'cat') {
   canvas = document.getElementById('runnerCanvas');
   ctx = canvas.getContext('2d');
@@ -52,20 +52,18 @@ function initRunner(petType = 'cat') {
   imagesLoaded = 0;
   forceStartAllowed = false;
 
-  loadImage(
-    petImg,
-    petType === 'cat'
-      ? 'static/images/cat_happy.png'
-      : 'static/images/dog_happy.png'
+  // Pet images
+  loadImage(petImg, petType === 'cat'
+    ? 'static/images/cat_happy.png'
+    : 'static/images/dog_happy.png'
   );
+
   loadImage(coinImg, 'static/images/coin.png');
   loadImage(boneImg, 'static/images/bone.png');
   loadImage(puddleImg, 'static/images/puddle.png');
 
-  // ⏳ Force start after 2 seconds (safety net)
-  setTimeout(() => {
-    forceStartAllowed = true;
-  }, 2000);
+  // Safety net: force start after 2 seconds
+  setTimeout(() => { forceStartAllowed = true; }, 2000);
 
   resetRunner();
 }
@@ -73,26 +71,22 @@ function initRunner(petType = 'cat') {
 /* ---------- RESET GAME ---------- */
 function resetRunner() {
   clearInterval(runnerInterval);
-
   runnerY = canvas.height - 80;
   runnerVy = 0;
   obstacles = [];
   score = 0;
   speed = 6;
   runnerRunning = false;
-
   drawStartScreen();
 }
 
 /* ---------- START BUTTON ---------- */
 document.getElementById('runnerStartBtn').onclick = () => {
   if (runnerRunning) return;
-
   if (imagesLoaded < TOTAL_IMAGES && !forceStartAllowed) {
     drawLoadingScreen();
     return;
   }
-
   runnerRunning = true;
   runnerInterval = setInterval(runGameLoop, 20);
 };
@@ -116,20 +110,12 @@ function runGameLoop() {
   // Gravity
   runnerVy += 0.6;
   runnerY += runnerVy;
-  if (runnerY > canvas.height - 80) {
-    runnerY = canvas.height - 80;
-    runnerVy = 0;
-  }
+  if (runnerY > canvas.height - 80) runnerY = canvas.height - 80, runnerVy = 0;
 
   // Spawn obstacles
-  if (Math.random() < 0.02)
-    obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'bone' });
-
-  if (Math.random() < 0.01)
-    obstacles.push({ x: canvas.width, y: canvas.height - 120, w: 25, h: 25, type: 'coin' });
-
-  if (Math.random() < 0.01)
-    obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'puddle' });
+  if (Math.random() < 0.02) obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'bone' });
+  if (Math.random() < 0.01) obstacles.push({ x: canvas.width, y: canvas.height - 120, w: 25, h: 25, type: 'coin' });
+  if (Math.random() < 0.01) obstacles.push({ x: canvas.width, y: canvas.height - 70, w: 30, h: 30, type: 'puddle' });
 
   // Move & draw obstacles
   for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -141,19 +127,9 @@ function runGameLoop() {
     if (ob.type === 'puddle') ctx.drawImage(puddleImg, ob.x, ob.y, ob.w, ob.h);
 
     // Collision
-    if (
-      50 + 25 > ob.x &&
-      50 - 25 < ob.x + ob.w &&
-      runnerY + 50 > ob.y &&
-      runnerY < ob.y + ob.h
-    ) {
-      if (ob.type === 'coin') {
-        score++;
-        obstacles.splice(i, 1);
-      } else {
-        endRunnerGame();
-        return;
-      }
+    if (50 + 25 > ob.x && 50 - 25 < ob.x + ob.w && runnerY + 50 > ob.y && runnerY < ob.y + ob.h) {
+      if (ob.type === 'coin') { score++; obstacles.splice(i, 1); }
+      else { endRunnerGame(); return; }
     }
 
     if (ob.x + ob.w < 0) obstacles.splice(i, 1);
@@ -199,6 +175,7 @@ function drawLoadingScreen() {
   ctx.font = '24px Arial';
   ctx.fillText('Loading assets...', 300, 200);
 }
+
 
 /* ==================== QUIZ GAME ==================== */
 
@@ -501,6 +478,7 @@ function showPopup(html, onClose) {
     if (onClose) onClose();
   };
 }
+
 
 
 
