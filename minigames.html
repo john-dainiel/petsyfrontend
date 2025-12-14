@@ -22,12 +22,22 @@
   </div>
 
   <!-- Quiz Game -->
-  <div id="quiz" class="game-container">
+<div id="quiz" class="game-container" style="display:none;">
+  <h2>❓ Quiz Challenge</h2>
+
+  <div id="quizTop">
     <button id="quizStartBtn">▶ Start Quiz</button>
-    <div id="quizQuestion"></div>
-    <div id="quizAnswers"></div>
-    <p id="quizFeedback"></p>
+    <div id="quizCoins">Coins 🪙 0</div>
   </div>
+
+  <div id="quizQuestion" class="quiz-question">
+    Click ▶ Start Quiz to begin
+  </div>
+
+  <div id="quizAnswers" class="quiz-answers"></div>
+
+  <div id="quizControls"></div>
+</div>
 
   <!-- Memory Game -->
   <div id="memory" class="game-container" style="display:none;">
@@ -45,6 +55,7 @@
   <script src="https://petsyfrontend.onrender.com/static/Js/minigames.js"></script>
 </body>
 </html>
+
 
 
 
