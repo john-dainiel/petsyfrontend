@@ -28,6 +28,7 @@ async function loadUserData() {
       localStorage.setItem('userId', data.id);
       localStorage.setItem('petId', data.pet_id);
       loadPlayerInfo();
+      updateAllLeaderboards(); // show all leaderboards
     }
   } catch(err) {
     console.error("Error fetching user data:", err);
@@ -55,7 +56,7 @@ function updateCoinsOnServer(coinsEarned, gameType) {
     if (data.success) {
       localStorage.setItem('totalCoins', data.coins || 0);
       loadPlayerInfo();
-      updateLeaderboard(gameType); // refresh leaderboard
+      updateAllLeaderboards(); // refresh all leaderboards
     }
   })
   .catch(err => console.error('Error updating coins:', err));
@@ -73,29 +74,33 @@ async function updateLeaderboard(gameType) {
 
     leaderboard.forEach((entry, index) => {
       const el = document.createElement('div');
-      el.textContent = `${index+1}. Pet ${entry.pet_id} - ${entry.best_score} coins`;
+      el.textContent = `${index + 1}. Pet ${entry.pet_id} - ${entry.best_score} coins`;
       leaderboardDiv.appendChild(el);
     });
   } catch(err) {
-    console.error("Error loading leaderboard:", err);
+    console.error(`Error loading ${gameType} leaderboard:`, err);
   }
 }
 
+function updateAllLeaderboards() {
+  ['runner','quiz','memory'].forEach(updateLeaderboard);
+}
+
 /* ==================== GAME SELECTION ==================== */
-function showGame(game, petType = 'cat') {
+function showGame(game, petType='cat') {
   document.querySelectorAll('.game-container').forEach(g => g.style.display = 'none');
   document.getElementById(game).style.display = 'block';
 
-  if (game === 'runner') initRunner(petType);
-  if (game === 'quiz') initQuiz();
-  if (game === 'memory') initMemory();
+  if (game==='runner') initRunner(petType);
+  if (game==='quiz') initQuiz();
+  if (game==='memory') initMemory();
 }
 
 /* ==================== RUNNER GAME ==================== */
 let canvas, ctx, petX, petY, petWidth=80, petHeight=80;
 let coinsArr=[], obstacles=[], score=0;
 let gameInterval=null, timerInterval=null, countdown=30, gameRunning=false;
-const petImg = new Image(), coinImg = new Image(), boneImg = new Image(), puddleImg = new Image();
+const petImg=new Image(), coinImg=new Image(), boneImg=new Image(), puddleImg=new Image();
 let imagesLoaded=0;
 
 function loadImage(img, src){ img.src=src; img.onload=()=>imagesLoaded++; img.onerror=()=>imagesLoaded++; }
@@ -135,10 +140,7 @@ document.addEventListener('keydown', e=>{
 });
 
 function spawnRunnerCoin(){ coinsArr.push({x:Math.random()*(canvas.width-40),y:-30,width:40,height:40}); }
-function spawnRunnerObstacle(){
-  const type=Math.random()<0.5?'bone':'puddle';
-  obstacles.push({x:Math.random()*(canvas.width-40),y:-30,width:50,height:50,type});
-}
+function spawnRunnerObstacle(){ const type=Math.random()<0.5?'bone':'puddle'; obstacles.push({x:Math.random()*(canvas.width-40),y:-30,width:50,height:50,type}); }
 
 function startRunnerGame(){
   gameRunning=true; score=0; coinsArr=[]; obstacles=[]; countdown=30;
@@ -150,10 +152,7 @@ function startRunnerGame(){
   },1000);
 }
 
-function updateTimerDisplay(){
-  const timerEl=document.getElementById('gameTimer');
-  if(timerEl) timerEl.innerText=`Time left: ${countdown}s`;
-}
+function updateTimerDisplay(){ document.getElementById('gameTimer').innerText=`Time left: ${countdown}s`; }
 
 function runnerGameLoop(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -337,9 +336,9 @@ function showPopup(html,onClose){
 
 /* ==================== INITIALIZE ==================== */
 document.addEventListener('DOMContentLoaded', async()=>{
-  await loadUserData(); 
-  loadPlayerInfo(); 
-  initRunner('cat'); 
-  initQuiz(); 
+  await loadUserData();
+  loadPlayerInfo();
+  initRunner('cat');
+  initQuiz();
   initMemory();
 });
