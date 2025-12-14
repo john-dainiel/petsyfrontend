@@ -55,9 +55,30 @@ function updateCoinsOnServer(coinsEarned, gameType) {
     if (data.success) {
       localStorage.setItem('totalCoins', data.coins || 0);
       loadPlayerInfo();
+      updateLeaderboard(gameType); // refresh leaderboard
     }
   })
   .catch(err => console.error('Error updating coins:', err));
+}
+
+/* ==================== LEADERBOARD ==================== */
+async function updateLeaderboard(gameType) {
+  try {
+    const response = await fetch(`${backendUrl}/leaderboard?game=${gameType}`);
+    const leaderboard = await response.json();
+
+    const leaderboardDiv = document.getElementById(`${gameType}-leaderboard`);
+    if (!leaderboardDiv) return;
+    leaderboardDiv.innerHTML = '';
+
+    leaderboard.forEach((entry, index) => {
+      const el = document.createElement('div');
+      el.textContent = `${index+1}. Pet ${entry.pet_id} - ${entry.best_score} coins`;
+      leaderboardDiv.appendChild(el);
+    });
+  } catch(err) {
+    console.error("Error loading leaderboard:", err);
+  }
 }
 
 /* ==================== GAME SELECTION ==================== */
@@ -224,9 +245,11 @@ function showQuizControls(){
   const controls=document.getElementById('quizControls'); controls.innerHTML='';
   const playAgain=document.createElement('button'); playAgain.innerText='▶ Next'; playAgain.className='quiz-control-btn'; playAgain.onclick=showQuizQuestion;
   const stop=document.createElement('button'); stop.innerText='⏹ Stop'; stop.className='quiz-control-btn stop';
-  stop.onclick=()=>{ document.getElementById('quizQuestion').innerText=`Quiz ended! Coins earned: 🪙 ${quizCoins}`;
+  stop.onclick=()=>{
+    document.getElementById('quizQuestion').innerText=`Quiz ended! Coins earned: 🪙 ${quizCoins}`;
     document.getElementById('quizAnswers').innerHTML=''; controls.innerHTML=''; document.getElementById('quizStartBtn').disabled=false;
-    updateCoinsOnServer(quizCoins,'quiz'); };
+    updateCoinsOnServer(quizCoins,'quiz');
+  };
   controls.appendChild(playAgain); controls.appendChild(stop);
 }
 
@@ -314,5 +337,9 @@ function showPopup(html,onClose){
 
 /* ==================== INITIALIZE ==================== */
 document.addEventListener('DOMContentLoaded', async()=>{
-  await loadUserData(); loadPlayerInfo(); initRunner('cat'); initQuiz(); initMemory();
+  await loadUserData(); 
+  loadPlayerInfo(); 
+  initRunner('cat'); 
+  initQuiz(); 
+  initMemory();
 });
