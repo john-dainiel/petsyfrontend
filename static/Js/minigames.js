@@ -1,27 +1,22 @@
 const backendUrl = "https://petsy-dow7.onrender.com";
 
-/* ==================== PLAYER INFO ==================== */
-const playerInfoDiv = document.getElementById('playerInfo');
-function loadPlayerInfo() {
-  const userToken = localStorage.getItem('userToken');
-  if (!userToken || !playerInfoDiv) return;
-
-  fetch(`${backendUrl}/me`, {
-    headers: { 'Authorization': `Bearer ${userToken}` }
-  })
-  .then(res => res.json())
-  .then(data => {
-    playerInfoDiv.innerHTML = `Player: ${data.username} • Coins 🪙 ${data.coins}`;
-  })
-  .catch(err => console.error('Error loading player info:', err));
+/* ==================== USER INFO ==================== */
+function displayUserInfo() {
+  const username = localStorage.getItem('username');
+  const coins = localStorage.getItem('coins');
+  const topDiv = document.getElementById('topUserInfo');
+  if (topDiv) {
+    topDiv.innerHTML = `
+      <span>Player: ${username || 'Guest'}</span> • 
+      <span>Coins: 🪙 ${coins || 0}</span>
+    `;
+  }
 }
 
-// Refresh player info after coins update
-function refreshPlayerInfo() {
-  loadPlayerInfo();
+function updateTopCoins(newCoins) {
+  localStorage.setItem('coins', newCoins);
+  displayUserInfo();
 }
-
-loadPlayerInfo();
 
 /* ==================== GAME SELECTION ==================== */
 function showGame(game, petType = 'cat') {
@@ -210,7 +205,10 @@ function endGame() {
   ctx.font = '24px Arial';
   ctx.fillText(`Coins collected: ${score}`, canvas.width / 2 - 90, canvas.height / 2 + 20);
 
-  updateCoinsOnServer(score, 'runner');
+  // Update coins and top bar
+  const currentCoins = parseInt(localStorage.getItem('coins') || '0') + score;
+  updateTopCoins(currentCoins);
+  updateCoinsOnServer(currentCoins, 'runner');
 
   const retryBtn = document.createElement('button');
   retryBtn.innerText = 'Retry';
@@ -322,13 +320,15 @@ function showQuizControls() {
   stop.innerText = '⏹ Stop';
   stop.className = 'quiz-control-btn stop';
   stop.onclick = () => {
+    const totalCoins = parseInt(localStorage.getItem('coins') || '0') + quizCoins;
+    updateTopCoins(totalCoins);
+    updateCoinsOnServer(totalCoins, 'quiz');
+
     document.getElementById('quizQuestion').innerText =
       `🏁 Quiz ended! Total coins earned: 🪙 ${quizCoins}`;
     document.getElementById('quizAnswers').innerHTML = '';
     controls.innerHTML = '';
     document.getElementById('quizStartBtn').disabled = false;
-
-    updateCoinsOnServer(quizCoins, 'quiz');
   };
 
   controls.appendChild(playAgain);
@@ -393,8 +393,10 @@ function startTimer() {
     updateTimerUI();
     if (timeLeft <= 0) {
       clearInterval(memorytimerInterval);
+      const totalCoins = parseInt(localStorage.getItem('coins') || '0') + memoryCoins;
+      updateTopCoins(totalCoins);
+      updateCoinsOnServer(totalCoins, 'memory');
       showPopup(`⏰ Time's up!<br>Coins earned: 🪙 ${memoryCoins}`, () => initMemory());
-      updateCoinsOnServer(memoryCoins, 'memory');
     }
   }, 1000);
 }
@@ -434,10 +436,12 @@ function flipCard(index) {
       memoryFlipped = [];
       if (memoryMatched.length === memoryCards.length) {
         clearInterval(memorytimerInterval);
+        const totalCoins = parseInt(localStorage.getItem('coins') || '0') + memoryCoins;
+        updateTopCoins(totalCoins);
         showPopup(`🎉 Level ${memoryLevel} Complete!<br>Coins: 🪙 ${memoryCoins}`, () => {
           memoryLevel++;
           startMemoryLevel();
-          updateCoinsOnServer(memoryCoins, 'memory');
+          updateCoinsOnServer(totalCoins, 'memory');
         });
       }
     } else setTimeout(() => { memoryFlipped = []; renderMemory(); }, 700);
@@ -455,20 +459,21 @@ function showPopup(html, onClose) {
 
 /* ==================== BACKEND UPDATES ==================== */
 function updateCoinsOnServer(coinsEarned, gameType) {
-  const userToken = localStorage.getItem('userToken');
-  const petId = localStorage.getItem('petId'); // store current pet ID
-  if (!userToken || !petId) return;
+  const userToken = localStorage.getItem('userToken'); 
+  if (!userToken) return;
 
   fetch(`${backendUrl}/update_coins`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-    body: JSON.stringify({ coins: coinsEarned, game: gameType, pet_id: petId })
+    body: JSON.stringify({ coins: coinsEarned, game: gameType })
   })
   .then(res => res.json())
-  .then(data => { console.log('Coins updated:', data); refreshLeaderboard(); })
+  .then(data => {
+    console.log('Coins updated:', data);
+    refreshLeaderboard();
+  })
   .catch(err => console.error('Error updating coins:', err));
 }
-
 
 function refreshLeaderboard() {
   fetch(`${backendUrl}/leaderboard`)
@@ -480,8 +485,8 @@ function refreshLeaderboard() {
 }
 
 /* ==================== INITIALIZE ==================== */
+displayUserInfo();
 initRunner('cat');
 initQuiz();
 initMemory();
 refreshLeaderboard();
-
