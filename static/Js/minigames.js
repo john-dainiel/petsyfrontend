@@ -65,7 +65,7 @@ function showGame(game, petType = 'cat') {
   if (game === 'memory') initMemory();
 }
 
-/* ==================== COIN CATCHER WITH OBSTACLES ==================== */
+/* ==================== COIN CATCHER (RUNNER) ==================== */
 let canvas, ctx;
 let petX, petY, petWidth = 80, petHeight = 80;
 let coins = [], obstacles = [];
@@ -251,7 +251,7 @@ function endGame() {
 let quizCoins = 0, currentQuestion = null, quizStarted = false;
 
 function initQuiz() {
-  quizCoins = 0; quizStarted = false; currentQuestion = null;
+  quizStarted = false; currentQuestion = null;
   document.getElementById('quizCoins').innerText = 'Coins 🪙 0';
   document.getElementById('quizQuestion').innerText = 'Click ▶ Start Quiz to begin';
   document.getElementById('quizAnswers').innerHTML = '';
@@ -313,8 +313,8 @@ function checkQuizAnswer(selected) {
   document.querySelectorAll('.quiz-btn').forEach(b => b.disabled = true);
 
   if (selected === correct) quizCoins++;
-  feedback.innerText = selected === correct ? '✅ Correct!' : `❌ Wrong! Correct: ${correct}`;
   document.getElementById('quizCoins').innerText = `Coins 🪙 ${quizCoins}`;
+  feedback.innerText = selected === correct ? '✅ Correct!' : `❌ Wrong! Correct: ${correct}`;
 
   showQuizControls();
 }
@@ -362,7 +362,7 @@ function initMemory() {
   timeLeft = 30;
 
   document.getElementById('memoryTimer').innerText = '⏱️ 30s';
-  document.getElementById('memoryInfo').innerText = 'Level 1 • Coins 🪙 0';
+  document.getElementById('memoryInfo').innerText = `Level ${memoryLevel} • Coins 🪙 ${memoryCoins}`;
   document.getElementById('memoryGrid').innerHTML = '<p style="font-size:20px;">Click ▶ Start Memory to begin</p>';
   document.getElementById('memoryStartBtn').disabled = false;
 }
@@ -455,18 +455,24 @@ function showPopup(html, onClose) {
 
 /* ==================== BACKEND UPDATES ==================== */
 function updateCoinsOnServer(coinsEarned, gameType) {
-  const userToken = localStorage.getItem('userToken'); 
-  const petId = localStorage.getItem('petId'); // store the user's pet id locally
+  const userId = getUserId(); 
+  const petId = localStorage.getItem('petId'); 
 
-  if (!userToken || !petId) return;
+  if (!userId || !petId) return;
 
-  fetch(`${backendUrl}/mini_game/win/${petId}`, {
+  fetch
+
+(`${backendUrl}/mini_game/win/${petId}`, {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken}` 
+      'Authorization': `Bearer ${localStorage.getItem('userToken')}`
     },
-    body: JSON.stringify({ coins_earned: coinsEarned })
+    body: JSON.stringify({ 
+      coins_earned: coinsEarned,
+      user_id: userId,
+      game_type: gameType
+    })
   })
   .then(res => res.json())
   .then(data => {
@@ -491,7 +497,9 @@ function refreshLeaderboard(gameType = 'runner') {
         if(data.length === 0) {
           lbDiv.innerHTML = 'No scores yet';
         } else {
-          lbDiv.innerHTML = data.slice(0, 10).map((u, i) => `${i + 1}. ${u.username}: 🪙 ${u.coins}`).join('<br>');
+          lbDiv.innerHTML = data.slice(0, 10)
+            .map((u, i) => `${i + 1}. ${u.username}: 🪙 ${u.coins}`)
+            .join('<br>');
         }
       }
     })
@@ -499,8 +507,8 @@ function refreshLeaderboard(gameType = 'runner') {
 }
 
 /* ==================== INITIALIZE ==================== */
-loadUserData();      // <-- fetch user & pet info first
-initRunner('cat');
-initQuiz();
-initMemory();
-refreshLeaderboard('runner');
+loadUserData();      // Fetch user & pet info first
+initRunner('cat');   // Initialize runner game
+initQuiz();          // Initialize quiz
+initMemory();        // Initialize memory game
+refreshLeaderboard('runner'); // Load leaderboard for runner
