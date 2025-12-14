@@ -1,64 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>🎯 PETSY Mini Games</title>
-  <link rel="stylesheet" href="https://petsyfrontend.onrender.com/static/css/minigames.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 PETSY Pet Runner</title>
+<link rel="stylesheet" href="minigames.css">
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <h1>🎯 PETSY Mini Games</h1>
-      <p class="sub">Win coins by playing games — win 10 times in each category to earn a free treat!</p>
-    </div>
-    <div id="petCoins" class="coins">Your Coins: 0 🪙</div>
-  </header>
-
-  <main class="container">
-    <section class="left-col">
-      <div id="gameStats" class="stats-box">
-        <h3>🎮 Game Progress</h3>
-        <p id="easyWins">Easy Wins: 0 / 10 🎁 Small Treat</p>
-        <p id="mediumWins">Medium Wins: 0 / 10 🎁 Medium Treat</p>
-        <p id="hardWins">Hard Wins: 0 / 10 🎁 Large Treat</p>
-      </div>
-
-      <div class="games">
-        <button class="game-btn" id="easyGame">🪙 Heads or Tails (Easy — 5 coins)</button>
-        <button class="game-btn" id="mediumGame">🎯 Guess Number 1–3 (Medium — 10 coins)</button>
-        <button class="game-btn" id="hardGame">🧮 Add 3 Numbers (Hard — 20 coins)</button>
-      </div>
-
-      <div class="actions">
-        <button id="backToPetMenu" class="secondary">🏠 Back to Pet Menu</button>
-      </div>
-    </section>
-
-    <section class="right-col">
-      <div id="gamePanel" class="game-panel hidden" role="region" aria-live="polite">
-        <div class="panel-header">
-          <h2 id="gameTitle">Game</h2>
-          <button id="closePanel" class="close-btn" aria-label="Close game panel">&times;</button>
-        </div>
-        <div id="gameBody" class="panel-body">
-          <img id="petFace" class="pet-face" alt="Your Pet" width="80" height="80" />
-          <p class="muted">Choose a game on the left to begin — results and actions appear here.</p>
-        </div>
-        <div class="panel-footer">
-          <div id="gameResult" class="result muted"></div>
-          <div class="panel-actions">
-            <button id="playAgain" class="tertiary hidden">Play Again</button>
-            <button id="claimReward" class="tertiary hidden">Cancel Game</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="popupMessage" class="toast" aria-atomic="true"></div>
-    </section>
-  </main>
-
-  <script src="https://petsyfrontend.onrender.com/static/Js/minigames.js"></script>
+<header>
+  <h1>🐾 PETSY Pet Runner</h1>
+  <div id="score">Coins: 0 🪙</div>
+</header>
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+<div class="instructions">
+  <p>Use <strong>←</strong> / <strong>→</strong> arrows to move. Collect coins, avoid rocks, bones, and puddles!</p>
+</div>
+<script src="minigames.js"></script>
 </body>
 </html>
-
