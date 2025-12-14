@@ -168,92 +168,129 @@ function checkQuizAnswer(selected,correct){
   }
 }
 
-/* ==================== MEMORY GAME WITH TIMER ==================== */
-let memoryCards=[], memorySelected=[], memoryMatched=[];
-let memoryLevel=1, memoryCoins=0, memoryTime=0, memoryTimerInterval=0;
-const memoryImages=[];
+/* ==================== MEMORY GAME ==================== */
 
-// Load your images from static/images folder
-for(let i=1;i<=12;i++){ memoryImages.push(`static/images/memory${i}.png`); }
+let memoryCards = [];
+let memoryFlipped = [];
+let memoryMatched = [];
+let memoryLevel = 1;
+let memoryCoins = 0;
+let timeLeft = 30;
+let timerInterval = null;
 
-function initMemory(){
-  memoryLevel=1; memoryCoins=0;
-  alert("Memory Instructions:\nMatch all cards before time runs out!\nTime decreases per level.");
-  startMemoryLevel(memoryLevel);
+// ✅ MAKE SURE THESE FILES EXIST
+const memoryImages = [
+  '/static/images/memory1.png',
+  '/static/images/memory2.png',
+  '/static/images/memory3.png',
+  '/static/images/memory4.png',
+  '/static/images/memory5.png',
+  '/static/images/memory6.png',
+  '/static/images/memory7.png',
+  '/static/images/memory8.png',
+  '/static/images/memory9.png',
+  '/static/images/memory10.png',
+  '/static/images/memory11.png',
+  '/static/images/memory12.png'
+];
+
+function initMemory() {
+  memoryLevel = 1;
+  memoryCoins = 0;
+  startMemoryLevel();
 }
 
-function startMemoryLevel(level){
-  const numPairs = Math.min(memoryImages.length, level+2);
-  const selected = memoryImages.slice(0,numPairs);
-  memoryCards = [...selected,...selected];
-  memoryCards.sort(()=>Math.random()-0.5);
-  memorySelected=[]; memoryMatched=[];
-  memoryTime = 30 - level*2; 
+function startMemoryLevel() {
+  clearInterval(timerInterval);
+
+  const pairs = Math.min(2 + memoryLevel, memoryImages.length);
+  const selected = memoryImages.slice(0, pairs);
+  memoryCards = [...selected, ...selected].sort(() => Math.random() - 0.5);
+
+  memoryFlipped = [];
+  memoryMatched = [];
+
+  timeLeft = Math.max(10, 30 - memoryLevel * 3);
+  startTimer();
+
+  renderMemory();
+}
+
+function startTimer() {
+  const timerEl = document.getElementById('memoryTimer');
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.innerText = `⏱️ Time: ${timeLeft}s`;
+
+    if (timeLeft <= 10) {
+      timerEl.style.color = 'red';
+      timerEl.style.animation = 'shake 0.3s infinite';
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      showPopup(`⏰ Time's up!\nCoins earned: ${memoryCoins}`, () => {
+        memoryLevel = 1;
+        memoryCoins = 0;
+        startMemoryLevel();
+      });
+    }
+  }, 1000);
+}
+
+function renderMemory() {
+  const grid = document.getElementById('memoryGrid');
+  grid.innerHTML = '';
+
+  memoryCards.forEach((imgSrc, index) => {
+    const card = document.createElement('div');
+    card.className = 'memory-card';
+
+    if (memoryFlipped.includes(index) || memoryMatched.includes(index)) {
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      card.appendChild(img);
+    } else {
+      card.innerText = '❓';
+    }
+
+    card.onclick = () => flipCard(index);
+    grid.appendChild(card);
+  });
+}
+
+function flipCard(index) {
+  if (
+    memoryFlipped.length === 2 ||
+    memoryFlipped.includes(index) ||
+    memoryMatched.includes(index)
+  ) return;
+
+  memoryFlipped.push(index);
   renderMemory();
 
-  if(memoryTimerInterval) clearInterval(memoryTimerInterval);
-  memoryTimerInterval = setInterval(()=>{ 
-    memoryTime--;
-    if(memoryTime<=0){
-      clearInterval(memoryTimerInterval);
-      alert(`⏰ Time's up! Coins collected: ${memoryCoins}`);
-      memoryLevel=1; memoryCoins=0;
-      startMemoryLevel(memoryLevel);
-    }
-    renderMemory();
-  },1000);
-}
+  if (memoryFlipped.length === 2) {
+    const [a, b] = memoryFlipped;
 
-function renderMemory(){
-  const grid = document.getElementById('memoryGrid');
-  grid.innerHTML='';
-  memoryCards.forEach((card,i)=>{
-    const btn = document.createElement('button');
-    btn.style.width='70px'; btn.style.height='70px'; btn.style.margin='5px';
-    btn.style.fontSize='40px';
-    if(memoryMatched.includes(i) || memorySelected.includes(i)){
-      const img = document.createElement('img');
-      img.src = card;
-      img.width = 60;
-      btn.appendChild(img);
-    } else btn.innerText='❓';
-    btn.onclick = () => selectMemoryCard(i);
-    grid.appendChild(btn);
-  });
+    if (memoryCards[a] === memoryCards[b]) {
+      memoryMatched.push(a, b);
+      memoryCoins++;
+      memoryFlipped = [];
 
-  const feedback = document.getElementById('memoryFeedback');
-  feedback.innerText=`Level ${memoryLevel} - Matched: ${memoryMatched.length/2} - Coins: ${memoryCoins} - Time left: ${memoryTime}s`;
-
-  if(memoryTime <=10){
-    feedback.style.color='red';
-    feedback.style.fontWeight='bold';
-    feedback.style.animation='shake 0.5s infinite';
-  } else {
-    feedback.style.color='black';
-    feedback.style.animation='';
-  }
-}
-
-function selectMemoryCard(i){
-  if(memorySelected.includes(i)||memoryMatched.includes(i)) return;
-  memorySelected.push(i);
-
-  if(memorySelected.length===2){
-    if(memoryCards[memorySelected[0]]===memoryCards[memorySelected[1]]){
-      memoryMatched.push(...memorySelected);
-      memoryCoins+=1;
-      alert("✅ Matched! +1 Coin");
+      if (memoryMatched.length === memoryCards.length) {
+        clearInterval(timerInterval);
+        showPopup(`🎉 Level ${memoryLevel} Complete!\nCoins: ${memoryCoins}`, () => {
+          memoryLevel++;
+          startMemoryLevel();
+        });
+      }
     } else {
-      alert("❌ Not matched!");
-    }
-    memorySelected=[];
-    renderMemory();
-
-    if(memoryMatched.length===memoryCards.length){
-      clearInterval(memoryTimerInterval);
-      memoryLevel++;
-      alert(`🎉 Level Up! Coins: ${memoryCoins}`);
-      startMemoryLevel(memoryLevel);
+      setTimeout(() => {
+        memoryFlipped = [];
+        renderMemory();
+      }, 800);
     }
   }
 }
+
