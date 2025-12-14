@@ -55,3 +55,12 @@ canvas {
 .memory-card:active {
   transform: scale(0.95);
 }
+
+.memory-card img {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+
