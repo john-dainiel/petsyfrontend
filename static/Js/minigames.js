@@ -1,11 +1,55 @@
 const backendUrl = "https://petsy-dow7.onrender.com";
 
+/* ==================== HELPER: GET USER INFO FROM TOKEN ==================== */
+function parseJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    ).join(''));
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
+function getUserId() {
+  const token = localStorage.getItem('userToken');
+  if (!token) return null;
+  const payload = parseJwt(token);
+  return payload?.id || null;
+}
+
 /* ==================== PLAYER INFO ==================== */
 function loadPlayerInfo() {
   const playerDiv = document.getElementById('playerInfo');
   const username = localStorage.getItem('username') || 'Guest';
   const totalCoins = localStorage.getItem('totalCoins') || 0;
   playerDiv.innerText = `Player: ${username} • Total Coins: 🪙 ${totalCoins}`;
+}
+
+/* ==================== FETCH USER & PET INFO ==================== */
+async function loadUserData() {
+  const token = localStorage.getItem('userToken');
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${backendUrl}/get_user_info`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('totalCoins', data.coins || 0);
+      localStorage.setItem('userId', data.id);
+      localStorage.setItem('petId', data.pet_id);
+      loadPlayerInfo();
+    }
+  } catch(err) {
+    console.error("Error fetching user data:", err);
+  }
 }
 
 /* ==================== GAME SELECTION ==================== */
@@ -412,19 +456,27 @@ function showPopup(html, onClose) {
 /* ==================== BACKEND UPDATES ==================== */
 function updateCoinsOnServer(coinsEarned, gameType) {
   const userToken = localStorage.getItem('userToken'); 
-  if (!userToken) return;
+  const petId = localStorage.getItem('petId'); // store the user's pet id locally
 
-  fetch(`${backendUrl}/update_coins`, {
+  if (!userToken || !petId) return;
+
+  fetch(`${backendUrl}/mini_game/win/${petId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-    body: JSON.stringify({ coins: coinsEarned, game: gameType })
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken}` 
+    },
+    body: JSON.stringify({ coins_earned: coinsEarned })
   })
   .then(res => res.json())
   .then(data => {
-    console.log('Coins updated:', data);
-    localStorage.setItem('totalCoins', data.totalCoins || 0);
-    loadPlayerInfo();
-    refreshLeaderboard(gameType);
+    if(data.success) {
+      localStorage.setItem('totalCoins', data.coins || 0);
+      loadPlayerInfo();
+      refreshLeaderboard(gameType);
+    } else {
+      console.error('Error updating coins:', data.error);
+    }
   })
   .catch(err => console.error('Error updating coins:', err));
 }
@@ -447,7 +499,7 @@ function refreshLeaderboard(gameType = 'runner') {
 }
 
 /* ==================== INITIALIZE ==================== */
-loadPlayerInfo();
+loadUserData();      // <-- fetch user & pet info first
 initRunner('cat');
 initQuiz();
 initMemory();
