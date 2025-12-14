@@ -29,13 +29,19 @@ function initRunner(petType='cat'){
   boneImg.src = 'static/images/bone.png';
   puddleImg.src = 'static/images/puddle.png';
 
-  runnerY = canvas.height - 100; runnerVy = 0;
-  obstacles = []; score = 0; speed = 6;
+  runnerY = canvas.height - 80; // ground level
+  runnerVy = 0;
+  obstacles = [];
+  score = 0;
+  speed = 6;
 
-  alert("Runner Instructions: Press SPACE to jump, collect coins, avoid bones & puddles!");
+  alert("Runner Instructions:\nPress SPACE to jump.\nCollect coins.\nAvoid bones and puddles!");
 
   document.onkeydown = function(e){
-    if(e.code==='Space' && runnerY>=canvas.height-100) runnerVy=-12;
+    if(e.code==='Space'){
+      e.preventDefault(); // prevents page scroll
+      if(runnerY>=canvas.height-80) runnerVy = -12;
+    }
   };
 
   runnerInterval = setInterval(runGameLoop, 20);
@@ -44,61 +50,57 @@ function initRunner(petType='cat'){
 function runGameLoop(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Draw cozy ground line
+  // Draw ground
   ctx.fillStyle = '#cce0ff';
   ctx.fillRect(0,canvas.height-40,canvas.width,40);
 
-  // Gravity & pet movement
+  // Gravity
   runnerVy += 0.6;
   runnerY += runnerVy;
-  if(runnerY>canvas.height-100) runnerY=canvas.height-100, runnerVy=0;
+  if(runnerY>canvas.height-80) runnerY=canvas.height-80, runnerVy=0;
 
   // Spawn obstacles and coins
-  if(Math.random() < 0.01){ 
+  if(Math.random() < 0.02){ 
     obstacles.push({x:canvas.width, y:canvas.height-70, w:30, h:30, type:'bone'});
   }
   if(Math.random() < 0.01){
-    obstacles.push({x:canvas.width, y:canvas.height-100 - Math.random()*50, w:20, h:20, type:'coin'});
+    obstacles.push({x:canvas.width, y:canvas.height-120-Math.random()*40, w:25, h:25, type:'coin'});
   }
-  if(Math.random() < 0.005){
+  if(Math.random() < 0.01){
     obstacles.push({x:canvas.width, y:canvas.height-70, w:30, h:30, type:'puddle'});
   }
 
-  let feedbackText = '';
-
-  // Move obstacles and detect collisions
-  obstacles.forEach((ob,index)=>{
+  // Move and draw obstacles
+  for(let i=obstacles.length-1;i>=0;i--){
+    const ob = obstacles[i];
     ob.x -= speed;
+
     if(ob.type==='bone') ctx.drawImage(boneImg, ob.x, ob.y, ob.w, ob.h);
     else if(ob.type==='puddle') ctx.drawImage(puddleImg, ob.x, ob.y, ob.w, ob.h);
     else if(ob.type==='coin') ctx.drawImage(coinImg, ob.x, ob.y, ob.w, ob.h);
 
-    if(50+25 > ob.x && 50-25 < ob.x+ob.w && runnerY+25 > ob.y){
-      if(ob.type==='coin'){ score +=1; feedbackText='+1 Coin!'; }
-      else { score = Math.max(score-1,0); feedbackText='💦 Hit obstacle!'; }
-      obstacles.splice(index,1);
+    // Collision detection
+    if(50+25 > ob.x && 50-25 < ob.x+ob.w && runnerY+50 > ob.y && runnerY < ob.y+ob.h){
+      if(ob.type==='coin'){ score+=1; alert("💰 Coin collected!"); }
+      else { score = Math.max(score-1,0); alert("💦 Hit obstacle!"); }
+      obstacles.splice(i,1);
     }
-  });
 
-  if(feedbackText){
-    ctx.fillStyle='red';
-    ctx.font='20px Arial';
-    ctx.fillText(feedbackText,50,50);
+    // Remove off-screen
+    if(ob.x + ob.w < 0) obstacles.splice(i,1);
   }
 
+  // Gradually increase speed
   speed = 6 + Math.floor(score/5);
 
-  // Pet bounce
-  let petOffsetY = runnerY + Math.sin(Date.now()/150)*2;
+  // Pet bounce animation
+  let petOffsetY = runnerY + Math.sin(Date.now()/100)*2;
   ctx.drawImage(petImg,50-25,petOffsetY-25,50,50);
 
-  // Score
+  // Score display
   ctx.fillStyle='black';
   ctx.font='22px Arial';
   ctx.fillText('Score: '+score,canvas.width-150,30);
-
-  // Remove off-screen obstacles
-  obstacles = obstacles.filter(ob => ob.x + ob.w > 0);
 }
 
 /* ==================== QUIZ GAME ==================== */
@@ -106,7 +108,7 @@ let quizCoins=0;
 
 function initQuiz(){
   quizCoins=0;
-  alert("Quiz Instructions: Solve the math questions. Click your choice to answer.");
+  alert("Quiz Instructions:\nSolve math questions.\nClick your choice to answer.\nCorrect answers give coins!");
   showQuizQuestion();
 }
 
@@ -114,7 +116,9 @@ function generateQuizQuestion(){
   const nums=[1+Math.floor(Math.random()*10),1+Math.floor(Math.random()*10),1+Math.floor(Math.random()*10)];
   const ops=[Math.random()<0.5?'+':'-', Math.random()<0.5?'+':'-'];
   const question=`What is ${nums[0]} ${ops[0]} ${nums[1]} ${ops[1]} ${nums[2]}?`;
-  let answer=nums[0]; answer=ops[0]==='+'?answer+nums[1]:answer-nums[1]; answer=ops[1]==='+'?answer+nums[2]:answer-nums[2];
+  let answer=nums[0]; 
+  answer=ops[0]==='+'?answer+nums[1]:answer-nums[1]; 
+  answer=ops[1]==='+'?answer+nums[2]:answer-nums[2];
   let options=[answer];
   while(options.length<3){
     let r=answer+Math.floor(Math.random()*6)-3;
@@ -144,24 +148,20 @@ function showQuizQuestion(){
     btn.onclick=()=>checkQuizAnswer(opt,q.answer);
     answersDiv.appendChild(btn);
   });
-  document.getElementById('quizFeedback').innerText='';
 }
 
 function checkQuizAnswer(selected,correct){
-  const feedback=document.getElementById('quizFeedback');
   if(selected===correct){
-    feedback.innerText='✅ Correct! +1 Coin';
-    feedback.style.backgroundColor='lightgreen';
+    alert("✅ Correct! +1 Coin");
     quizCoins+=1;
   } else {
-    feedback.innerText=`❌ Wrong! Correct answer: ${correct}`;
-    feedback.style.backgroundColor='pink';
+    alert(`❌ Wrong! Correct answer was: ${correct}`);
   }
-  setTimeout(()=>{
-    feedback.style.backgroundColor='transparent';
-    if(confirm('Do you want to continue?')) showQuizQuestion();
-    else alert(`You earned ${quizCoins} coins!`);
-  },1000);
+  if(confirm("Do you want to continue to the next question?")){
+    showQuizQuestion();
+  } else {
+    alert(`You earned ${quizCoins} coins in total!`);
+  }
 }
 
 /* ==================== MEMORY GAME WITH TIMER ==================== */
@@ -171,7 +171,7 @@ const emojiList=['🍎','🍌','🍒','🥕','🍪','🧀','🍇','🍉','🥦',
 
 function initMemory(){
   memoryLevel=1; memoryCoins=0;
-  alert("Memory Instructions: Match all emoji cards before time runs out. Higher levels = less time!");
+  alert("Memory Instructions:\nMatch all emoji cards before time runs out.\nHigher levels = less time!");
   startMemoryLevel(memoryLevel);
 }
 
@@ -181,7 +181,7 @@ function startMemoryLevel(level){
   memoryCards = [...selected,...selected];
   memoryCards.sort(()=>Math.random()-0.5);
   memorySelected=[]; memoryMatched=[];
-  memoryTime = 30 - level*2; // less time each level
+  memoryTime = 30 - level*2; // less time per level
   renderMemory();
   if(memoryTimerInterval) clearInterval(memoryTimerInterval);
   memoryTimerInterval = setInterval(()=>{ 
@@ -218,6 +218,9 @@ function selectMemoryCard(i){
     if(memoryCards[memorySelected[0]]===memoryCards[memorySelected[1]]){
       memoryMatched.push(...memorySelected);
       memoryCoins+=1;
+      alert("✅ Matched! +1 Coin");
+    } else {
+      alert("❌ Not matched!");
     }
     memorySelected=[];
     renderMemory();
