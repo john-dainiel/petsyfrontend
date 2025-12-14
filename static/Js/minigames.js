@@ -1,5 +1,28 @@
 const backendUrl = "https://petsy-dow7.onrender.com";
 
+/* ==================== PLAYER INFO ==================== */
+const playerInfoDiv = document.getElementById('playerInfo');
+function loadPlayerInfo() {
+  const userToken = localStorage.getItem('userToken');
+  if (!userToken || !playerInfoDiv) return;
+
+  fetch(`${backendUrl}/me`, {
+    headers: { 'Authorization': `Bearer ${userToken}` }
+  })
+  .then(res => res.json())
+  .then(data => {
+    playerInfoDiv.innerHTML = `Player: ${data.username} • Coins 🪙 ${data.coins}`;
+  })
+  .catch(err => console.error('Error loading player info:', err));
+}
+
+// Refresh player info after coins update
+function refreshPlayerInfo() {
+  loadPlayerInfo();
+}
+
+loadPlayerInfo();
+
 /* ==================== GAME SELECTION ==================== */
 function showGame(game, petType = 'cat') {
   const games = document.querySelectorAll('.game-container');
@@ -444,6 +467,7 @@ function updateCoinsOnServer(coinsEarned, gameType) {
   .then(data => {
     console.log('Coins updated:', data);
     refreshLeaderboard();
+    refreshPlayerInfo();
   })
   .catch(err => console.error('Error updating coins:', err));
 }
@@ -453,33 +477,12 @@ function refreshLeaderboard() {
     .then(res => res.json())
     .then(data => {
       const lbDiv = document.getElementById('leaderboard');
-      if(lbDiv) {
-        lbDiv.innerHTML = ''; // clear old content
-
-        // Sort users by coins descending
-        data.sort((a, b) => b.coins - a.coins);
-
-        data.forEach((user, index) => {
-          const userDiv = document.createElement('div');
-          const rank = index + 1; // 1-based ranking
-          userDiv.innerText = `${rank}. ${user.username}: 🪙 ${user.coins}`;
-
-          // Highlight current user
-          if(user.username === currentUser) {
-            userDiv.classList.add('me');
-          }
-
-          lbDiv.appendChild(userDiv);
-        });
-      }
-    })
-    .catch(err => console.error('Error fetching leaderboard:', err));
+      if(lbDiv) lbDiv.innerHTML = data.map(u => `${u.username}: 🪙 ${u.coins}`).join('<br>');
+    });
 }
-
 
 /* ==================== INITIALIZE ==================== */
 initRunner('cat');
 initQuiz();
 initMemory();
 refreshLeaderboard();
-
