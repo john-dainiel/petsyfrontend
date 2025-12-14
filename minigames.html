@@ -3,62 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PETSY Minigames</title>
-  <link rel="stylesheet" href="https://petsyfrontend.onrender.com/static/css/minigames.css">
+  <title>PETSY Games Dashboard</title>
+  <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
-  <!-- PLAYER INFO -->
-  <div id="playerInfo">
-  User: <span id="miniUser"></span> | Coins: <span id="miniCoins"></span>
-  </div>
-  <!-- GAME MENU -->
-  <div class="game-menu">
-    <h1>🐾 PETSY Minigames</h1>
-    <button onclick="showGame('runner')">Coin Catcher</button>
-    <button onclick="showGame('quiz')">Quiz ❓</button>
-    <button onclick="showGame('memory')">Memory 🃏</button>
-  </div>
 
-  <!-- RUNNER GAME -->
-  <div id="runner" class="game-container" style="display:none;">
-    <div id="runnerCoins" style="font-size:20px; margin-top:5px;">Coins 🪙 0</div>
-    <button id="runnerStartBtn">▶ Start Game</button>
-    <canvas id="runnerCanvas" width="800" height="400"></canvas>
-    <p>Use LEFT & RIGHT arrows to move your pet and catch coins. Avoid bones and puddles!</p>
-    <div id="gameTimer" style="font-size:20px; margin-top:5px;"></div>
-  </div>
+<header id="playerInfo">User: Player • Coins: 🪙 0</header>
 
-  <!-- QUIZ GAME -->
-  <div id="quiz" class="game-container" style="display:none;">
-    <h2>❓ Quiz Challenge</h2>
-    <div id="quizTop" style="display:flex; align-items:center; gap:20px;">
-      <button id="quizStartBtn">▶ Start Quiz</button>
+<div class="container">
+  <!-- Games Column -->
+  <div class="games">
+    <!-- Game Selector -->
+    <div>
+      <button onclick="showGame('runner')">🏃 Runner</button>
+      <button onclick="showGame('quiz')">❓ Quiz</button>
+      <button onclick="showGame('memory')">🧠 Memory</button>
+    </div>
+
+    <!-- Runner Game -->
+    <div id="runner" class="game-container">
+      <h2>Runner Game</h2>
+      <canvas id="runnerCanvas" width="400" height="300"></canvas>
+      <div id="runnerCoins">Coins 🪙 0</div>
+      <div id="gameTimer">Time left: 30s</div>
+      <button id="runnerStartBtn">▶ Start Runner</button>
+    </div>
+
+    <!-- Quiz Game -->
+    <div id="quiz" class="game-container">
+      <h2>Quiz Game</h2>
       <div id="quizCoins">Coins 🪙 0</div>
+      <div id="quizQuestion"></div>
+      <div id="quizAnswers"></div>
+      <div id="quizControls"></div>
+      <button id="quizStartBtn">▶ Start Quiz</button>
     </div>
-    <div id="quizQuestion" class="quiz-question">Click ▶ Start Quiz to begin</div>
-    <div id="quizAnswers" class="quiz-answers"></div>
-    <div id="quizControls"></div>
-  </div>
 
-  <!-- MEMORY GAME -->
-  <div id="memory" class="game-container" style="display:none;">
-    <h2>🧠 Memory Match</h2>
-    <div id="memoryTop" style="display:flex; align-items:center; gap:20px;">
-      <button id="memoryStartBtn">▶ Start Memory</button>
-      <div id="memoryTimer">⏱️ 30s</div>
+    <!-- Memory Game -->
+    <div id="memory" class="game-container">
+      <h2>Memory Game</h2>
       <div id="memoryInfo">Level 1 • Coins 🪙 0</div>
+      <div id="memoryTimer">⏱️ 30s</div>
+      <div id="memoryGrid"></div>
+      <button id="memoryStartBtn">▶ Start Memory</button>
     </div>
-    <div id="memoryGrid"></div>
   </div>
 
-  <!-- LEADERBOARD -->
-  <div id="leaderboardContainer" style="margin-top:20px;">
-    <h3>🏆 Leaderboard</h3>
-    <div id="leaderboard">Loading...</div>
-  </div>
+  <!-- Leaderboards Column -->
+  <div class="leaderboards">
+    <h3>🏃 Runner Leaderboard</h3>
+    <div id="runner-leaderboard">Loading...</div>
 
-  <!-- JS -->
-  <script src="https://petsyfrontend.onrender.com/static/Js/minigames.js"></script>
+    <h3>❓ Quiz Leaderboard</h3>
+    <div id="quiz-leaderboard">Loading...</div>
+
+    <h3>🧠 Memory Leaderboard</h3>
+    <div id="memory-leaderboard">Loading...</div>
+  </div>
+</div>
+
+<script src="static/js/games.js"></script>
 </body>
 </html>
-
