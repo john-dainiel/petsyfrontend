@@ -455,22 +455,20 @@ function showPopup(html, onClose) {
 
 /* ==================== BACKEND UPDATES ==================== */
 function updateCoinsOnServer(coinsEarned, gameType) {
-  const userToken = localStorage.getItem('userToken'); 
-  if (!userToken) return;
+  const userToken = localStorage.getItem('userToken');
+  const petId = localStorage.getItem('petId'); // store current pet ID
+  if (!userToken || !petId) return;
 
   fetch(`${backendUrl}/update_coins`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-    body: JSON.stringify({ coins: coinsEarned, game: gameType })
+    body: JSON.stringify({ coins: coinsEarned, game: gameType, pet_id: petId })
   })
   .then(res => res.json())
-  .then(data => {
-    console.log('Coins updated:', data);
-    refreshLeaderboard();
-    refreshPlayerInfo();
-  })
+  .then(data => { console.log('Coins updated:', data); refreshLeaderboard(); })
   .catch(err => console.error('Error updating coins:', err));
 }
+
 
 function refreshLeaderboard() {
   fetch(`${backendUrl}/leaderboard`)
@@ -486,3 +484,4 @@ initRunner('cat');
 initQuiz();
 initMemory();
 refreshLeaderboard();
+
