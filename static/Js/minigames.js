@@ -92,7 +92,7 @@ function initRunner(petType='cat'){
   score = 0; coinsArr=[]; obstacles=[]; countdown=30; gameRunning=false; imagesLoaded=0;
 
   loadImage(petImg, petType==='cat'?'static/images/cat_happy.png':'static/images/dog_happy.png');
-  loadImage(coinImg,'static/images/coin.png'); loadImage(boneImg,'static/images/bone.png'); loadImage(puddleImg,'static/images/puddle.png');
+  loadImage(coinImg,'static/images/coin.png'); loadImage(boneImg,'static/images/bones.png'); loadImage(puddleImg,'static/images/puddle.png');
 
   document.getElementById('runnerCoins').innerText = `Coins 🪙 0`;
   drawRunnerStartScreen();
@@ -399,6 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Update all leaderboards on load
   updateAllLeaderboards();
 });
+
 
 
 
