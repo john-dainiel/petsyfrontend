@@ -181,8 +181,14 @@ otpForm.addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if (res.ok && data.success) {
+      // ✅ THIS IS WHERE YOU ADD IT:
+      localStorage.setItem("userToken", data.device_token); // save token for minigames
+      localStorage.setItem("username", currentUsername);
+      localStorage.setItem("userId", data.user_id);
+      localStorage.setItem("petId", data.pet?.id || null);
+      localStorage.setItem("totalCoins", data.pet?.coins || 0);
+
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("user_id", data.user_id || "");
       localStorage.setItem("remember_username", currentUsername);
 
       loginForm.classList.add("hidden");
@@ -195,12 +201,12 @@ otpForm.addEventListener("submit", async (e) => {
     } else {
       showMessage(data.message || "Invalid OTP.", "error");
     }
-
   } catch (err) {
     console.error("OTP verification error:", err);
     showMessage("Server unavailable. Try again later.", "warn");
   }
 });
+
 
 // ==============================
 // 🧩 FORGOT PASSWORD & RESET
@@ -323,4 +329,5 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
 
