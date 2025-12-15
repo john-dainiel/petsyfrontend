@@ -183,6 +183,7 @@ otpForm.addEventListener("submit", async (e) => {
     if (res.ok && data.success) {
       // ✅ THIS IS WHERE YOU ADD IT:
       localStorage.setItem('userToken', data.token); // token
+      console.log("✅ SAVED TOKEN:", data.token);
       localStorage.setItem('username', currentUsername);
       localStorage.setItem('user_id', data.user_id);       // lowercase for greet.js
       localStorage.setItem('pet_id', data.pet?.id || "");  // lowercase
@@ -329,6 +330,7 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
 
 
 
