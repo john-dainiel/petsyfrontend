@@ -182,14 +182,14 @@ otpForm.addEventListener("submit", async (e) => {
 
     if (res.ok && data.success) {
       // ✅ THIS IS WHERE YOU ADD IT:
-      localStorage.setItem("userToken", data.device_token); // save token for minigames
-      localStorage.setItem("username", currentUsername);
-      localStorage.setItem("userId", data.user_id);
-      localStorage.setItem("petId", data.pet?.id || null);
-      localStorage.setItem("totalCoins", data.pet?.coins || 0);
+      localStorage.setItem('userToken', data.device_token); // token
+      localStorage.setItem('username', currentUsername);
+      localStorage.setItem('user_id', data.user_id);       // lowercase for greet.js
+      localStorage.setItem('pet_id', data.pet?.id || "");  // lowercase
+      localStorage.setItem('totalCoins', data.pet?.coins || 0);
+      localStorage.setItem('role', data.role || 'user');   // store role
+      localStorage.setItem('has_pet', data.pet ? "true" : "false");
 
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("remember_username", currentUsername);
 
       loginForm.classList.add("hidden");
       otpForm.classList.add("hidden");
@@ -329,5 +329,6 @@ async function logout() {
   showMessage("Logged out successfully.", "success");
   setTimeout(() => (window.location.href = "index.html"), 1000);
 }
+
 
 
