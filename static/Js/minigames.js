@@ -22,30 +22,48 @@ function loadPlayerInfo() {
 }
 
 /* ==================== BACKEND COIN UPDATE ==================== */
-function updateCoinsOnServer(coinsEarned, gameType) {
+async function updateCoinsOnServer(coinsEarned, gameType) {
   const token = localStorage.getItem('userToken');
-  if (!token) return;
-  fetch(`${backendUrl}/mini_game/win`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ coins_earned: coinsEarned, game_type: gameType })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      localStorage.setItem('totalCoins', data.coins || 0);
-      loadPlayerInfo();
-      updateAllLeaderboards();
-      if(coinsEarned>0) sounds.coin.play();
-    } else {
-      console.error("Win rejected:", data);
+  if (!token) {
+    console.error("❌ No token found");
+    return false;
+  }
+
+  try {
+    const res = await fetch(`${backendUrl}/mini_game/win`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        coins_earned: coinsEarned,
+        game_type: gameType
+      })
+    });
+
+    const data = await res.json();
+    console.log("🎯 WIN RESPONSE:", data);
+
+    if (!data.success) {
+      console.error("❌ Win rejected:", data.error);
+      return false;
     }
-  })
-  .catch(err => console.error('Error updating coins:', err));
+
+    // 🔥 TRUST SERVER, NOT LOCAL SCORE
+    localStorage.setItem("totalCoins", data.coins);
+
+    // 🔥 FORCE UI UPDATE
+    loadPlayerInfo();
+
+    return true;
+
+  } catch (err) {
+    console.error("❌ Coin update failed:", err);
+    return false;
+  }
 }
+
 
 /* ==================== LEADERBOARD ==================== */
 async function updateLeaderboard(gameType) {
@@ -158,10 +176,15 @@ function endRunnerGame(){
   ctx.fillText('Game Over!',canvas.width/2-100,canvas.height/2-20);
   ctx.font='24px Arial'; ctx.fillText(`Coins collected: ${score}`,canvas.width/2-90,canvas.height/2+20);
   sounds.runner_gameover.play();
-  showPopup(`Game Over! You earned 🪙 ${score}`, () => {
-    updateCoinsOnServer(score,'runner');   
-    initRunner('cat'); 
-  });
+  showPopup(`Game Over! You earned 🪙 ${score}`, async () => {
+  const success = await updateCoinsOnServer(score, 'runner');
+
+  if (success) {
+    console.log("✅ Coins saved successfully");
+  }
+
+  initRunner('cat');
+});
 }
 
 /* ==================== QUIZ GAME ==================== */
@@ -305,3 +328,4 @@ async function loadUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
+
