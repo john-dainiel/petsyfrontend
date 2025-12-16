@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const shopOverlay = document.createElement('div');
   shopOverlay.className = 'modal-overlay hidden';
   document.body.appendChild(shopOverlay);
-
+  
+  const treatOptions = document.getElementById("treatOptions");
   const eatButton = $('#eatButton');
   const eatMenuContainer = document.querySelector('.eat-menu');
   const shopButtons = Array.from(document.querySelectorAll('.shop-btn'));
@@ -161,8 +162,8 @@ if (petImage) {
  
   // Clean button
   cleanBtn?.addEventListener('click', async () => {
-    const pet_id = localStorage.getItem('pet_id');
-    if (!pet_id) {
+    const petId = localStorage.getItem('petId');
+    if (!petId) {
       alert('No pet selected.');
       return;
     }
@@ -170,12 +171,12 @@ if (petImage) {
       const res = await fetch(`${backendUrl}/clean_pet`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pet_id })
+        body: JSON.stringify({ petId })
       });
       const data = await res.json();
       if (res.ok && (data.success || data.cleaned)) {
         // reset local play counter and dirty flag
-        resetPlayCounter(pet_id);
+        resetPlayCounter(petId);
         if (pet) { pet.is_dirty = false; pet.isDirty = false; }
         await updateStats();
         sparklesOnClean();
@@ -214,8 +215,8 @@ if (petImage) {
 // -----------------------
 saveNameBtn?.addEventListener('click', async () => {
   const newName = (renameInput?.value || '').trim();
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) {
+  const petId = localStorage.getItem('petId');
+  if (!petId) {
     renameResult.textContent = '❌ No pet selected.';
     renameResult.classList.remove('hidden');
     return;
@@ -226,7 +227,7 @@ saveNameBtn?.addEventListener('click', async () => {
     return;
   }
 
-  const cooldownKey = `pet_rename_cooldown_${pet_id}`;
+  const cooldownKey = `pet_rename_cooldown_${petId}`;
   const lastRename = parseInt(localStorage.getItem(cooldownKey) || '0', 10);
   const now = Date.now();
   const oneDayMs = 24 * 60 * 60 * 1000;
@@ -246,7 +247,7 @@ saveNameBtn?.addEventListener('click', async () => {
     const res = await fetch(`${backendUrl}/rename_pet`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pet_id, new_name: newName })
+      body: JSON.stringify({ petId, new_name: newName })
     });
     const data = await res.json();
 
@@ -305,8 +306,8 @@ saveNameBtn?.addEventListener('click', async () => {
 
     restBtn.addEventListener('click', async () => {
       const sleeping = !!localStorage.getItem('pet_sleep_start');
-      const pet_id = localStorage.getItem('pet_id');
-      if (!pet_id) { showToast('No pet selected.'); return; }
+      const petId = localStorage.getItem('petId');
+      if (!petId) { showToast('No pet selected.'); return; }
 
       if (!sleeping) {
         // put pet to sleep
@@ -352,7 +353,7 @@ function safeSetPetImage(imgEl, src) {
 async function loadMain() {
   console.log('📦 loadMain() starting...');
   const user_id = localStorage.getItem('user_id');
-  const pet_id = localStorage.getItem('pet_id');
+  const petId = localStorage.getItem('petId');
 
   if (!user_id) {
     console.log('❌ No user_id found, redirecting to login...');
@@ -360,8 +361,8 @@ async function loadMain() {
     return;
   }
 
-  const idToLoad = pet_id ? pet_id : user_id;
-  const endpoint = pet_id ? 'get_pet_by_id' : 'get_pet';
+  const idToLoad = petId ? petId : user_id;
+  const endpoint = petId ? 'get_pet_by_id' : 'get_pet';
 
   try {
     const res = await fetch(`${backendUrl}/${endpoint}/${idToLoad}`);
@@ -384,7 +385,7 @@ async function loadMain() {
     pet.hunger = (typeof pet.hunger === 'number') ? pet.hunger : (pet.hunger ?? 50);
     pet.happiness = (typeof pet.happiness === 'number') ? pet.happiness : (pet.happiness ?? 50);
 
-    localStorage.setItem('pet_id', data.id);
+    localStorage.setItem('petId', data.id);
     if (data.pet_name) localStorage.setItem('pet_name', data.pet_name);
     if (data.pet_type) localStorage.setItem('pet_type', data.pet_type.toLowerCase());
     if (data.created_at) localStorage.setItem('pet_birthdate', data.created_at.split(' ')[0]);
@@ -490,11 +491,11 @@ function displayAge() {
 }
 
 async function updateStats() {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
+  const petId = localStorage.getItem('petId');
+  if (!petId) return;
 
   try {
-    const res = await fetch(`${backendUrl}/get_pet_by_id/${pet_id}`);
+    const res = await fetch(`${backendUrl}/get_pet_by_id/${petId}`);
     const data = await res.json();
     if (!res.ok || data.error) return;
 
@@ -567,8 +568,8 @@ function updateBackground() {
 
 // generic endpoint action with small floating emoji feedback
 async function doAction(endpoint) {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
+  const petId = localStorage.getItem('petId');
+  if (!petId) return;
 
   const emoji = document.createElement('div');
   emoji.className = 'floating-emoji';
@@ -585,7 +586,7 @@ async function doAction(endpoint) {
     const res = await fetch(`${backendUrl}/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pet_id }),
+      body: JSON.stringify({ petId }),
     });
     const data = await res.json();
     if (data.success) await updateStats();
@@ -606,8 +607,8 @@ async function doAction(endpoint) {
 // 🐾 doPatAction — Play with pet (fixed dirty/baby logic)
 // ===============================
 async function doPatAction() {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
+  const petId = localStorage.getItem('petId');
+  if (!petId) return;
 
   const playBtn = document.getElementById('playBtn');
   if (!playBtn) return;
@@ -720,7 +721,7 @@ const cooldownInterval = setInterval(() => {
   if (happinessEl) happinessEl.value = pet.happiness;
 
   // Mark dirty after 3 plays
-  incrementPlayCounter(pet_id);
+  incrementPlayCounter(petId);
 
   // Backend sync after animation
   setTimeout(async () => {
@@ -728,7 +729,7 @@ const cooldownInterval = setInterval(() => {
       const res = await fetch(`${backendUrl}/play_pet`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pet_id })
+        body: JSON.stringify({ petId })
       });
 
       await updateStats();
@@ -750,30 +751,30 @@ function getCooldownEmoji() {
 }
 
 
-function getPlayKey(pet_id) { return `play_count_${pet_id}`; }
-function incrementPlayCounter(pet_id) {
-  const key = getPlayKey(pet_id);
+function getPlayKey(petId) { return `play_count_${petId}`; }
+function incrementPlayCounter(petId) {
+  const key = getPlayKey(petId);
   let count = parseInt(localStorage.getItem(key) || '0', 10);
   count += 1;
   localStorage.setItem(key, String(count));
   // if reaches 3, mark dirty and reset counter
   if (count >= 3) {
-    markPetDirtyLocal(pet_id);
+    markPetDirtyLocal(petId);
     showToast('💩 Your pet got dirty after playing a lot—time to clean!');
     localStorage.setItem(key, '0');
   }
 }
-function resetPlayCounter(pet_id) { const key = getPlayKey(pet_id); localStorage.setItem(key, '0'); }
+function resetPlayCounter(petId) { const key = getPlayKey(petId); localStorage.setItem(key, '0'); }
 
 // try to persist dirty state on server if endpoint exists; otherwise keep client-side
-async function markPetDirtyLocal(pet_id) {
-  if (!pet_id) return;
+async function markPetDirtyLocal(petId) {
+  if (!petId) return;
 
   // optimistic local update
   if (!pet) pet = {};
   pet.is_dirty = true;
   pet.isDirty = true;
-  localStorage.setItem(`pet_dirty_${pet_id}`, 'true');
+  localStorage.setItem(`pet_dirty_${petId}`, 'true');
 
   // ✅ Fix: set dirty image
   setPetImage('dirty');
@@ -783,7 +784,7 @@ async function markPetDirtyLocal(pet_id) {
     await fetch(`${backendUrl}/mark_dirty`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pet_id })
+      body: JSON.stringify({ petId })
     });
     setTimeout(updateStats, 800);
   } catch (err) {
@@ -932,11 +933,11 @@ function startCommunityPopups() {
 // -----------------------
 
 async function handleSleep() {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
+  const petId = localStorage.getItem('petId');
+  if (!petId) return;
   try {
     const res = await fetch(`${backendUrl}/sleep_pet`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pet_id })
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ petId })
     });
     const data = await res.json();
     if (data.success) {
@@ -969,14 +970,14 @@ function startSleepTimer() {
 async function wakePet() {
   
   // Unified wake logic — used by rest button and auto-wake
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
+  const petId = localStorage.getItem('petId');
+  if (!petId) return;
   // attempt server wake endpoint; fallback to client-side
   try {
     const res = await fetch(`${backendUrl}/wake_pet`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pet_id })
+      body: JSON.stringify({ petId })
     });
     const data = await res.json();
     // if server confirms, use server state; otherwise fall through
@@ -1036,10 +1037,10 @@ function startSleepEmoji() {
 function stopSleepEmoji() { if (sleepEmojiInterval) { clearInterval(sleepEmojiInterval); sleepEmojiInterval = null; } }
 
 async function checkSleepStatus() {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
+  const petId = localStorage.getItem('petId');
+  if (!petId) return;
   try {
-    const res = await fetch(`${backendUrl}/check_sleep_status/${pet_id}`);
+    const res = await fetch(`${backendUrl}/check_sleep_status/${petId}`);
     const data = await res.json();
     if (data.sleeping) {
       disableAllActions(true);
@@ -1153,12 +1154,12 @@ function startPetMoodMonitor() {
 // this will attempt to call them; otherwise it will update locally and call updateStats().
 
 async function restoreEnergyOnce() {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
+  const petId = localStorage.getItem('petId');
+  if (!petId) return;
 
   // Try server endpoint first (optional). If it fails, do local update.
   try {
-    const res = await fetch(`${backendUrl}/restore_energy/${pet_id}`, {
+    const res = await fetch(`${backendUrl}/restore_energy/${petId}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 100 })
     });
     if (res.ok) {
@@ -1196,17 +1197,17 @@ function stopEnergyRestore() { if (energyRestoreInterval) { clearInterval(energy
 // UI & Toast helpers
 // -----------------------
 async function drinkWater() {
-  const petId = localStorage.getItem("pet_id"); // or however you store current pet
+  const petId = localStorage.getItem("petId"); // or however you store current pet
   const response = await fetch(`${backendUrl}/update_thirst`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ pet_id: petId, amount: 10 })
+    body: JSON.stringify({ petId: petId, amount: 10 })
   });
   
   const data = await response.json();
   if (data.success) {
     console.log("💧 Thirst updated!");
-    loadPetData(); // refresh UI
+    updateStats();
   }
 }
 
@@ -1253,7 +1254,7 @@ function playSound(src) {
 const sDrink = new Audio("static/sounds/drink.mp3"); // make sure drink.mp3 exists
 
 async function doDrinkAction() {
-  const petId = localStorage.getItem("pet_id");
+  const petId = localStorage.getItem("petId");
   if (!petId) return;
 
   // If pet sleeping, ignore
@@ -1287,7 +1288,7 @@ async function doDrinkAction() {
     const res = await fetch(`${backendUrl}/update_thirst`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id: petId, amount: 10 }) // +10 thirst
+      body: JSON.stringify({ petId: petId, amount: 10 }) // +10 thirst
     });
     const data = await res.json();
     if (data.success) {
@@ -1349,7 +1350,7 @@ function startThirstDrain() {
       fetch(`${backendUrl}/update_thirst`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pet_id: localStorage.getItem("pet_id"), amount: 0 }) // sync current thirst
+        body: JSON.stringify({ petId: localStorage.getItem("petId"), amount: 0 }) // sync current thirst
       }).catch(() => console.debug("Thirst sync failed"));
     }
 
@@ -1390,14 +1391,15 @@ async function loadpet() {
 // Run once sanity checks
 // -----------------------
 (function sanity() {
-  // ensure there's a pet_id set for dev if not present
-  if (!localStorage.getItem('pet_id')) {
+  // ensure there's a petId set for dev if not present
+  if (!localStorage.getItem('petId')) {
     // don't overwrite user's data; only set for dev local testing
-    // localStorage.setItem('pet_id', '1');
+    // localStorage.setItem('petId', '1');
   }
 })();
 
 // End of main.js
+
 
 
 
