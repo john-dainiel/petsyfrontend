@@ -1402,13 +1402,4 @@ async function loadpet() {
 })();
 
 // End of main.js
-
-
-
-
-
-
-
-
-
-
+}
