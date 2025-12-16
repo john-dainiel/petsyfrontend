@@ -141,31 +141,39 @@ function updateRemainingCoins() {
 // -------------------------------
 // Checkout
 // -------------------------------
-checkoutBtn.addEventListener("click", () => {
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  if (total > userCoins) return alert("Not enough coins!");
-
+checkoutBtn.addEventListener("click", async () => {
+  const token = localStorage.getItem("userToken");
   const petId = localStorage.getItem("petId");
-  fetch(`${backendUrl}/buy_multiple_treats/${petId}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`
-    },
-    body: JSON.stringify({ items: cart })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert(`Purchase successful! Coins left: ${userCoins - total}`);
-      cart = [];
-      loadUserInfo(); // refresh coins
-      renderCart();
+
+  for (const item of cart) {
+    const res = await fetch(`${backendUrl}/shop/checkout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        pet_id: petId,
+        item_name: item.name,
+        item_size: item.size,
+        quantity: item.quantity
+      })
+    });
+
+    const data = await res.json();
+    if (!data.success) {
+      return alert(`Purchase failed: ${data.error}`);
     } else {
-      alert("Purchase failed: " + data.message);
+      userCoins = data.coins; // update coins after each purchase
     }
-  });
+  }
+
+  alert("Purchase successful!");
+  cart = [];
+  loadUserInfo();
+  renderCart();
 });
+
 
 // -------------------------------
 // Initialize
