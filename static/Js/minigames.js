@@ -22,12 +22,21 @@ function loadPlayerInfo() {
 }
 
 /* ==================== BACKEND COIN UPDATE ==================== */
+let coinUpdateInProgress = false;
+
 async function updateCoinsOnServer(coinsEarned, gameType) {
-  const token = localStorage.getItem('userToken');
+  if (coinUpdateInProgress) return false;
+  coinUpdateInProgress = true;
+
+  const token = localStorage.getItem("userToken");
+
   if (!token) {
-    console.error("❌ No token found");
+    console.error("❌ No userToken in localStorage");
+    coinUpdateInProgress = false;
     return false;
   }
+
+  console.log("📤 Sending:", { coinsEarned, gameType });
 
   try {
     const res = await fetch(`${backendUrl}/mini_game/win`, {
@@ -45,24 +54,26 @@ async function updateCoinsOnServer(coinsEarned, gameType) {
     const data = await res.json();
     console.log("🎯 WIN RESPONSE:", data);
 
-    if (!data.success) {
-      console.error("❌ Win rejected:", data.error);
+    if (!res.ok || !data.success) {
+      console.error("❌ Coin update rejected:", data.error);
+      coinUpdateInProgress = false;
       return false;
     }
 
-    // 🔥 TRUST SERVER, NOT LOCAL SCORE
+    // ✅ Trust backend
     localStorage.setItem("totalCoins", data.coins);
-
-    // 🔥 FORCE UI UPDATE
     loadPlayerInfo();
 
+    coinUpdateInProgress = false;
     return true;
 
   } catch (err) {
-    console.error("❌ Coin update failed:", err);
+    console.error("❌ Network error:", err);
+    coinUpdateInProgress = false;
     return false;
   }
 }
+
 
 
 /* ==================== LEADERBOARD ==================== */
@@ -336,5 +347,6 @@ async function loadUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
+
 
 
