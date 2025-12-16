@@ -57,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(shopOverlay);
   
   const treatOptions = document.getElementById("treatOptions");
-  const eatButton = $('#eatButton');
   const eatMenuContainer = document.querySelector('.eat-menu');
   const shopButtons = Array.from(document.querySelectorAll('.shop-btn'));
   document.getElementById("closeFeedMenu")?.addEventListener("click", () => {
@@ -1461,6 +1460,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
