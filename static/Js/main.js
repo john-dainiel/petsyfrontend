@@ -814,7 +814,7 @@ async function loadTreatInventory() {
     treatOptions.classList.remove("hidden");
     return;
   }
-
+}
 data.inventory.forEach(item => {
   const baseItem = ITEM_LOOKUP[item.name];
 
@@ -1408,5 +1408,6 @@ async function loadpet() {
 })();
 
 // End of main.js
-}
+
+
 
