@@ -814,7 +814,7 @@ async function loadTreatInventory() {
     treatOptions.classList.remove("hidden");
     return;
   }
-}
+
 data.inventory.forEach(item => {
   const baseItem = ITEM_LOOKUP[item.name];
 
@@ -841,7 +841,7 @@ data.inventory.forEach(item => {
   treatOptions.appendChild(div);
 });
 
-
+}
 
 function feedPet(name, size) {
   const petId = localStorage.getItem("petId");
@@ -1408,6 +1408,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
