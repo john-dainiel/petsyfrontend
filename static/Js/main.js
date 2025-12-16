@@ -1265,7 +1265,58 @@ function playSound(src) {
   audio.play().catch(err => console.log('Sound play failed:', err));
 }
 
+// -----------------------
+// 🐾 doDrinkAction — pet drinks water with sound only
+// -----------------------
+async function doDrinkAction() {
+  const petId = localStorage.getItem("pet_id");
+  if (!petId || !pet) return;
 
+  // Prevent action if pet is sleeping
+  if (pet.sleeping || pet.is_sleeping) {
+    showToast('😴 Your pet is sleeping.');
+    return;
+  }
+
+  const drinkBtn = document.getElementById('drinkBtn');
+  if (drinkBtn) {
+    drinkBtn.disabled = true;
+    drinkBtn.classList.add('disabled');
+  }
+
+  // Play drinking sound
+  const drinkSound = new Audio('static/sounds/drink.mp3'); // <-- make sure this exists
+  drinkSound.volume = 0.7;
+  drinkSound.play();
+
+  // Update thirst on backend
+  try {
+    const res = await fetch(`${backendUrl}/update_thirst`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pet_id: petId, amount: 10 }) // add 10 thirst points
+    });
+    const data = await res.json();
+    if (data.success) {
+      await updateStats(); // refresh UI bars
+      showToast('💧 Your pet drank water!');
+    }
+  } catch (err) {
+    console.error('Drink error:', err);
+    showToast('⚠️ Could not update thirst.');
+  }
+
+  // Re-enable button after cooldown (e.g., 2 seconds)
+  setTimeout(() => {
+    if (drinkBtn) {
+      drinkBtn.disabled = false;
+      drinkBtn.classList.remove('disabled');
+    }
+  }, 2000);
+}
+
+// Hook button
+document.getElementById('drinkBtn')?.addEventListener('click', doDrinkAction);
 // -----------------------
 // Misc dev helpers
 // -----------------------
@@ -1295,6 +1346,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
