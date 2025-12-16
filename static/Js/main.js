@@ -59,7 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const eatButton = $('#eatButton');
   const eatMenuContainer = document.querySelector('.eat-menu');
   const shopButtons = Array.from(document.querySelectorAll('.shop-btn'));
-  
+  document.getElementById("closeFeedMenu")?.addEventListener("click", () => {
+  document.getElementById("treatOptions")?.classList.add("hidden");
+  });
 
   // cleaning & options
   const cleanBtn = $('#cleanBtn');
@@ -71,6 +73,32 @@ document.addEventListener('DOMContentLoaded', () => {
   const renameResult = $('#renameResult');
   const muteToggle = $('#muteToggle');
   const muteStatus = $('#muteStatus');
+
+
+  const items = [
+  { name: "Apple", emoji: "🍎", size: "small", price: 5 },
+  { name: "Carrot", emoji: "🥕", size: "small", price: 4 },
+  { name: "Cookie", emoji: "🍪", size: "small", price: 6 },
+  { name: "Cheese", emoji: "🧀", size: "small", price: 5 },
+  { name: "Banana", emoji: "🍌", size: "small", price: 5 },
+
+  { name: "Burger", emoji: "🍔", size: "medium", price: 15 },
+  { name: "Pizza", emoji: "🍕", size: "medium", price: 18 },
+  { name: "Sushi", emoji: "🍣", size: "medium", price: 20 },
+  { name: "Sandwich", emoji: "🥪", size: "medium", price: 16 },
+  { name: "Pasta", emoji: "🍝", size: "medium", price: 17 },
+
+  { name: "Cake", emoji: "🍰", size: "large", price: 30 },
+  { name: "Steak", emoji: "🥩", size: "large", price: 35 },
+  { name: "Pineapple", emoji: "🍍", size: "large", price: 25 },
+  { name: "Watermelon", emoji: "🍉", size: "large", price: 28 },
+  { name: "Turkey", emoji: "🦃", size: "large", price: 40 }
+];
+
+  const ITEM_LOOKUP = {};
+items.forEach(item => {
+  ITEM_LOOKUP[item.name] = item;
+});
 
   // Background music element
 const bgMusic = document.getElementById('bgMusic');
@@ -786,18 +814,32 @@ async function loadTreatInventory() {
     return;
   }
 
-  data.inventory.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "treat-item";
-    div.innerHTML = `
-      <span>${item.emoji} ${item.name} x ${item.quantity}</span>
-      <button onclick="feedPet('${item.name}', '${item.size}')">Feed</button>
-    `;
-    treatOptions.appendChild(div);
-  });
+data.inventory.forEach(item => {
+  const baseItem = ITEM_LOOKUP[item.name];
 
-  treatOptions.classList.remove("hidden");
-}
+  // fallback safety
+  const hungerGain = baseItem?.price || 0;
+  const size = baseItem?.size || item.size;
+  const emoji = baseItem?.emoji || "🍽️";
+
+  const div = document.createElement("div");
+  div.className = "treat-item";
+
+  div.innerHTML = `
+    <div class="treat-info">
+      <strong>${emoji} ${item.name}</strong><br>
+      <span class="treat-size">Category: ${capitalize(size)}</span><br>
+      <span class="treat-effects">+${hungerGain} Hunger</span><br>
+      <span class="treat-qty">Owned: ${item.quantity}</span>
+    </div>
+    <button onclick="feedPet('${item.name}', '${size}')">
+      Feed
+    </button>
+  `;
+
+  treatOptions.appendChild(div);
+});
+
 
 
 function feedPet(name, size) {
@@ -833,7 +875,7 @@ function feedPet(name, size) {
         `;
         treatOptions.appendChild(div);
       });
-
+      document.getElementById("treatOptions")?.classList.add("hidden");
       // Optionally, update pet stats progress bars
       if (data.petStats) {
         document.getElementById("hungerBar").value = data.petStats.hunger;
@@ -1356,6 +1398,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
