@@ -21,6 +21,7 @@ const items = [
 let cart = [];
 let userCoins = 0;
 
+const usernameDisplay = document.getElementById("username-display");
 const userCoinsEl = document.getElementById("user-coins");
 const itemsContainer = document.getElementById("items-container");
 const cartContainer = document.getElementById("cart-container");
@@ -40,12 +41,10 @@ backBtn.addEventListener("click", () => {
 // Load User Info
 // -------------------------------
 function loadUserInfo() {
-  const playerDiv = document.getElementById('playerInfo');
-  if (!playerDiv) return;
-
   const token = localStorage.getItem('userToken');
   if (!token) {
-    playerDiv.innerText = `User: Guest • Coins: 0`;
+    usernameDisplay.innerText = "Guest";
+    userCoinsEl.innerText = 0;
     userCoins = 0;
     updateRemainingCoins();
     return;
@@ -57,23 +56,27 @@ function loadUserInfo() {
   })
   .then(res => res.json())
   .then(data => {
+    console.log("User info fetched:", data); // debug
     if (data.success) {
       localStorage.setItem('username', data.username);
       localStorage.setItem('petId', data.pet_id);
       localStorage.setItem('totalCoins', data.coins || 0);
 
       userCoins = data.coins || 0;
-      playerDiv.innerText = `User: ${data.username} • Coins: ${userCoins}`;
+      usernameDisplay.innerText = data.username;
+      userCoinsEl.innerText = userCoins;
       updateRemainingCoins();
     } else {
-      playerDiv.innerText = `User: Guest • Coins: 0`;
+      usernameDisplay.innerText = "Guest";
+      userCoinsEl.innerText = 0;
       userCoins = 0;
       updateRemainingCoins();
     }
   })
   .catch(err => {
     console.error('Failed to load player info:', err);
-    playerDiv.innerText = `User: Guest • Coins: 0`;
+    usernameDisplay.innerText = "Guest";
+    userCoinsEl.innerText = 0;
     userCoins = 0;
     updateRemainingCoins();
   });
