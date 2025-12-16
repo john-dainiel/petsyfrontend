@@ -4,11 +4,11 @@ const backendUrl = "https://petsy-dow7.onrender.com";
 const sounds = {
   coin: new Audio('static/sounds/coin.mp3'),
   quiz_correct: new Audio('static/sounds/quiz_correct.mp3'),
-  quiz_wrong: new Audio('static/sounds/quiz_wrong.mp3'),
+  quiz_wrong: new Audio('static/sounds/quiz_wrong.wav'),
   runner_start: new Audio('static/sounds/runner_start.mp3'),
-  runner_gameover: new Audio('static/sounds/runner_gameover.mp3'),
-  memory_match: new Audio('static/sounds/memory_match.mp3'),
-  memory_mismatch: new Audio('static/sounds/memory_mismatch.mp3'),
+  runner_gameover: new Audio('static/sounds/runner_gameover.wav'),
+  memory_match: new Audio('static/sounds/memory_match.wav'),
+  memory_mismatch: new Audio('static/sounds/memory_mismatch.wav'),
   popup: new Audio('static/sounds/popup.mp3')
 };
 
@@ -445,6 +445,7 @@ async function loadUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
+
 
 
 
