@@ -86,7 +86,7 @@ async function updateLeaderboard(gameType) {
     leaderboardDiv.innerHTML = '';
     leaderboard.forEach((entry, index) => {
       const el = document.createElement('div');
-      el.textContent = `${index + 1}. Pet ${entry.pet_id} - ${entry.best_score} coins`;
+      el.textContent = `${index + 1}. ${entry.username} - ${entry.best_score} 🪙`;
       leaderboardDiv.appendChild(el);
     });
   } catch(err) {
@@ -372,6 +372,7 @@ async function loadUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
+
 
 
 
