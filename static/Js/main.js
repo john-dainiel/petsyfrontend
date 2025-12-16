@@ -1243,9 +1243,12 @@ function playPetSound() {
 }
 // Generic sound player (respects mute)
 function playSound(src) {
-  if (localStorage.getItem('muted') === 'true') return;
+  if (!src) return;
+  const muted = localStorage.getItem('muted') === 'true';
+  if (muted) return;
   const audio = new Audio(src);
-  audio.play().catch(err => console.log('Sound play failed:', err));
+  audio.volume = 0.5;
+  audio.play().catch(err => console.log('Audio play blocked:', err));
 }
 
 // ===============================
@@ -1399,6 +1402,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
