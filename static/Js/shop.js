@@ -1,4 +1,3 @@
-
 const backendUrl = "https://petsy-dow7.onrender.com";
 
 const items = [
@@ -20,7 +19,7 @@ const items = [
 ];
 
 let cart = [];
-let userCoins = 100;
+let userCoins = 0;
 let username = "Player";
 
 const userCoinsEl = document.getElementById("user-coins");
@@ -32,6 +31,17 @@ const remainingCoinsEl = document.getElementById("remaining-coins");
 const checkoutBtn = document.getElementById("checkout-btn");
 const backBtn = document.getElementById("back-btn");
 
+// Modal elements
+const checkoutModal = document.getElementById("checkout-modal");
+const modalItems = document.getElementById("modal-items");
+const modalTotal = document.getElementById("modal-total");
+const modalCoins = document.getElementById("modal-coins");
+const modalOk = document.getElementById("modal-ok");
+
+modalOk.addEventListener("click", () => {
+  checkoutModal.style.display = "none";
+});
+
 // Back button
 backBtn.addEventListener("click", () => {
   window.location.href = "main.html"; // replace with your main menu
@@ -41,13 +51,13 @@ function loadUserInfo() {
   username = localStorage.getItem("username") || "Player";
   usernameEl.innerText = username;
 
-  // Fetch coins from backend
-  fetch("/get_user_info", {
+  const petId = localStorage.getItem("petId");
+  fetch(`${backendUrl}/get_pet_info/${petId}`, {
     headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` }
   })
     .then(res => res.json())
     .then(data => {
-      userCoins = data.coins || 0;
+      userCoins = data.coins || 0; // pet's coins
       userCoinsEl.innerText = userCoins;
       updateRemainingCoins();
     });
@@ -101,15 +111,19 @@ function removeFromCart(idx) {
 function updateRemainingCoins() {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   totalPriceEl.innerText = `Total: ${total} coins`;
-  remainingCoinsEl.innerText = `Coins after purchase: ${userCoins - total}`;
+
+  const remaining = userCoins - total;
+  remainingCoinsEl.innerText = `Coins after purchase: ${remaining}`;
+  checkoutBtn.disabled = remaining < 0;
 }
 
+// Checkout with modal
 checkoutBtn.addEventListener("click", () => {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   if (total > userCoins) return alert("Not enough coins!");
 
   const petId = localStorage.getItem("petId");
-  fetch(`/buy_multiple_treats/${petId}`, {
+  fetch(`${backendUrl}/buy_multiple_treats/${petId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -120,16 +134,29 @@ checkoutBtn.addEventListener("click", () => {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        alert(`Purchase successful! Coins left: ${userCoins - total}`);
+        const newCoins = userCoins - total;
+
+        // Fill modal with purchase info
+        modalItems.innerHTML = cart
+          .map(i => `${i.emoji} ${i.name} x ${i.quantity} = ${i.price * i.quantity} coins`)
+          .join("<br>");
+        modalTotal.innerText = `Total spent: ${total} coins`;
+        modalCoins.innerText = `Coins before: ${userCoins}, Coins after: ${newCoins}`;
+
+        checkoutModal.style.display = "flex";
+
+        // Update coins and reset cart
+        userCoins = newCoins;
+        userCoinsEl.innerText = userCoins;
         cart = [];
-        loadUserInfo();
         renderCart();
+        renderItems();
       } else {
         alert("Purchase failed: " + data.message);
       }
     });
 });
 
+// Initialize
 loadUserInfo();
 renderItems();
-
