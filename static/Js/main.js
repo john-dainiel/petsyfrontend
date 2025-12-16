@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const muteStatus = $('#muteStatus');
 
 
-  const items = [
+  const item = [
   { name: "Apple", emoji: "🍎", size: "small", price: 5 },
   { name: "Carrot", emoji: "🥕", size: "small", price: 4 },
   { name: "Cookie", emoji: "🍪", size: "small", price: 6 },
@@ -97,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
 ];
 
   const ITEM_LOOKUP = {};
-items.forEach(items => {
-  ITEM_LOOKUP[items.name] = items;
+item.forEach(item => {
+  ITEM_LOOKUP[item.name] = item;
 });
 
   // Background music element
@@ -1408,6 +1408,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
