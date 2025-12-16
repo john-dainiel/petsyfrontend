@@ -105,97 +105,169 @@ function showGame(game, petType='cat') {
 }
 
 /* ==================== RUNNER GAME ==================== */
-let canvas, ctx, petX, petY, petWidth=80, petHeight=80;
-let coinsArr=[], obstacles=[], score=0;
-let gameInterval=null, timerInterval=null, countdown=30, gameRunning=false;
-const petImg=new Image(), coinImg=new Image(), boneImg=new Image(), puddleImg=new Image();
-let imagesLoaded=0;
+let canvas, ctx, petX, petY, petWidth = 80, petHeight = 80;
+let coinsArr = [], obstacles = [], score = 0;
+let gameInterval = null, timerInterval = null, countdown = 30, gameRunning = false;
+const petImg = new Image(), coinImg = new Image(), boneImg = new Image(), puddleImg = new Image();
+let imagesLoaded = 0;
 
-function loadImage(img, src){ img.src=src; img.onload=()=>imagesLoaded++; img.onerror=()=>imagesLoaded++; }
-function initRunner(petType='cat'){
-  canvas = document.getElementById('runnerCanvas'); ctx = canvas.getContext('2d');
-  petX = canvas.width/2 - petWidth/2; petY = canvas.height - petHeight -10;
-  score = 0; coinsArr=[]; obstacles=[]; countdown=30; gameRunning=false; imagesLoaded=0;
-  loadImage(petImg, petType==='cat'?'static/images/cat_happy.png':'static/images/dog_happy.png');
-  loadImage(coinImg,'static/images/coin.png'); loadImage(boneImg,'static/images/bones.png'); loadImage(puddleImg,'static/images/puddle.png');
+// Load images helper
+function loadImage(img, src) {
+  img.src = src;
+  img.onload = () => imagesLoaded++;
+  img.onerror = () => imagesLoaded++;
+}
+
+// Init runner game
+function initRunner(petType = 'cat') {
+  canvas = document.getElementById('runnerCanvas');
+  ctx = canvas.getContext('2d');
+  petX = canvas.width / 2 - petWidth / 2;
+  petY = canvas.height - petHeight - 10;
+  score = 0;
+  coinsArr = [];
+  obstacles = [];
+  countdown = 30;
+  gameRunning = false;
+  imagesLoaded = 0;
+
+  loadImage(petImg, petType === 'cat' ? 'static/images/cat_happy.png' : 'static/images/dog_happy.png');
+  loadImage(coinImg, 'static/images/coin.png');
+  loadImage(boneImg, 'static/images/bones.png');
+  loadImage(puddleImg, 'static/images/puddle.png');
+
   document.getElementById('runnerCoins').innerText = `Coins 🪙 0`;
-  drawRunnerStartScreen(); updateTimerDisplay();
+  drawRunnerStartScreen();
+  updateTimerDisplay();
 }
-function drawRunnerStartScreen(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='#cce0ff'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='#000'; ctx.font='36px Arial';
-  ctx.fillText('Click ▶ Start Game',canvas.width/2-150,canvas.height/2);
+
+// Start screen
+function drawRunnerStartScreen() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#cce0ff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#000';
+  ctx.font = '36px Arial';
+  ctx.fillText('Click ▶ Start Game', canvas.width / 2 - 150, canvas.height / 2);
 }
-document.getElementById('runnerStartBtn').onclick = ()=>{
-  if(gameRunning) return;
-  if(imagesLoaded<4){ alert("Loading images..."); return; }
-  startRunnerGame(); sounds.runner_start.play();
+
+// Fade out audio helper
+function fadeOutAudio(audio, duration = 500) {
+  if (!audio) return;
+  let volStep = audio.volume / (duration / 50);
+  let fade = setInterval(() => {
+    if (audio.volume > volStep) {
+      audio.volume -= volStep;
+    } else {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = 1;
+      clearInterval(fade);
+    }
+  }, 50);
+}
+
+// Start button click
+document.getElementById('runnerStartBtn').onclick = () => {
+  if (gameRunning) return;
+  if (imagesLoaded < 4) { alert("Loading images..."); return; }
+  startRunnerGame();
+  sounds.runner_start.loop = true;
+  sounds.runner_start.play();
 };
-document.addEventListener('keydown', e=>{
-  if(!gameRunning) return;
-  if(e.code==='ArrowLeft') petX-=15;
-  if(e.code==='ArrowRight') petX+=15;
-  if(petX<0) petX=0;
-  if(petX+petWidth>canvas.width) petX=canvas.width-petWidth;
+
+// Player movement
+document.addEventListener('keydown', e => {
+  if (!gameRunning) return;
+  if (e.code === 'ArrowLeft') petX -= 15;
+  if (e.code === 'ArrowRight') petX += 15;
+  if (petX < 0) petX = 0;
+  if (petX + petWidth > canvas.width) petX = canvas.width - petWidth;
 });
-function spawnRunnerCoin(){ coinsArr.push({x:Math.random()*(canvas.width-40),y:-30,width:40,height:40}); }
-function spawnRunnerObstacle(){ const type=Math.random()<0.5?'bone':'puddle'; obstacles.push({x:Math.random()*(canvas.width-40),y:-30,width:50,height:50,type}); }
-function startRunnerGame(){
-  gameRunning=true; score=0; coinsArr=[]; obstacles=[]; countdown=30;
-  document.getElementById('runnerCoins').innerText=`Coins 🪙 0`;
-  gameInterval=setInterval(runnerGameLoop,20);
-  timerInterval=setInterval(()=>{
-    countdown--; updateTimerDisplay();
-    if(countdown<=0) endRunnerGame();
-  },1000);
+
+// Spawn coin & obstacles
+function spawnRunnerCoin() { coinsArr.push({ x: Math.random() * (canvas.width - 40), y: -30, width: 40, height: 40 }); }
+function spawnRunnerObstacle() { 
+  const type = Math.random() < 0.5 ? 'bone' : 'puddle'; 
+  obstacles.push({ x: Math.random() * (canvas.width - 40), y: -30, width: 50, height: 50, type }); 
 }
-function updateTimerDisplay(){ document.getElementById('gameTimer').innerText=`Time left: ${countdown}s`; }
-function runnerGameLoop(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='#cce0ff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+// Start the game
+function startRunnerGame() {
+  gameRunning = true;
+  score = 0;
+  coinsArr = [];
+  obstacles = [];
+  countdown = 30;
+  document.getElementById('runnerCoins').innerText = `Coins 🪙 0`;
+  gameInterval = setInterval(runnerGameLoop, 20);
+  timerInterval = setInterval(() => {
+    countdown--;
+    updateTimerDisplay();
+    if (countdown <= 0) endRunnerGame();
+  }, 1000);
+}
+
+function updateTimerDisplay() { document.getElementById('gameTimer').innerText = `Time left: ${countdown}s`; }
+
+// Game loop
+function runnerGameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#cce0ff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(petImg, petX, petY, petWidth, petHeight);
 
-  if(Math.random()<0.02) spawnRunnerCoin();
-  if(Math.random()<0.01) spawnRunnerObstacle();
+  if (Math.random() < 0.02) spawnRunnerCoin();
+  if (Math.random() < 0.01) spawnRunnerObstacle();
 
-  for(let i=coinsArr.length-1;i>=0;i--){
-    const c=coinsArr[i]; c.y+=4; ctx.drawImage(coinImg,c.x,c.y,c.width,c.height);
-    if(c.x<petX+petWidth && c.x+c.width>petX && c.y<petY+petHeight && c.y+c.height>petY){
-      score++; coinsArr.splice(i,1);
-      document.getElementById('runnerCoins').innerText=`Coins 🪙 ${score}`;
+  // Coins
+  for (let i = coinsArr.length - 1; i >= 0; i--) {
+    const c = coinsArr[i];
+    c.y += 4;
+    ctx.drawImage(coinImg, c.x, c.y, c.width, c.height);
+    if (c.x < petX + petWidth && c.x + c.width > petX && c.y < petY + petHeight && c.y + c.height > petY) {
+      score++; coinsArr.splice(i, 1);
+      document.getElementById('runnerCoins').innerText = `Coins 🪙 ${score}`;
       sounds.coin.play();
     }
-    if(c.y>canvas.height) coinsArr.splice(i,1);
+    if (c.y > canvas.height) coinsArr.splice(i, 1);
   }
 
-  for(let i=obstacles.length-1;i>=0;i--){
-    const ob=obstacles[i]; ob.y+=5;
-    if(ob.type==='bone') ctx.drawImage(boneImg,ob.x,ob.y,ob.width,ob.height);
-    else ctx.drawImage(puddleImg,ob.x,ob.y,ob.width,ob.height);
+  // Obstacles
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const ob = obstacles[i];
+    ob.y += 5;
+    if (ob.type === 'bone') ctx.drawImage(boneImg, ob.x, ob.y, ob.width, ob.height);
+    else ctx.drawImage(puddleImg, ob.x, ob.y, ob.width, ob.height);
 
-    if(ob.x<petX+petWidth && ob.x+ob.width>petX && ob.y<petY+petHeight && ob.y+ob.height>petY){
-      endRunnerGame(); return;
+    if (ob.x < petX + petWidth && ob.x + ob.width > petX && ob.y < petY + petHeight && ob.y + ob.height > petY) {
+      endRunnerGame();
+      return;
     }
-    if(ob.y>canvas.height) obstacles.splice(i,1);
+    if (ob.y > canvas.height) obstacles.splice(i, 1);
   }
 }
-function endRunnerGame(){
-  if (!gameRunning) return; // ⛔ prevent double calls
+
+// End game
+function endRunnerGame() {
+  if (!gameRunning) return;
   gameRunning = false;
 
   clearInterval(gameInterval);
   clearInterval(timerInterval);
 
-  ctx.fillStyle='rgba(0,0,0,0.6)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+  // Fade out runner_start background
+  fadeOutAudio(sounds.runner_start);
 
-  ctx.fillStyle='#fff';
-  ctx.font='36px Arial';
-  ctx.fillText('Game Over!',canvas.width/2-100,canvas.height/2-20);
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.font='24px Arial';
-  ctx.fillText(`Coins collected: ${score}`,canvas.width/2-90,canvas.height/2+20);
+  ctx.fillStyle = '#fff';
+  ctx.font = '36px Arial';
+  ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2 - 20);
+
+  ctx.font = '24px Arial';
+  ctx.fillText(`Coins collected: ${score}`, canvas.width / 2 - 90, canvas.height / 2 + 20);
 
   sounds.runner_gameover.play();
 
@@ -204,6 +276,7 @@ function endRunnerGame(){
     initRunner('cat');
   });
 }
+
 
 
 /* ==================== QUIZ GAME ==================== */
@@ -372,6 +445,7 @@ async function loadUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
+
 
 
 
