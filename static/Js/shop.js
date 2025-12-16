@@ -1,3 +1,6 @@
+
+const backendUrl = "https://petsy-dow7.onrender.com";
+
 // shop.js
 const petId = localStorage.getItem("petId");
 let coins = parseInt(localStorage.getItem("totalCoins")) || 0;
