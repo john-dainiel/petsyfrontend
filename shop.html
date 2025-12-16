@@ -7,24 +7,29 @@
     <link rel="stylesheet" href="https://petsyfrontend.onrender.com/static/css/shop.css">
 </head>
 <body>
-    <header>
-        <h1>🎁 Petsy Shop</h1>
-        <div id="coins-display">Coins: <span id="coins">0</span> 🪙</div>
-    </header>
+  <header>
+    <button id="back-btn">← Back</button>
+    <h1>🐾 Petsy Shop</h1>
+    <div id="player-info">
+      <span id="username-display">Player</span> • Coins: <span id="user-coins">0</span>
+    </div>
+  </header>
 
-    <main>
-        <section id="shop-section">
-            <h2>Available Treats</h2>
-            <div id="items-container"></div>
-        </section>
+  <main>
+    <section id="items-section">
+      <h2>Available Treats</h2>
+      <div id="items-container"></div>
+    </section>
 
-        <section id="checkout-section">
-            <h2>Checkout</h2>
-            <div id="checkout-list"></div>
-            <div id="checkout-total">Total: 0 🪙</div>
-            <button id="checkout-btn">Buy Selected Items</button>
-        </section>
-    </main>
+    <aside id="cart-section">
+      <h2>🛒 Checkout</h2>
+      <div id="cart-container"></div>
+      <div id="total-price">Total: 0 coins</div>
+      <div id="remaining-coins">Coins after purchase: 0</div>
+      <button id="checkout-btn">Checkout</button>
+    </aside>
+  </main>
+
 
     <script src="https://petsyfrontend.onrender.com/static/Js/shop.js"></script>
 </body>
