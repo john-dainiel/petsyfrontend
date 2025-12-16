@@ -308,17 +308,42 @@ function renderMemory(){
   document.getElementById('memoryInfo').innerText=`Level ${memoryLevel} • Coins 🪙 ${memoryCoins}`;
 }
 function flipMemoryCard(index){
-  if(memoryFlipped.length === 2 || memoryFlipped.includes(index) || memoryMatched.includes(index)) return;
-  memoryFlipped.push(index); renderMemory();
-  if(memoryFlipped.length === 2){
+  if (memoryFlipped.length === 2 || memoryFlipped.includes(index) || memoryMatched.includes(index)) return;
+
+  memoryFlipped.push(index);
+  renderMemory();
+
+  if (memoryFlipped.length === 2){
     const [a,b] = memoryFlipped;
-    if(memoryCards[a] === memoryCards[b]){
-      memoryMatched.push(a,b); memoryCoins++; memoryFlipped = [];
-      renderMemory(); sounds.memory_match.play();
-    } else { setTimeout(() => { memoryFlipped=[]; renderMemory(); sounds.memory_mismatch.play(); },700); }
+
+    if (memoryCards[a] === memoryCards[b]) {
+      memoryMatched.push(a, b);
+      memoryCoins++;
+      memoryFlipped = [];
+      sounds.memory_match.play();
+      renderMemory();
+
+      // ✅ CHECK IF LEVEL IS COMPLETE
+      if (memoryMatched.length === memoryCards.length) {
+        clearInterval(memorytimerInterval);
+
+        setTimeout(() => {
+          memoryLevel++;
+          showPopup(`🎉 Level ${memoryLevel - 1} complete!`, () => {
+            startMemoryLevel(); // ▶ start next level
+          });
+        }, 500);
+      }
+
+    } else {
+      setTimeout(() => {
+        memoryFlipped = [];
+        renderMemory();
+        sounds.memory_mismatch.play();
+      }, 700);
+    }
   }
 }
-
 /* ==================== POPUP ==================== */
 function showPopup(html,onClose){
   const overlay=document.createElement('div'); overlay.className='popup-overlay';
@@ -347,6 +372,7 @@ async function loadUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
+
 
 
 
