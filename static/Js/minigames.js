@@ -170,22 +170,30 @@ function runnerGameLoop(){
   }
 }
 function endRunnerGame(){
-  clearInterval(gameInterval); clearInterval(timerInterval); gameRunning=false;
-  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='#fff'; ctx.font='36px Arial';
+  if (!gameRunning) return; // ⛔ prevent double calls
+  gameRunning = false;
+
+  clearInterval(gameInterval);
+  clearInterval(timerInterval);
+
+  ctx.fillStyle='rgba(0,0,0,0.6)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle='#fff';
+  ctx.font='36px Arial';
   ctx.fillText('Game Over!',canvas.width/2-100,canvas.height/2-20);
-  ctx.font='24px Arial'; ctx.fillText(`Coins collected: ${score}`,canvas.width/2-90,canvas.height/2+20);
+
+  ctx.font='24px Arial';
+  ctx.fillText(`Coins collected: ${score}`,canvas.width/2-90,canvas.height/2+20);
+
   sounds.runner_gameover.play();
+
   showPopup(`Game Over! You earned 🪙 ${score}`, async () => {
-  const success = await updateCoinsOnServer(score, 'runner');
-
-  if (success) {
-    console.log("✅ Coins saved successfully");
-  }
-
-  initRunner('cat');
-});
+    await updateCoinsOnServer(score, 'runner');
+    initRunner('cat');
+  });
 }
+
 
 /* ==================== QUIZ GAME ==================== */
 let quizCoins=0, currentQuestion=null, quizStarted=false;
@@ -328,4 +336,5 @@ async function loadUserData() {
 document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
+
 
