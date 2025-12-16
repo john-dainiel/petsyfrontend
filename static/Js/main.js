@@ -1201,7 +1201,7 @@ async function drinkWater() {
   const response = await fetch(`${backendUrl}/update_thirst`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ petId: petId, amount: 10 })
+    body: JSON.stringify({ petId: petId, amount: 100 })
   });
   
   const data = await response.json();
@@ -1408,6 +1408,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
