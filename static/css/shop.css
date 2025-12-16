@@ -1,88 +1,94 @@
-/* shop.css */
 body {
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    margin: 0;
-    padding: 0;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background-color: #fef6f0;
 }
 
 header {
-    background-color: #ffcc00;
-    padding: 20px;
-    text-align: center;
-    position: sticky;
-    top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffb347;
+  padding: 15px 20px;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 2rem;
+#back-btn {
+  background-color: #ff8c42;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-#coins-display {
-    margin-top: 10px;
-    font-weight: bold;
+#player-info {
+  font-weight: bold;
 }
 
 main {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
 }
 
-section {
-    background: #fff;
-    padding: 20px;
-    margin: 10px 0;
-    width: 90%;
-    max-width: 600px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+#items-section {
+  flex: 2;
+  background-color: #fff8f0;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-h2 {
-    margin-top: 0;
+#items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 10px 0;
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ffd7a1;
+  padding: 10px 0;
 }
 
-.item div {
-    margin: 0 5px;
+aside#cart-section {
+  flex: 1;
+  position: sticky;
+  top: 80px;
+  background-color: #fff3e0;
+  padding: 20px;
+  border-radius: 10px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.item input[type="number"] {
-    width: 50px;
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #ffd7a1;
 }
 
-#checkout-list {
-    margin-top: 10px;
+button {
+  background-color: #ff8c42;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.checkout-item {
-    display: flex;
-    justify-content: space-between;
-    margin: 5px 0;
+button:hover {
+  background-color: #ff5722;
 }
 
-#checkout-btn {
-    margin-top: 10px;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 8px;
-    background-color: #4caf50;
-    color: #fff;
-    cursor: pointer;
-    font-size: 1rem;
-}
-
-#checkout-btn:hover {
-    background-color: #45a049;
+input[type="number"] {
+  width: 50px;
 }
