@@ -23,7 +23,6 @@ let pet = null;
 let ageInterval = null;
 let communityIntervalId = null;
 let lastPopupIds = new Set();
-let treatInventory = { small: 0, medium: 0, large: 0 };
 let sleepEmojiInterval = null;
 let petMoodInterval = null;
 let energyRestoreInterval = null; // restores energy each hour while sleeping
@@ -49,20 +48,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const restBtn = $('#restBtn');   // sleep/wake button
   const miniGamesBtn = $('#miniGamesBtn');
   const logoutBtn = $('#logoutBtn');
-  const shopBtn = $('#shopBtn');
+  
   const communityBtn = $('#communityBtn');
   const shopModal = $('#shopModal');
   const shopResult = $('#shopResult');
-  const closeShopBtn = $('#closeShopBtn');
   const shopOverlay = document.createElement('div');
   shopOverlay.className = 'modal-overlay hidden';
   document.body.appendChild(shopOverlay);
 
   const eatButton = $('#eatButton');
-  const treatMenu = $('#treatOptions');
   const eatMenuContainer = document.querySelector('.eat-menu');
   const shopButtons = Array.from(document.querySelectorAll('.shop-btn'));
-  const treatOptionEls = Array.from(document.querySelectorAll('.treat-option'));
+  
 
   // cleaning & options
   const cleanBtn = $('#cleanBtn');
@@ -120,95 +117,20 @@ if (petImage) {
     window.location.href = 'index.html';
   });
   
-  shopBtn?.addEventListener('click', async () => {
-    await loadTreatInventory();
-    updateTreatMenu();
-
-    shopModal?.classList.remove('hidden');
-    shopOverlay.classList.remove('hidden');
-    shopResult?.classList.add('hidden');
-    shopResult && (shopResult.textContent = '');
-    document.body.style.overflow = 'hidden';
-  });
-
-  closeShopBtn?.addEventListener('click', closeShop);
-  shopOverlay?.addEventListener('click', closeShop);
-  shopModal?.querySelector('.modal-content')?.addEventListener('click', e => e.stopPropagation());
-
-  function closeShop() {
-    shopModal?.classList.add('hidden');
-    shopOverlay?.classList.add('hidden');
-    document.body.style.overflow = '';
-  }
+  const shopBtn = document.getElementById("shopBtn");
+  shopBtn.addEventListener("click", () => {
+  window.location.href = "shop.html"; // go to the shop page
+});
 
   communityBtn?.addEventListener('click', () => {
     window.location.href = 'community.html';
   });
 
-  // Shop buy handlers
-  shopButtons.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const treatType = btn.dataset.type;
-      const pet_id = localStorage.getItem('pet_id');
-      if (!pet_id) {
-        if (shopResult) {
-          shopResult.textContent = '❌ No pet selected.';
-          shopResult.classList.remove('hidden');
-        }
-        return;
-      }
-
-      try {
-        const res = await fetch(`${backendUrl}/buy_treat/${pet_id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ treat_type: treatType })
-        });
-        const data = await res.json();
-
-        if (res.ok && data && data.success) {
-          await loadTreatInventory();
-          updateTreatMenu();
-          await updateStats();
-          if (shopResult) {
-            shopResult.textContent = `✅ You bought a ${treatType} treat!`;
-            shopResult.classList.remove('hidden');
-          }
-        } else {
-          const errMsg = data && data.error ? data.error : 'Purchase failed.';
-          if (shopResult) {
-            shopResult.textContent = `❌ ${errMsg}`;
-            shopResult.classList.remove('hidden');
-          }
-        }
-      } catch (err) {
-        console.error('Shop error:', err);
-        if (shopResult) {
-          shopResult.textContent = '❌ Network error.';
-          shopResult.classList.remove('hidden');
-        }
-      }
-    });
+  eatButton.addEventListener("click", () => {
+  loadTreatInventory();
   });
 
-  // Treat menu show/hide
-  if (eatButton && treatMenu && eatMenuContainer) {
-    eatButton.addEventListener('mouseenter', () => {
-      updateTreatMenu();
-      treatMenu.classList.remove('hidden');
-    });
-    eatMenuContainer.addEventListener('mouseleave', () => {
-      treatMenu.classList.add('hidden');
-    });
-    treatOptionEls.forEach(option => {
-      option.addEventListener('click', async () => {
-        const treatType = option.dataset.type;
-        await feedPet(treatType);
-        treatMenu.classList.add('hidden');
-      });
-    });
-  }
-
+ 
   // Clean button
   cleanBtn?.addEventListener('click', async () => {
     const pet_id = localStorage.getItem('pet_id');
@@ -462,7 +384,6 @@ async function loadMain() {
     // load treats from server and show
     await loadTreatInventory();
   
-    updateTreatMenu();
 
     // Auto refresh stats and age
     if (ageInterval) clearInterval(ageInterval);
@@ -586,7 +507,7 @@ async function updateStats() {
       treatInventory.small = data.small_treats ?? 0;
       treatInventory.medium = data.medium_treats ?? 0;
       treatInventory.large = data.large_treats ?? 0;
-      updateTreatMenu();
+
     }
 
     setPetImage(pet.sleeping ? 'sleeping' : 'happy');
@@ -847,63 +768,82 @@ async function markPetDirtyLocal(pet_id) {
 // -----------------------
 
 async function loadTreatInventory() {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
-  try {
-    const res = await fetch(`${backendUrl}/get_treats/${pet_id}`);
-    if (!res.ok) { console.warn('get_treats returned non-ok:', res.status); return; }
-    const data = await res.json();
-    treatInventory.small = data.small_treats ?? 0;
-    treatInventory.medium = data.medium_treats ?? 0;
-    treatInventory.large = data.large_treats ?? 0;
-    updateTreatMenu();
-  } catch (err) { console.error('Failed to load treats:', err); }
-}
+  const petId = localStorage.getItem("petId");
+  const token = localStorage.getItem("userToken");
+  if (!petId || !token) return;
 
-async function feedPet(treatType) {
-  const pet_id = localStorage.getItem('pet_id');
-  if (!pet_id) return;
-  if (!treatInventory[treatType] || treatInventory[treatType] <= 0) {
-    alert('❌ You\'re out of this treat!');
+  const res = await fetch(`${backendUrl}/get_pet_inventory/${petId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const data = await res.json();
+
+  
+  treatOptions.innerHTML = "";
+
+  if (!data.success || data.inventory.length === 0) {
+    treatOptions.innerHTML = "<p>No food available</p>";
+    treatOptions.classList.remove("hidden");
     return;
   }
-  try {
-    const res = await fetch(`${backendUrl}/feed_pet`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pet_id, treatType })
-    });
-    const data = await res.json();
-    if (!res.ok) { alert(data.error || 'Failed to feed pet.'); return; }
-    if (data.success) {
-      treatInventory[treatType] = Math.max(0, (treatInventory[treatType] || 0) - 1);
-      await loadTreatInventory();
-      updateTreatMenu();
-      await updateStats();
-      const hungerBoost = { small: 10, medium: 25, large: 50 }[treatType] || 0;
-      showToast(`🍗 ${capitalize(treatType)} treat eaten! Hunger +${hungerBoost}`);
-      // playing reduces play fatigue — do a small counter decrement so frequent feeding helps
-      const key = getPlayKey(pet_id);
-      const current = parseInt(localStorage.getItem(key) || '0', 10);
-      if (current > 0) localStorage.setItem(key, String(Math.max(0, current - 1)));
-    } else {
-      alert(data.error || 'Failed to feed pet.');
-    }
-  } catch (err) { console.error('Feeding failed:', err); alert('Network error while feeding pet.'); }
+
+  data.inventory.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "treat-item";
+    div.innerHTML = `
+      <span>${item.emoji} ${item.name} x ${item.quantity}</span>
+      <button onclick="feedPet('${item.name}', '${item.size}')">Feed</button>
+    `;
+    treatOptions.appendChild(div);
+  });
+
+  treatOptions.classList.remove("hidden");
 }
 
-function updateTreatMenu() {
-  document.querySelectorAll('.treat-option').forEach(option => {
-    const type = option.dataset.type;
-    const count = treatInventory[type] || 0;
-    const emoji = type === 'small' ? '🍪' : type === 'medium' ? '🥩' : '🍗';
-    option.innerHTML = `${emoji} ${capitalize(type)} Treat ×${count}`;
-    if (count <= 0) option.classList.add('disabled'); else option.classList.remove('disabled');
-  });
-  $('#smallCount') && ($('#smallCount').textContent = treatInventory.small || 0);
-  $('#mediumCount') && ($('#mediumCount').textContent = treatInventory.medium || 0);
-  $('#largeCount') && ($('#largeCount').textContent = treatInventory.large || 0);
-  $('#smallTreats') && ($('#smallTreats').textContent = `Small Treats: ${treatInventory.small || 0}`);
-  $('#mediumTreats') && ($('#mediumTreats').textContent = `Medium Treats: ${treatInventory.medium || 0}`);
-  $('#largeTreats') && ($('#largeTreats').textContent = `Large Treats: ${treatInventory.large || 0}`);
+
+function feedPet(name, size) {
+  const petId = localStorage.getItem("petId");
+  const token = localStorage.getItem("userToken");
+
+  fetch(`${backendUrl}/feed`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      petId: petId,
+      treatName: name,
+      treatSize: size
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.error) {
+      alert("Failed to feed: " + data.error);
+    } else {
+      alert(`${name} fed to your pet!`);
+      // Update inventory in the UI
+      treatOptions.innerHTML = "";
+      data.inventory.forEach(item => {
+        const div = document.createElement("div");
+        div.classList.add("treat-item");
+        div.innerHTML = `
+          <span>${item.emoji} ${item.name} x ${item.quantity}</span>
+          <button onclick="feedPet('${item.name}', '${item.size}')">Feed</button>
+        `;
+        treatOptions.appendChild(div);
+      });
+
+      // Optionally, update pet stats progress bars
+      if (data.petStats) {
+        document.getElementById("hungerBar").value = data.petStats.hunger;
+        document.getElementById("happinessBar").value = data.petStats.happiness;
+        document.getElementById("energyBar").value = data.petStats.energy;
+        document.getElementById("thirstBar").value = data.petStats.thirst;
+      }
+    }
+  })
+  .catch(err => console.error(err));
 }
 
 function capitalize(s = '') { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
@@ -1416,6 +1356,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
