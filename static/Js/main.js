@@ -97,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
 ];
 
   const ITEM_LOOKUP = {};
-items.forEach(item => {
-  ITEM_LOOKUP[item.name] = item;
+items.forEach(items => {
+  ITEM_LOOKUP[items.name] = items;
 });
 
   // Background music element
@@ -841,7 +841,7 @@ data.inventory.forEach(item => {
   treatOptions.appendChild(div);
 });
 
-
+}
 
 function feedPet(name, size) {
   const petId = localStorage.getItem("petId");
@@ -1241,11 +1241,20 @@ function playPetSound() {
   const soundFile = type === 'dog' ? 'static/sounds/bark.mp3' : 'static/sounds/meow.mp3';
   playSound(soundFile);
 }
+
 // Generic sound player (respects mute)
 function playSound(src) {
-  if (localStorage.getItem('muted') === 'true') return;
+  if (!src) return;
+  const muted = localStorage.getItem('muted') === 'true';
+  if (muted) return;
   const audio = new Audio(src);
-  audio.play().catch(err => console.log('Sound play failed:', err));
+  audio.volume = 0.5;
+  audio.play().catch(err => console.log('Audio play blocked:', err));
+}
+
+// Now attach the click listener
+if (petImage) {
+  petImage.addEventListener('click', playPetSound);
 }
 
 // ===============================
@@ -1288,7 +1297,7 @@ async function doDrinkAction() {
     const res = await fetch(`${backendUrl}/update_thirst`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ petId: petId, amount: 10 }) // +10 thirst
+      body: JSON.stringify({ petId: petId, amount: 100 }) // +10 thirst
     });
     const data = await res.json();
     if (data.success) {
@@ -1399,10 +1408,6 @@ async function loadpet() {
 })();
 
 // End of main.js
-
-
-
-
 
 
 
