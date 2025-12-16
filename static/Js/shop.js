@@ -20,10 +20,8 @@ const items = [
 
 let cart = [];
 let userCoins = 0;
-let username = "Player";
 
 const userCoinsEl = document.getElementById("user-coins");
-const usernameEl = document.getElementById("username-display");
 const itemsContainer = document.getElementById("items-container");
 const cartContainer = document.getElementById("cart-container");
 const totalPriceEl = document.getElementById("total-price");
@@ -31,105 +29,59 @@ const remainingCoinsEl = document.getElementById("remaining-coins");
 const checkoutBtn = document.getElementById("checkout-btn");
 const backBtn = document.getElementById("back-btn");
 
+// -------------------------------
 // Back button
+// -------------------------------
 backBtn.addEventListener("click", () => {
-  window.location.href = "main.html"; // replace with your main menu
+  window.location.href = "main.html";
 });
 
 // -------------------------------
-// 🐾 Load Player Info
+// Load User Info
 // -------------------------------
-function loadPlayerInfo() {
+function loadUserInfo() {
   const playerDiv = document.getElementById('playerInfo');
   if (!playerDiv) return;
 
   const token = localStorage.getItem('userToken');
   if (!token) {
     playerDiv.innerText = `User: Guest • Coins: 0`;
+    userCoins = 0;
+    updateRemainingCoins();
     return;
   }
 
-  fetch('https://petsy-dow7.onrender.com/get_user_info', {
+  fetch(`${backendUrl}/get_user_info`, {
     method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    }
+    headers: { 'Authorization': `Bearer ${token}` }
   })
   .then(res => res.json())
   .then(data => {
     if (data.success) {
-      // Store the latest info in localStorage
       localStorage.setItem('username', data.username);
       localStorage.setItem('petId', data.pet_id);
       localStorage.setItem('totalCoins', data.coins || 0);
 
-      playerDiv.innerText = `User: ${data.username} • Coins: ${data.coins || 0}`;
+      userCoins = data.coins || 0;
+      playerDiv.innerText = `User: ${data.username} • Coins: ${userCoins}`;
+      updateRemainingCoins();
     } else {
       playerDiv.innerText = `User: Guest • Coins: 0`;
+      userCoins = 0;
+      updateRemainingCoins();
     }
   })
   .catch(err => {
     console.error('Failed to load player info:', err);
     playerDiv.innerText = `User: Guest • Coins: 0`;
+    userCoins = 0;
+    updateRemainingCoins();
   });
 }
 
 // -------------------------------
-// 🪙 Update Coins Display (after purchase/game)
+// Cart Functions
 // -------------------------------
-function refreshCoins() {
-  // Just reload the player info to get latest coins from pet
-  loadPlayerInfo();
-}
-
-// Example usage after buying a treat
-function buyTreat(treatType) {
-  const petId = localStorage.getItem('petId');
-  fetch(`https://petsy-dow7.onrender.com/buy_treat/${petId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ treat_type: treatType })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      // Refresh coins display immediately
-      refreshCoins();
-    } else {
-      alert(data.error || 'Failed to buy treat');
-    }
-  });
-}
-
-// Example usage after a mini-game win
-function miniGameWin(coinsEarned, gameType) {
-  const token = localStorage.getItem('userToken');
-  fetch('https://petsy-dow7.onrender.com/mini_game/win', {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify({ coins_earned: coinsEarned, game_type: gameType })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      // Update localStorage and display
-      localStorage.setItem('totalCoins', data.coins);
-      refreshCoins();
-    }
-  });
-}
-
-// -------------------------------
-// 🏁 Initial load
-// -------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-  loadPlayerInfo();
-});
-
-// Render shop items
 function renderItems() {
   itemsContainer.innerHTML = "";
   items.forEach((item, idx) => {
@@ -144,7 +96,6 @@ function renderItems() {
   });
 }
 
-// Add item to cart
 function addToCart(idx) {
   const qty = parseInt(document.getElementById(`qty-${idx}`).value);
   if (qty <= 0) return;
@@ -157,7 +108,6 @@ function addToCart(idx) {
   renderCart();
 }
 
-// Render cart items
 function renderCart() {
   cartContainer.innerHTML = "";
   cart.forEach((item, idx) => {
@@ -172,13 +122,11 @@ function renderCart() {
   updateRemainingCoins();
 }
 
-// Remove item from cart
 function removeFromCart(idx) {
   cart.splice(idx, 1);
   renderCart();
 }
 
-// Update totals and remaining coins
 function updateRemainingCoins() {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   totalPriceEl.innerText = `Total: ${total} coins`;
@@ -187,7 +135,9 @@ function updateRemainingCoins() {
   checkoutBtn.disabled = remaining < 0 || cart.length === 0;
 }
 
+// -------------------------------
 // Checkout
+// -------------------------------
 checkoutBtn.addEventListener("click", () => {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   if (total > userCoins) return alert("Not enough coins!");
@@ -201,19 +151,23 @@ checkoutBtn.addEventListener("click", () => {
     },
     body: JSON.stringify({ items: cart })
   })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        alert(`Purchase successful! Coins left: ${userCoins - total}`);
-        cart = [];
-        loadUserInfo(); // reload updated coins
-        renderCart();
-      } else {
-        alert("Purchase failed: " + data.message);
-      }
-    });
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert(`Purchase successful! Coins left: ${userCoins - total}`);
+      cart = [];
+      loadUserInfo(); // refresh coins
+      renderCart();
+    } else {
+      alert("Purchase failed: " + data.message);
+    }
+  });
 });
 
+// -------------------------------
 // Initialize
-loadUserInfo();
-renderItems();
+// -------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  loadUserInfo();
+  renderItems();
+});
