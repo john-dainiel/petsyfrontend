@@ -1241,6 +1241,7 @@ function playPetSound() {
   const soundFile = type === 'dog' ? 'static/sounds/bark.mp3' : 'static/sounds/meow.mp3';
   playSound(soundFile);
 }
+
 // Generic sound player (respects mute)
 function playSound(src) {
   if (!src) return;
@@ -1249,6 +1250,11 @@ function playSound(src) {
   const audio = new Audio(src);
   audio.volume = 0.5;
   audio.play().catch(err => console.log('Audio play blocked:', err));
+}
+
+// Now attach the click listener
+if (petImage) {
+  petImage.addEventListener('click', playPetSound);
 }
 
 // ===============================
@@ -1403,3 +1409,4 @@ async function loadpet() {
 
 // End of main.js
 }
+
