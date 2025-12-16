@@ -155,9 +155,10 @@ if (petImage) {
     window.location.href = 'community.html';
   });
 
-  eatButton.addEventListener("click", () => {
-  loadTreatInventory();
-  });
+  const eatButton = document.getElementById("eatButton");
+  if (eatButton) {
+  eatButton.addEventListener("click", loadTreatInventory);
+}
 
  
   // Clean button
@@ -801,93 +802,145 @@ async function loadTreatInventory() {
   const token = localStorage.getItem("userToken");
   if (!petId || !token) return;
 
-  const res = await fetch(`${backendUrl}/get_pet_inventory/${petId}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const data = await res.json();
+  try {
+    const res = await fetch(`${backendUrl}/get_pet_inventory/${petId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
 
-  
-  treatOptions.innerHTML = "";
+    treatOptions.innerHTML = "";
 
-  if (!data.success || data.inventory.length === 0) {
-    treatOptions.innerHTML = "<p>No food available</p>";
+    if (!data.success || !Array.isArray(data.inventory) || data.inventory.length === 0) {
+      treatOptions.innerHTML = "<p>No food available</p>";
+      treatOptions.classList.remove("hidden");
+      return;
+    }
+
+    data.inventory.forEach(item => {
+      const baseItem = ITEM_LOOKUP[item.name];
+
+      // fallback safety
+      const hungerGain = baseItem?.price || 0;
+      const size = baseItem?.size || item.size;
+      const emoji = baseItem?.emoji || "🍽️";
+
+      const div = document.createElement("div");
+      div.className = "treat-item";
+
+      const infoDiv = document.createElement("div");
+      infoDiv.className = "treat-info";
+      infoDiv.innerHTML = `
+        <strong>${emoji} ${item.name}</strong><br>
+        <span class="treat-size">Category: ${capitalize(size)}</span><br>
+        <span class="treat-effects">+${hungerGain} Hunger</span><br>
+        <span class="treat-qty">Owned: ${item.quantity}</span>
+      `;
+
+      const feedBtn = document.createElement("button");
+      feedBtn.textContent = "Feed";
+      feedBtn.addEventListener("click", () => feedPet(item.name, size));
+
+      div.appendChild(infoDiv);
+      div.appendChild(feedBtn);
+
+      treatOptions.appendChild(div);
+    });
+
     treatOptions.classList.remove("hidden");
-    return;
+
+  } catch (err) {
+    console.error("Failed to load treat inventory:", err);
+    treatOptions.innerHTML = "<p>Error loading inventory</p>";
+    treatOptions.classList.remove("hidden");
   }
-
-data.inventory.forEach(item => {
-  const baseItem = ITEM_LOOKUP[item.name];
-
-  // fallback safety
-  const hungerGain = baseItem?.price || 0;
-  const size = baseItem?.size || item.size;
-  const emoji = baseItem?.emoji || "🍽️";
-
-  const div = document.createElement("div");
-  div.className = "treat-item";
-
-  div.innerHTML = `
-    <div class="treat-info">
-      <strong>${emoji} ${item.name}</strong><br>
-      <span class="treat-size">Category: ${capitalize(size)}</span><br>
-      <span class="treat-effects">+${hungerGain} Hunger</span><br>
-      <span class="treat-qty">Owned: ${item.quantity}</span>
-    </div>
-    <button onclick="feedPet('${item.name}', '${size}')">
-      Feed
-    </button>
-  `;
-
-  treatOptions.appendChild(div);
-});
-
 }
 
-function feedPet(name, size) {
+
+async function feedPet(name, size) {
   const petId = localStorage.getItem("petId");
   const token = localStorage.getItem("userToken");
+  if (!petId || !token) return;
 
-  fetch(`${backendUrl}/feed`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      petId: petId,
-      treatName: name,
-      treatSize: size
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
+  try {
+    const res = await fetch(`${backendUrl}/feed`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({ petId, treatName: name, treatSize: size })
+    });
+
+    const data = await res.json();
+
     if (data.error) {
-      alert("Failed to feed: " + data.error);
-    } else {
-      alert(`${name} fed to your pet!`);
-      // Update inventory in the UI
-      treatOptions.innerHTML = "";
+      alert("❌ Failed to feed: " + data.error);
+      return;
+    }
+
+    // Feedback
+    showToast(`${name} fed to your pet!`);
+    sEat.play?.(); // play eating sound if defined
+
+    // Update pet stats bars
+    if (data.petStats) {
+      const { hunger, happiness, energy, thirst } = data.petStats;
+      const hungerEl = $('#hungerBar'); if (hungerEl) hungerEl.value = hunger;
+      const happinessEl = $('#happinessBar'); if (happinessEl) happinessEl.value = happiness;
+      const energyEl = $('#energyBar'); if (energyEl) energyEl.value = energy;
+      const thirstEl = $('#thirstBar'); if (thirstEl) thirstEl.value = thirst;
+    }
+
+    // Refresh treat inventory
+    if (Array.isArray(data.inventory)) {
+      treatOptions.innerHTML = ""; // clear existing
       data.inventory.forEach(item => {
+        const baseItem = ITEM_LOOKUP[item.name];
+        const size = baseItem?.size || item.size;
+        const emoji = baseItem?.emoji || "🍽️";
+
         const div = document.createElement("div");
-        div.classList.add("treat-item");
-        div.innerHTML = `
-          <span>${item.emoji} ${item.name} x ${item.quantity}</span>
-          <button onclick="feedPet('${item.name}', '${item.size}')">Feed</button>
+        div.className = "treat-item";
+
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "treat-info";
+        infoDiv.innerHTML = `
+          <strong>${emoji} ${item.name}</strong><br>
+          <span class="treat-size">Category: ${capitalize(size)}</span><br>
+          <span class="treat-qty">Owned: ${item.quantity}</span>
         `;
+
+        const feedBtn = document.createElement("button");
+        feedBtn.textContent = "Feed";
+        feedBtn.disabled = item.quantity <= 0; // disable if none left
+        feedBtn.addEventListener("click", () => feedPet(item.name, size));
+
+        div.appendChild(infoDiv);
+        div.appendChild(feedBtn);
+
         treatOptions.appendChild(div);
       });
-      document.getElementById("treatOptions")?.classList.add("hidden");
-      // Optionally, update pet stats progress bars
+    }
+
+    // Optionally hide treat menu after feeding
+    treatOptions.classList.add("hidden");
+
+    // Update local pet object
+    if (pet) {
       if (data.petStats) {
-        document.getElementById("hungerBar").value = data.petStats.hunger;
-        document.getElementById("happinessBar").value = data.petStats.happiness;
-        document.getElementById("energyBar").value = data.petStats.energy;
-        document.getElementById("thirstBar").value = data.petStats.thirst;
+        pet.hunger = data.petStats.hunger ?? pet.hunger;
+        pet.happiness = data.petStats.happiness ?? pet.happiness;
+        pet.energy = data.petStats.energy ?? pet.energy;
+        pet.thirst = data.petStats.thirst ?? pet.thirst;
       }
     }
-  })
-  .catch(err => console.error(err));
+
+  } catch (err) {
+    console.error("Feed pet failed:", err);
+    alert("⚠️ Network error while feeding your pet.");
+  }
 }
+
 
 function capitalize(s = '') { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
@@ -1408,6 +1461,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
