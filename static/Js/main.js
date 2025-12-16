@@ -1297,7 +1297,7 @@ async function doDrinkAction() {
     const res = await fetch(`${backendUrl}/update_thirst`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ petId: petId, amount: 10 }) // +10 thirst
+      body: JSON.stringify({ petId: petId, amount: 100 }) // +10 thirst
     });
     const data = await res.json();
     if (data.success) {
@@ -1408,6 +1408,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
