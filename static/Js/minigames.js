@@ -446,10 +446,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadUserData(); loadPlayerInfo(); showGame('runner'); updateAllLeaderboards();
 });
 
+document.getElementById('mainMenuBtn').onclick = () => {
+  window.location.href = 'main.html';
+};
 
-
-
-
-
-
-
+document.getElementById('logoutBtn').onclick = () => {
+  localStorage.clear(); // Optional: clear user data on logout
+  window.location.href = 'index.html';
+};
