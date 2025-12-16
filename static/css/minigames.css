@@ -169,3 +169,18 @@ canvas {
   border-radius: 12px;
   cursor: pointer;
 }
+
+#mainMenuBtn, #logoutBtn {
+  padding: 10px 20px;
+  margin: 10px 5px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  background-color: #ffcc80;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#mainMenuBtn:hover, #logoutBtn:hover {
+  background-color: #ffa726;
+}
