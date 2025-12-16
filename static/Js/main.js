@@ -1265,55 +1265,125 @@ function playSound(src) {
   audio.play().catch(err => console.log('Sound play failed:', err));
 }
 
-// -----------------------
-// 🐾 doDrinkAction — pet drinks water with sound only
-// -----------------------
+// ===============================
+// 🐾 doDrinkAction — pet drinks water
+// ===============================
+const sDrink = new Audio("static/sounds/drink.mp3"); // make sure drink.mp3 exists
+
 async function doDrinkAction() {
   const petId = localStorage.getItem("pet_id");
-  if (!petId || !pet) return;
+  if (!petId) return;
 
-  // Prevent action if pet is sleeping
-  if (pet.sleeping || pet.is_sleeping) {
-    showToast('😴 Your pet is sleeping.');
+  // If pet sleeping, ignore
+  if (pet && (pet.sleeping || pet.is_sleeping)) {
+    showToast("😴 Your pet is sleeping.");
     return;
   }
 
-  const drinkBtn = document.getElementById('drinkBtn');
-  if (drinkBtn) {
-    drinkBtn.disabled = true;
-    drinkBtn.classList.add('disabled');
-  }
-
   // Play drinking sound
-  const drinkSound = new Audio('static/sounds/drink.mp3'); // <-- make sure this exists
-  drinkSound.volume = 0.7;
-  drinkSound.play();
+  sDrink.play();
 
-  // Update thirst on backend
+  // Floating emoji
+  const emoji = document.createElement('div');
+  emoji.className = 'floating-emoji';
+  emoji.textContent = '💧';
+  document.body.appendChild(emoji);
+  Object.assign(emoji.style, {
+    position: 'fixed',
+    fontSize: '3.5rem',
+    top: '38%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    opacity: '0',
+    transition: 'opacity 0.15s ease'
+  });
+  setTimeout(() => (emoji.style.opacity = '1'), 30);
+  setTimeout(() => emoji.remove(), 1500);
+
+  // Update thirst on server
   try {
     const res = await fetch(`${backendUrl}/update_thirst`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pet_id: petId, amount: 100 }) // add 10 thirst points
+      body: JSON.stringify({ pet_id: petId, amount: 10 }) // +10 thirst
     });
     const data = await res.json();
     if (data.success) {
-      await updateStats(); // refresh UI bars
-      showToast('💧 Your pet drank water!');
+      // locally update UI
+      if (pet) pet.thirst = Math.min(100, (pet.thirst || 0) + 10);
+      const thirstBar = document.getElementById("thirstBar");
+      if (thirstBar) {
+        thirstBar.value = pet.thirst;
+        // optional: change color
+        if (pet.thirst > 70) thirstBar.style.setProperty("--progress-color", "#4caf50");
+        else if (pet.thirst > 35) thirstBar.style.setProperty("--progress-color", "#ffb300");
+        else thirstBar.style.setProperty("--progress-color", "#ff3d00");
+      }
+      showToast("💧 Your pet drank water!");
     }
   } catch (err) {
-    console.error('Drink error:', err);
-    showToast('⚠️ Could not update thirst.');
+    console.error("Drink action failed:", err);
+    showToast("⚠️ Failed to drink water.");
   }
-
-  // Re-enable button after cooldown (e.g., 2 seconds)
-  setTimeout(() => {
-    if (drinkBtn) {
-      drinkBtn.disabled = false;
-      drinkBtn.classList.remove('disabled');
-    }
-  }, 2000);
 }
+
+// ===============================
+// 🐾 THIRST DRAIN SYSTEM
+// ===============================
+
+let thirstDrainInterval = null;
+
+// start thirst drain — call once on page load
+function startThirstDrain() {
+  stopThirstDrain(); // ensure no duplicates
+
+  // drain every 5 minutes (300000 ms)
+  thirstDrainInterval = setInterval(() => {
+    if (!pet) return;
+
+    // don't drain if sleeping
+    if (pet.sleeping || pet.is_sleeping) return;
+
+    // reduce thirst
+    pet.thirst = Math.max(0, (pet.thirst || 100) - 5); // -5 per interval
+
+    // update thirst bar
+    const thirstBar = document.getElementById("thirstBar");
+    if (thirstBar) {
+      thirstBar.value = pet.thirst;
+      // bar color
+      if (pet.thirst > 70) thirstBar.style.setProperty("--progress-color", "#4caf50");
+      else if (pet.thirst > 35) thirstBar.style.setProperty("--progress-color", "#ffb300");
+      else thirstBar.style.setProperty("--progress-color", "#ff3d00");
+    }
+
+    // low thirst warning
+    if (pet.thirst <= 20) {
+      showToast("⚠️ Your pet is thirsty! Give it water 💧");
+    }
+
+    // optionally sync with backend every hour
+    if (Date.now() % (60*60*1000) < 300000) { // every hour
+      fetch(`${backendUrl}/update_thirst`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pet_id: localStorage.getItem("pet_id"), amount: 0 }) // sync current thirst
+      }).catch(() => console.debug("Thirst sync failed"));
+    }
+
+  }, 5 * 60 * 1000); // 5 minutes
+}
+
+function stopThirstDrain() {
+  if (thirstDrainInterval) {
+    clearInterval(thirstDrainInterval);
+    thirstDrainInterval = null;
+  }
+}
+
+// call this on DOMContentLoaded or after loading pet
+startThirstDrain();
+
 
 // Hook button
 document.getElementById('drinkBtn')?.addEventListener('click', doDrinkAction);
@@ -1346,6 +1416,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
