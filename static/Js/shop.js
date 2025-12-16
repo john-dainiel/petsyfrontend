@@ -31,27 +31,24 @@ const remainingCoinsEl = document.getElementById("remaining-coins");
 const checkoutBtn = document.getElementById("checkout-btn");
 const backBtn = document.getElementById("back-btn");
 
-// Modal elements
-const checkoutModal = document.getElementById("checkout-modal");
-const modalItems = document.getElementById("modal-items");
-const modalTotal = document.getElementById("modal-total");
-const modalCoins = document.getElementById("modal-coins");
-const modalOk = document.getElementById("modal-ok");
-
-modalOk.addEventListener("click", () => {
-  checkoutModal.style.display = "none";
-});
-
 // Back button
 backBtn.addEventListener("click", () => {
   window.location.href = "main.html"; // replace with your main menu
 });
 
+// Load username and pet coins
 function loadUserInfo() {
   username = localStorage.getItem("username") || "Player";
   usernameEl.innerText = username;
 
   const petId = localStorage.getItem("petId");
+  if (!petId) {
+    userCoins = 0;
+    userCoinsEl.innerText = userCoins;
+    updateRemainingCoins();
+    return;
+  }
+
   fetch(`${backendUrl}/get_pet_info/${petId}`, {
     headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` }
   })
@@ -60,9 +57,16 @@ function loadUserInfo() {
       userCoins = data.coins || 0; // pet's coins
       userCoinsEl.innerText = userCoins;
       updateRemainingCoins();
+    })
+    .catch(err => {
+      console.error("Failed to load pet coins:", err);
+      userCoins = 0;
+      userCoinsEl.innerText = userCoins;
+      updateRemainingCoins();
     });
 }
 
+// Render shop items
 function renderItems() {
   itemsContainer.innerHTML = "";
   items.forEach((item, idx) => {
@@ -77,6 +81,7 @@ function renderItems() {
   });
 }
 
+// Add item to cart
 function addToCart(idx) {
   const qty = parseInt(document.getElementById(`qty-${idx}`).value);
   if (qty <= 0) return;
@@ -89,6 +94,7 @@ function addToCart(idx) {
   renderCart();
 }
 
+// Render cart items
 function renderCart() {
   cartContainer.innerHTML = "";
   cart.forEach((item, idx) => {
@@ -103,21 +109,22 @@ function renderCart() {
   updateRemainingCoins();
 }
 
+// Remove item from cart
 function removeFromCart(idx) {
   cart.splice(idx, 1);
   renderCart();
 }
 
+// Update totals and remaining coins
 function updateRemainingCoins() {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   totalPriceEl.innerText = `Total: ${total} coins`;
-
   const remaining = userCoins - total;
   remainingCoinsEl.innerText = `Coins after purchase: ${remaining}`;
-  checkoutBtn.disabled = remaining < 0;
+  checkoutBtn.disabled = remaining < 0 || cart.length === 0;
 }
 
-// Checkout with modal
+// Checkout
 checkoutBtn.addEventListener("click", () => {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   if (total > userCoins) return alert("Not enough coins!");
@@ -134,23 +141,10 @@ checkoutBtn.addEventListener("click", () => {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        const newCoins = userCoins - total;
-
-        // Fill modal with purchase info
-        modalItems.innerHTML = cart
-          .map(i => `${i.emoji} ${i.name} x ${i.quantity} = ${i.price * i.quantity} coins`)
-          .join("<br>");
-        modalTotal.innerText = `Total spent: ${total} coins`;
-        modalCoins.innerText = `Coins before: ${userCoins}, Coins after: ${newCoins}`;
-
-        checkoutModal.style.display = "flex";
-
-        // Update coins and reset cart
-        userCoins = newCoins;
-        userCoinsEl.innerText = userCoins;
+        alert(`Purchase successful! Coins left: ${userCoins - total}`);
         cart = [];
+        loadUserInfo(); // reload updated coins
         renderCart();
-        renderItems();
       } else {
         alert("Purchase failed: " + data.message);
       }
