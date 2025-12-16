@@ -36,35 +36,98 @@ backBtn.addEventListener("click", () => {
   window.location.href = "main.html"; // replace with your main menu
 });
 
-// Load username and pet coins
-function loadUserInfo() {
-  username = localStorage.getItem("username") || "Player";
-  usernameEl.innerText = username;
+// -------------------------------
+// 🐾 Load Player Info
+// -------------------------------
+function loadPlayerInfo() {
+  const playerDiv = document.getElementById('playerInfo');
+  if (!playerDiv) return;
 
-  const petId = localStorage.getItem("petId");
-  if (!petId) {
-    userCoins = 0;
-    userCoinsEl.innerText = userCoins;
-    updateRemainingCoins();
+  const token = localStorage.getItem('userToken');
+  if (!token) {
+    playerDiv.innerText = `User: Guest • Coins: 0`;
     return;
   }
 
-  fetch(`${backendUrl}/get_pet_info/${petId}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem("userToken")}` }
+  fetch('https://petsy-dow7.onrender.com/get_user_info', {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
   })
-    .then(res => res.json())
-    .then(data => {
-      userCoins = data.coins || 0; // pet's coins
-      userCoinsEl.innerText = userCoins;
-      updateRemainingCoins();
-    })
-    .catch(err => {
-      console.error("Failed to load pet coins:", err);
-      userCoins = 0;
-      userCoinsEl.innerText = userCoins;
-      updateRemainingCoins();
-    });
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Store the latest info in localStorage
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('petId', data.pet_id);
+      localStorage.setItem('totalCoins', data.coins || 0);
+
+      playerDiv.innerText = `User: ${data.username} • Coins: ${data.coins || 0}`;
+    } else {
+      playerDiv.innerText = `User: Guest • Coins: 0`;
+    }
+  })
+  .catch(err => {
+    console.error('Failed to load player info:', err);
+    playerDiv.innerText = `User: Guest • Coins: 0`;
+  });
 }
+
+// -------------------------------
+// 🪙 Update Coins Display (after purchase/game)
+// -------------------------------
+function refreshCoins() {
+  // Just reload the player info to get latest coins from pet
+  loadPlayerInfo();
+}
+
+// Example usage after buying a treat
+function buyTreat(treatType) {
+  const petId = localStorage.getItem('petId');
+  fetch(`https://petsy-dow7.onrender.com/buy_treat/${petId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ treat_type: treatType })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Refresh coins display immediately
+      refreshCoins();
+    } else {
+      alert(data.error || 'Failed to buy treat');
+    }
+  });
+}
+
+// Example usage after a mini-game win
+function miniGameWin(coinsEarned, gameType) {
+  const token = localStorage.getItem('userToken');
+  fetch('https://petsy-dow7.onrender.com/mini_game/win', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ coins_earned: coinsEarned, game_type: gameType })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      // Update localStorage and display
+      localStorage.setItem('totalCoins', data.coins);
+      refreshCoins();
+    }
+  });
+}
+
+// -------------------------------
+// 🏁 Initial load
+// -------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  loadPlayerInfo();
+});
 
 // Render shop items
 function renderItems() {
