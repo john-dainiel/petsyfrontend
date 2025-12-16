@@ -38,6 +38,32 @@ const sSleep = new Audio("static/sounds/sleep.mp3");
 // Safe selector helper
 const $ = (sel, root = document) => (root || document).querySelector(sel);
 
+const item = [
+  { name: "Apple", emoji: "🍎", size: "small", price: 5 },
+  { name: "Carrot", emoji: "🥕", size: "small", price: 4 },
+  { name: "Cookie", emoji: "🍪", size: "small", price: 6 },
+  { name: "Cheese", emoji: "🧀", size: "small", price: 5 },
+  { name: "Banana", emoji: "🍌", size: "small", price: 5 },
+
+  { name: "Burger", emoji: "🍔", size: "medium", price: 15 },
+  { name: "Pizza", emoji: "🍕", size: "medium", price: 18 },
+  { name: "Sushi", emoji: "🍣", size: "medium", price: 20 },
+  { name: "Sandwich", emoji: "🥪", size: "medium", price: 16 },
+  { name: "Pasta", emoji: "🍝", size: "medium", price: 17 },
+
+  { name: "Cake", emoji: "🍰", size: "large", price: 30 },
+  { name: "Steak", emoji: "🥩", size: "large", price: 35 },
+  { name: "Pineapple", emoji: "🍍", size: "large", price: 25 },
+  { name: "Watermelon", emoji: "🍉", size: "large", price: 28 },
+  { name: "Turkey", emoji: "🦃", size: "large", price: 40 }
+];
+
+  const ITEM_LOOKUP = {};
+item.forEach(item => {
+  ITEM_LOOKUP[item.name] = item;
+});
+
+
 // -----------------------
 // DOM Ready — initialize once
 // -----------------------
@@ -74,31 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const muteToggle = $('#muteToggle');
   const muteStatus = $('#muteStatus');
 
-
-  const item = [
-  { name: "Apple", emoji: "🍎", size: "small", price: 5 },
-  { name: "Carrot", emoji: "🥕", size: "small", price: 4 },
-  { name: "Cookie", emoji: "🍪", size: "small", price: 6 },
-  { name: "Cheese", emoji: "🧀", size: "small", price: 5 },
-  { name: "Banana", emoji: "🍌", size: "small", price: 5 },
-
-  { name: "Burger", emoji: "🍔", size: "medium", price: 15 },
-  { name: "Pizza", emoji: "🍕", size: "medium", price: 18 },
-  { name: "Sushi", emoji: "🍣", size: "medium", price: 20 },
-  { name: "Sandwich", emoji: "🥪", size: "medium", price: 16 },
-  { name: "Pasta", emoji: "🍝", size: "medium", price: 17 },
-
-  { name: "Cake", emoji: "🍰", size: "large", price: 30 },
-  { name: "Steak", emoji: "🥩", size: "large", price: 35 },
-  { name: "Pineapple", emoji: "🍍", size: "large", price: 25 },
-  { name: "Watermelon", emoji: "🍉", size: "large", price: 28 },
-  { name: "Turkey", emoji: "🦃", size: "large", price: 40 }
-];
-
-  const ITEM_LOOKUP = {};
-item.forEach(item => {
-  ITEM_LOOKUP[item.name] = item;
-});
 
   // Background music element
 const bgMusic = document.getElementById('bgMusic');
@@ -1460,6 +1461,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
