@@ -10,6 +10,7 @@
   <div class="background"></div>
 
   <div class="pet-container">
+    <!-- Header -->
     <header class="top-info">
       <h1 class="title">🐾 PETSY</h1>
       <div id="petInfo">
@@ -21,6 +22,7 @@
       </div>
     </header>
 
+    <!-- Stat bars -->
     <div id="petBars">
       <div class="bar"><label>Hunger</label><progress id="hungerBar" value="50" max="100"></progress></div>
       <div class="bar"><label>Energy</label><progress id="energyBar" value="70" max="100"></progress></div>
@@ -28,18 +30,21 @@
       <div class="bar"><label>Thirst</label><progress id="thirstBar" value="80" max="100"></progress></div>
     </div>
 
+    <!-- Pet display -->
     <div class="pet-display">
       <img src="https://petsyfrontend.onrender.com/static/images/paw.png" id="petImage" alt="Pet" />
     </div>
 
+    <!-- Side buttons (vertical right) -->
     <div class="side-buttons">
       <button class="circle-btn" id="cleanBtn" title="Clean pet">🧽</button>
       <button class="circle-btn" id="eatButton" title="Feed pet">🍽️</button>
-      <button class="circle-btn" id="playBtn" title="Pat pet">🎮</button>
+      <button class="circle-btn" id="playBtn" title="Play">🎮</button>
       <button class="circle-btn" id="restBtn" title="Rest">💤</button>
       <button class="circle-btn" id="drinkBtn" title="Give Water">💧</button>
     </div>
 
+    <!-- Bottom buttons inside panel -->
     <footer class="bottom-buttons">
       <button class="btn" id="miniGamesBtn">🎯 Mini Games</button>
       <button class="btn" id="shopBtn">🏪 Shop</button>
@@ -85,28 +90,23 @@
       <div class="option-row">
         <label for="newPetName"><strong>Rename Pet</strong></label>
         <input id="newPetName" placeholder="Enter new name" />
-        <div style="margin-top:8px;">
-          <button id="renameBtn">Rename</button>
-        </div>
-        <div id="renameResult" class="result hidden" style="margin-top:8px"></div>
+        <button id="renameBtn">Rename</button>
+        <div id="renameResult" class="result hidden"></div>
       </div>
       <hr>
       <div class="option-row">
         <label for="muteToggle"><strong>Music</strong></label>
-        <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+        <div style="display:flex; align-items:center; gap:10px;">
           <button id="muteToggle" class="btn">Mute</button>
           <span id="muteStatus">Off</span>
         </div>
-        <div style="font-size:12px; color:#666; margin-top:6px;">This toggles the saved "muted" preference.</div>
       </div>
       <hr>
       <div class="option-row">
         <label><strong>Future</strong></label>
-        <div style="font-size:13px; color:#444; margin-top:8px;">Reserved for future settings (privacy, avatar, themes, etc.)</div>
+        <div style="font-size:13px; color:#444;">Reserved for future settings</div>
       </div>
-      <div style="margin-top:12px;">
-        <button id="closeOptionsBtn" class="close-btn">❌ Close</button>
-      </div>
+      <button id="closeOptionsBtn" class="close-btn">❌ Close</button>
     </div>
   </div>
 
