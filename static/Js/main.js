@@ -600,6 +600,25 @@ async function doAction(endpoint) {
   }, 1200);
 }
 
+const feedModal = document.getElementById("feedModal");
+const closeFeedModal = document.getElementById("closeFeedModal");
+const feedOverlay = feedModal.querySelector(".modal-overlay");
+
+eatButton.addEventListener("click", async () => {
+  await loadTreatInventory();   // 👈 keep your existing logic
+  feedModal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+});
+
+closeFeedModal.addEventListener("click", closeFeed);
+feedOverlay.addEventListener("click", closeFeed);
+
+function closeFeed() {
+  feedModal.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+
 // Play / pat action — cooldown 60s, but only play button disabled (others still clickable).
 // -----------------------
 // Play / pat action — cooldown 60s with visual countdown
@@ -812,7 +831,6 @@ async function loadTreatInventory() {
 
     if (!data.success || !Array.isArray(data.inventory) || data.inventory.length === 0) {
       treatOptions.innerHTML = "<p>No food available</p>";
-      treatOptions.classList.remove("hidden");
       return;
     }
 
@@ -845,8 +863,7 @@ async function loadTreatInventory() {
 
       treatOptions.appendChild(div);
     });
-
-    treatOptions.classList.remove("hidden");
+  
 
   } catch (err) {
     console.error("Failed to load treat inventory:", err);
@@ -923,7 +940,7 @@ async function feedPet(name, size) {
     }
 
     // Optionally hide treat menu after feeding
-    treatOptions.classList.add("hidden");
+    closeFeed();
 
     // Update local pet object
     if (pet) {
@@ -940,6 +957,7 @@ async function feedPet(name, size) {
     alert("⚠️ Network error while feeding your pet.");
   }
 }
+
 
 
 function capitalize(s = '') { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
@@ -1461,6 +1479,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
