@@ -2,32 +2,21 @@
    🌙 PETSY Main Page Styles
    ===========================*/
 
-/* Page layout */
+/* Body & layout */
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  overflow: hidden;
+  background: #000;
+  overflow-y: auto;
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: #000;
+  align-items: flex-start;
+  padding: 20px 0;
+  min-height: 100vh;
 }
 
-.close-feed-btn {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-
-
-/* Background */
 .background {
-  position: absolute;
+  position: fixed;
   width: 100%;
   height: 100%;
   background: url('static/images/background/morning.png') center/cover no-repeat;
@@ -35,16 +24,11 @@ body {
   transition: background-image 2s ease, opacity 2s ease;
 }
 
-.fade-transition {
-  opacity: 0.8;
-  transition: opacity 1s ease;
-}
-
-/* Main Container */
+/* Pet container */
 .pet-container {
   position: relative;
   width: 400px;
-  height: 700px;
+  max-width: 95%;
   background: rgba(0, 0, 0, 0.4);
   border-radius: 25px;
   box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
@@ -64,16 +48,9 @@ body {
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.title {
-  margin: 0;
-  color: #ff914d;
-}
+.title { margin: 0; color: #ff914d; }
 
-#petInfo {
-  margin-top: 5px;
-  font-size: 14px;
-  color: #ffd6a5;
-}
+#petInfo { margin-top: 5px; font-size: 14px; color: #ffd6a5; }
 
 /* Stat Bars */
 #petBars {
@@ -95,7 +72,6 @@ body {
   font-size: 0.9rem;
 }
 
-/* Progress Bars (UPDATED: Added color variables for dynamic coloring) */
 progress {
   appearance: none;
   -webkit-appearance: none;
@@ -105,23 +81,12 @@ progress {
   overflow: hidden;
   background-color: #222;
   border: 1px solid #444;
-  --progress-color: #ff7b00; /* Default fallback color */
+  --progress-color: #ff7b00;
 }
 
-progress::-webkit-progress-bar {
-  background-color: #333;
-  border-radius: 8px;
-}
-
-progress::-webkit-progress-value {
-  background: var(--progress-color); /* Dynamic color set by JS */
-  border-radius: 8px;
-}
-
-progress::-moz-progress-bar {
-  background: var(--progress-color); /* Dynamic color set by JS */
-  border-radius: 8px;
-}
+progress::-webkit-progress-bar { background-color: #333; border-radius: 8px; }
+progress::-webkit-progress-value { background: var(--progress-color); border-radius: 8px; }
+progress::-moz-progress-bar { background: var(--progress-color); border-radius: 8px; }
 
 /* Pet Display */
 .pet-display {
@@ -132,126 +97,57 @@ progress::-moz-progress-bar {
   align-items: flex-end;
 }
 
-#petId {
-  font-weight: bold;
-  color: #ffb703;
-}
-
 .pet-display img {
   width: 180px;
   filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.7));
-  animation: petFloat 3s ease-in-out infinite; /* 🐾 default floating motion */
+  animation: petFloat 3s ease-in-out infinite;
+  transition: all 0.5s ease;
 }
 
-/* Floating / breathing animation */
 @keyframes petFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 /* Side Buttons */
 .side-buttons {
   position: absolute;
   right: 10px;
-  bottom: 200px;
+  bottom: 120px;
   display: flex;
   flex-direction: column;
   gap: 15px;
   z-index: 2;
 }
 
-/* Eat Button */
-#eatButton {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: none;
-  font-size: 24px;
-  background: rgba(255, 145, 77, 0.8);
-  color: white;
-  box-shadow: 0 0 10px rgba(255, 145, 77, 0.7);
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-#eatButton:hover {
-  transform: scale(1.1);
-  background: rgba(255, 145, 77, 1);
-}
-
-/* Orange Play/Rest Buttons */
 .circle-btn {
   width: 60px;
   height: 60px;
   border-radius: 50%;
   border: none;
   font-size: 24px;
-  background: rgba(255, 145, 77, 0.8);
+  background: rgba(255,145,77,0.8);
   color: white;
-  box-shadow: 0 0 10px rgba(255, 145, 77, 0.7);
+  box-shadow: 0 0 10px rgba(255,145,77,0.7);
   cursor: pointer;
   transition: 0.3s;
 }
-
-.circle-btn:hover {
-  transform: scale(1.1);
-  background: rgba(255, 145, 77, 1);
-}
-
-/* Treat Menu */
-.eat-menu {
-  position: relative;
-  display: inline-block;
-  z-index: 5;
-}
-
-.treat-options {
-  position: absolute;
-  top: 110%;
-  left: 0;
-  background: #fffbe6;
-  border: 2px solid #ffcc80;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  padding: 8px 0;
-  min-width: 180px;
-  z-index: 1001;
-}
-
-.treat-option {
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-  color: #333;
-}
-
-.treat-option:hover {
-  background-color: #ffe0b2;
-}
-
-.treat-option.disabled {
-  color: #aaa;
-  pointer-events: none;
-  opacity: 0.6;
-}
+.circle-btn:hover { transform: scale(1.1); background: rgba(255,145,77,1); }
 
 /* Bottom Buttons */
 .bottom-buttons {
   display: flex;
   justify-content: space-around;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0,0,0,0.5);
   padding: 10px;
-  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  border-top: 2px solid rgba(255,255,255,0.1);
   z-index: 2;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .btn {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255,255,255,0.15);
   border: none;
   color: #fff;
   padding: 10px 12px;
@@ -261,345 +157,56 @@ progress::-moz-progress-bar {
   transition: 0.3s;
   min-width: 64px;
 }
+.btn:hover { background: rgba(255,255,255,0.3); }
+.logout { background: rgba(255,0,0,0.3); }
+.logout:hover { background: rgba(255,0,0,0.5); }
 
-.btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.logout {
-  background: rgba(255, 0, 0, 0.3);
-}
-.logout:hover {
-  background: rgba(255, 0, 0, 0.5);
-}
-
-/* Post Popup */
-.post-popup {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 10px 15px;
-  border-radius: 10px;
-  font-size: 14px;
-  max-width: 280px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.5s ease;
-  z-index: 10000;
-}
-
-.post-popup.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* == Modal styles == */
-.modal {
+/* Modals */
+.modal, .feed-modal {
   position: fixed;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%,-50%);
   min-width: 320px;
   max-width: 90%;
   z-index: 1002;
+  overflow-y: auto;
 }
 
-.modal .modal-content {
+.modal .modal-content, .feed-modal .modal-content {
   background: rgba(255,255,255,0.98);
   color: #222;
-  padding: 16px;
+  padding: 1.5rem;
   border-radius: 12px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 8px 30px rgba(0,0,0,0.4);
 }
 
-.modal-overlay {
+.modal-overlay, .feed-modal .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
   z-index: 1000;
-}
-
-/* Hidden Class */
-.hidden {
-  display: none !important;
-}
-
-/* Shop buttons */
-.shop-btn {
-  background: #ffb347;
-  border: none;
-  padding: 10px;
-  border-radius: 10px;
-  margin: 5px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.shop-btn:hover {
-  background: #ff9800;
-}
-
-/* shop result */
-.result {
-  margin-top: 10px;
-  font-weight: 600;
-}
-
-/* option modal small layout */
-.option-row {
-  margin-bottom: 10px;
-}
-
-/* responsive adjustments */
-@media (max-width: 480px) {
-  .pet-container {
-    width: 320px;
-    height: 620px;
-  }
-  .pet-display img {
-    width: 150px;
-  }
-  .bottom-buttons {
-    flex-wrap: wrap;
-  }
-}
-
-/* Floating emoji animation */
-.floating-emoji {
-  animation: floatUp 3s ease-out forwards;
-}
-@keyframes floatUp {
-  from {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: translate(-50%, -150%) scale(1.5);
-    opacity: 0;
-  }
-}
-
-/* Toast notification */
-.toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #333;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 10px;
-  z-index: 9999;
-  font-family: sans-serif;
-}
-
-/* ===============================
-   🐾 PETSY PET ANIMATIONS
-   ===============================*/
-
-/* Base pet image */
-.pet-display img {
-  width: 180px;
-  filter: drop-shadow(0 0 15px rgba(0, 0, 0, 0.7));
-  animation: petFloat 3s ease-in-out infinite;
-  transition: all 0.5s ease;
-}
-
-/* Default floating (idle) */
-@keyframes petFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-/* Sleeping motion — slow breathing effect */
-.pet.sleeping {
-  animation: petSleep 5s ease-in-out infinite;
-  opacity: 0.8;
-  filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)) blur(0.5px);
-}
-@keyframes petSleep {
-  0%, 100% {
-    transform: scale(1) translateY(2px);
-  }
-  50% {
-    transform: scale(1.03) translateY(-2px);
-  }
-}
-
-/* Happy motion — gentle side wiggle */
-.pet.happy {
-  animation: petWiggle 0.4s ease-in-out 0s 6 alternate;
-  filter: drop-shadow(0 0 12px rgba(255, 193, 7, 0.7));
-}
-@keyframes petWiggle {
-  0% {
-    transform: rotate(0deg) translateY(0);
-  }
-  25% {
-    transform: rotate(4deg) translateY(-2px);
-  }
-  50% {
-    transform: rotate(0deg) translateY(0);
-  }
-  75% {
-    transform: rotate(-4deg) translateY(-2px);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
-}
-
-/* Washing animation: Shake and sparkle */
-@keyframes washShake {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  10% { transform: translateX(-5px) rotate(-2deg); }
-  20% { transform: translateX(5px) rotate(2deg); }
-  30% { transform: translateX(-5px) rotate(-2deg); }
-  40% { transform: translateX(5px) rotate(2deg); }
-  50% { transform: translateX(0) rotate(0deg); }
-}
-.pet-washing {
-  animation: washShake 0.8s ease-in-out;
-  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8)); /* Gold sparkle effect */
-}
-
-
-.shop-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-
-.shop-items h3 {
-  margin: 8px 0 4px;
-  font-size: 1rem;
-  color: #333;
-}
-
-.shop-btn {
-  background: #ffb347;
-  border: none;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: 0.3s;
-  width: 100%;
-  text-align: left;
-}
-
-.shop-btn:hover {
-  background: #ff9800;
-}
-
-#cart {
-  background: #fff3e0;
-  padding: 10px;
-  border-radius: 10px;
-  margin-top: 10px;
-}
-
-#cartList {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 8px;
-}
-
-#cartList li {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
-}
-
-#checkoutBtn {
-  background: #4CAF50;
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  width: 100%;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-#checkoutBtn:hover {
-  background: #45a049;
-}
-
-.result {
-  font-weight: 600;
-  margin-top: 10px;
-  text-align: center;
-}
-
-.close-btn {
-  margin-top: 10px;
-  background: #e74c3c;
-  color: white;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  width: 100%;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.close-btn:hover {
-  background: #c0392b;
-}
-
-.feed-modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* modal base */
-}
-
-.feed-modal.hidden {
-  display: none;
-}
-
-/* Overlay covers the whole screen but behind modal-content */
-.feed-modal .modal-overlay {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;  /* behind modal content */
-  pointer-events: auto; /* allows click to close modal */
-}
-
-/* Modal content always above overlay */
-.feed-modal .modal-content {
-  position: relative;
-  background: #fff;
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  z-index: 1100; /* higher than overlay */
-  min-width: 300px;
-  max-height: 80%;
-  overflow-y: auto;
-}
-
-/* Treat items */
-.treat-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0.5rem 0;
-}
-.treat-item button {
   cursor: pointer;
 }
 
+.hidden { display: none !important; }
 
+/* Shop/Treat styles */
+.treat-options { display: flex; flex-direction: column; gap: 8px; }
+.treat-option { padding: 8px; cursor: pointer; border-radius: 6px; background: #fffbe6; transition: 0.2s; }
+.treat-option:hover { background: #ffe0b2; }
+.treat-option.disabled { color: #aaa; pointer-events: none; opacity: 0.6; }
+
+.shop-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
+.shop-btn { background: #ffb347; border: none; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 100%; text-align: left; }
+.shop-btn:hover { background: #ff9800; }
+.close-btn { margin-top: 10px; background: #e74c3c; color: white; border: none; padding: 8px; border-radius: 8px; width: 100%; cursor: pointer; transition: 0.3s; }
+.close-btn:hover { background: #c0392b; }
+
+/* Responsive */
+@media (max-width:480px) {
+  .pet-container { width: 320px; }
+  .pet-display img { width: 150px; }
+}
