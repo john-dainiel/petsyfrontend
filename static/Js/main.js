@@ -605,7 +605,7 @@ const closeFeedModal = document.getElementById("closeFeedModal");
 const feedOverlay = feedModal.querySelector(".modal-overlay");
 
 eatButton.addEventListener("click", async () => {
-  await loadTreatInventory();   // 👈 keep your existing logic
+  await loadTreatInventory(); // load your treats
   feedModal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
 });
@@ -617,7 +617,35 @@ function closeFeed() {
   feedModal.classList.add("hidden");
   document.body.style.overflow = "";
 }
+closeFeedModal.addEventListener("click", closeFeed);
+feedOverlay.addEventListener("click", closeFeed);
 
+// Load treat inventory dynamically
+async function loadTreatInventory() {
+  treatOptions.innerHTML = "";
+
+  // Example: using your ITEM_LOOKUP and fetched inventory
+  const inventory = [
+    { name: "Apple", quantity: 3 },
+    { name: "Cookie", quantity: 1 },
+    { name: "Pizza", quantity: 2 }
+  ]; // replace with fetch from backend
+
+  inventory.forEach(item => {
+    const baseItem = ITEM_LOOKUP[item.name] || {};
+    const div = document.createElement("div");
+    div.className = "treat-item";
+    div.innerHTML = `<span>${baseItem.emoji || "🍽️"} ${item.name} (x${item.quantity})</span>`;
+
+    const btn = document.createElement("button");
+    btn.textContent = "Feed";
+    btn.disabled = item.quantity <= 0;
+    btn.addEventListener("click", () => feedPet(item.name, baseItem.size));
+
+    div.appendChild(btn);
+    treatOptions.appendChild(div);
+  });
+}
 
 // Play / pat action — cooldown 60s, but only play button disabled (others still clickable).
 // -----------------------
@@ -1479,6 +1507,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
