@@ -555,3 +555,30 @@ progress::-moz-progress-bar {
   background: #c0392b;
 }
 
+/* Feed modal treat list */
+.treat-options-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Each treat item (works with your existing JS) */
+.treat-option {
+  background: #fff3e0;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+  color: #333;
+}
+
+.treat-option:hover {
+  background: #ffe0b2;
+}
+
+.treat-option.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
