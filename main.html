@@ -43,11 +43,7 @@
     <div class="side-buttons">
       <button class="circle-btn" id="cleanBtn" title="Clean pet (sponge)">🧽</button>
 
-      <div class="eat-menu">
-        <button id="eatButton">🍽️ Feed</button>
-        <div id="treatOptions" class="eat-menu hidden">
-        <button id="closeFeedMenu" class="close-feed-btn">✖</button>
-        </div>
+      <button class="circle-btn" id="eatButton" title="Feed pet">🍽️</button>
       </div>
       <button class="circle-btn" id="playBtn" title="Pat your pet">🎮</button>
       <button class="circle-btn" id="restBtn">💤</button>
@@ -62,6 +58,21 @@
       <button class="btn logout" id="logoutBtn">🚪 Logout</button>
     </footer>
   </div>
+
+
+  <!-- 🍽️ Feed Modal -->
+<div id="feedModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-overlay"></div>
+
+  <div class="modal-content">
+    <h2>🍽️ Feed Your Pet</h2>
+
+    <!-- REUSE your existing container -->
+    <div id="treatOptions" class="treat-options-modal"></div>
+
+    <button id="closeFeedModal" class="close-btn">❌ Close</button>
+  </div>
+</div>
 
 <!-- Shop Modal -->
 <div id="shopModal" class="modal hidden" aria-hidden="true">
@@ -134,6 +145,7 @@
   
 </body>
 </html>
+
 
 
 
