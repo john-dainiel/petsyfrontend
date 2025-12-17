@@ -60,17 +60,15 @@
   </div>
 
 
-  <!-- 🍽️ Feed Modal -->
-<div id="feedModal" class="modal hidden" aria-hidden="true">
+  <!-- Feed Modal -->
+<div id="feedModal" class="feed-modal hidden">
   <div class="modal-overlay"></div>
-
   <div class="modal-content">
-    <h2>🍽️ Feed Your Pet</h2>
-
-    <!-- REUSE your existing container -->
-    <div id="treatOptions" class="treat-options-modal"></div>
-
-    <button id="closeFeedModal" class="close-btn">❌ Close</button>
+    <h2>Feed Your Pet</h2>
+    <div id="treatOptions" class="treat-options">
+      <!-- Treat buttons will be injected here -->
+    </div>
+    <button id="closeFeedModal">Close</button>
   </div>
 </div>
 
@@ -145,6 +143,7 @@
   
 </body>
 </html>
+
 
 
 
