@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <title>🐾 PETSY</title>
-  <link rel="stylesheet" href="https://petsyfrontend.onrender.com/static/css/main.css" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="static/css/main.css" />
 </head>
 <body>
   <div class="background"></div>
@@ -22,18 +22,10 @@
     </header>
 
     <div id="petBars">
-      <div class="bar">
-        <label>Hunger</label><progress id="hungerBar" value="50" max="100"></progress>
-      </div>
-      <div class="bar">
-        <label>Energy</label><progress id="energyBar" value="70" max="100"></progress>
-      </div>
-      <div class="bar">
-        <label>Happiness</label><progress id="happinessBar" value="90" max="100"></progress>
-      </div>
-      <div class="bar">
-        <label>Thirst</label><progress id="thirstBar" value="80" max="100"></progress>
-      </div>
+      <div class="bar"><label>Hunger</label><progress id="hungerBar" value="50" max="100"></progress></div>
+      <div class="bar"><label>Energy</label><progress id="energyBar" value="70" max="100"></progress></div>
+      <div class="bar"><label>Happiness</label><progress id="happinessBar" value="90" max="100"></progress></div>
+      <div class="bar"><label>Thirst</label><progress id="thirstBar" value="80" max="100"></progress></div>
     </div>
 
     <div class="pet-display">
@@ -41,12 +33,10 @@
     </div>
 
     <div class="side-buttons">
-      <button class="circle-btn" id="cleanBtn" title="Clean pet (sponge)">🧽</button>
-
+      <button class="circle-btn" id="cleanBtn" title="Clean pet">🧽</button>
       <button class="circle-btn" id="eatButton" title="Feed pet">🍽️</button>
-      </div>
-      <button class="circle-btn" id="playBtn" title="Pat your pet">🎮</button>
-      <button class="circle-btn" id="restBtn">💤</button>
+      <button class="circle-btn" id="playBtn" title="Pat pet">🎮</button>
+      <button class="circle-btn" id="restBtn" title="Rest">💤</button>
       <button class="circle-btn" id="drinkBtn" title="Give Water">💧</button>
     </div>
 
@@ -59,97 +49,71 @@
     </footer>
   </div>
 
-
   <!-- Feed Modal -->
-<div id="feedModal" class="feed-modal hidden">
-  <div class="modal-overlay"></div>
-  <div class="modal-content">
-    <h2>Feed Your Pet</h2>
-    <div id="treatOptions" class="treat-options">
-      <!-- Treat buttons will be injected here -->
+  <div id="feedModal" class="feed-modal hidden">
+    <div class="modal-overlay" onclick="document.getElementById('feedModal').classList.add('hidden')"></div>
+    <div class="modal-content">
+      <h2>Feed Your Pet</h2>
+      <div id="treatOptions" class="treat-options"></div>
+      <button id="closeFeedModal" class="close-btn">Close</button>
     </div>
-    <button id="closeFeedModal">Close</button>
   </div>
-</div>
 
-<!-- Shop Modal -->
-<div id="shopModal" class="modal hidden" aria-hidden="true">
-  <div class="modal-overlay"></div>
-  <div class="modal-content">
-    <h2>🏪 Treat Shop</h2>
-    <p>Buy treats for your pet using coins!</p>
-
-    <!-- Items will be injected here dynamically -->
-    <div id="shopItemsContainer" class="shop-items"></div>
-
-    <!-- Cart -->
-    <div id="cart">
-      <h3>Cart Summary</h3>
-      <ul id="cartList"></ul>
-      <div>Total: <span id="cartTotal">0</span> 🪙</div>
-      <button id="checkoutBtn" class="shop-btn">Buy Now</button>
+  <!-- Shop Modal -->
+  <div id="shopModal" class="modal hidden">
+    <div class="modal-overlay" onclick="document.getElementById('shopModal').classList.add('hidden')"></div>
+    <div class="modal-content">
+      <h2>🏪 Treat Shop</h2>
+      <p>Buy treats for your pet using coins!</p>
+      <div id="shopItemsContainer" class="shop-items"></div>
+      <div id="cart">
+        <h3>Cart Summary</h3>
+        <ul id="cartList"></ul>
+        <div>Total: <span id="cartTotal">0</span> 🪙</div>
+        <button id="checkoutBtn" class="shop-btn">Buy Now</button>
+      </div>
+      <div id="shopResult" class="result hidden"></div>
+      <button id="closeShopBtn" class="close-btn">❌ Close</button>
     </div>
-
-    <div id="shopResult" class="result hidden"></div>
-    <button id="closeShopBtn" class="close-btn">❌ Close</button>
   </div>
-</div>
 
   <!-- Options Modal -->
-  <div id="optionsModal" class="modal hidden" aria-hidden="true">
+  <div id="optionsModal" class="modal hidden">
+    <div class="modal-overlay" onclick="document.getElementById('optionsModal').classList.add('hidden')"></div>
     <div class="modal-content">
       <h2>⚙️ Options</h2>
-
       <div class="option-row">
-        <label for="renameInput"><strong>Rename Pet</strong></label>
+        <label for="newPetName"><strong>Rename Pet</strong></label>
         <input id="newPetName" placeholder="Enter new name" />
         <div style="margin-top:8px;">
           <button id="renameBtn">Rename</button>
         </div>
         <div id="renameResult" class="result hidden" style="margin-top:8px"></div>
       </div>
-
       <hr>
-
       <div class="option-row">
         <label for="muteToggle"><strong>Music</strong></label>
         <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
           <button id="muteToggle" class="btn">Mute</button>
           <span id="muteStatus">Off</span>
         </div>
-        <div style="font-size:12px; color:#666; margin-top:6px;">This toggles the saved "muted" preference. Add an audio element later for playback control.</div>
+        <div style="font-size:12px; color:#666; margin-top:6px;">This toggles the saved "muted" preference.</div>
       </div>
-
       <hr>
-
       <div class="option-row">
         <label><strong>Future</strong></label>
         <div style="font-size:13px; color:#444; margin-top:8px;">Reserved for future settings (privacy, avatar, themes, etc.)</div>
       </div>
-
       <div style="margin-top:12px;">
         <button id="closeOptionsBtn" class="close-btn">❌ Close</button>
       </div>
     </div>
   </div>
 
-   <!-- Background music (loops automatically) -->
   <audio id="bgMusic" loop preload="auto" volume="0.5">
-  <source src="static/sounds/background.mp3" type="audio/mpeg">
+    <source src="static/sounds/background.mp3" type="audio/mpeg">
   </audio>
-  
-  <script src="https://petsyfrontend.onrender.com/static/Js/main.js"></script>
 
-  
+  <script src="static/Js/main.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
