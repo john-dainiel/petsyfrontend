@@ -1296,19 +1296,59 @@ function stopEnergyRestore() { if (energyRestoreInterval) { clearInterval(energy
 // UI & Toast helpers
 // -----------------------
 async function drinkWater() {
-  const petId = localStorage.getItem("petId"); // or however you store current pet
-  const response = await fetch(`${backendUrl}/update_thirst`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ petId: petId, amount: 100 })
+  const petId = localStorage.getItem("petId");
+  if (!petId) return;
+
+  // Optional: check if pet is sleeping
+  if (pet && (pet.sleeping || pet.is_sleeping)) {
+    showToast("😴 Your pet is sleeping.");
+    return;
+  }
+
+  // Floating emoji
+  const emoji = document.createElement('div');
+  emoji.className = 'floating-emoji';
+  emoji.textContent = '💧';
+  document.body.appendChild(emoji);
+  Object.assign(emoji.style, {
+    position: 'fixed',
+    fontSize: '3.5rem',
+    top: '38%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    opacity: '0',
+    transition: 'opacity 0.15s ease'
   });
-  
-  const data = await response.json();
-  if (data.success) {
-    console.log("💧 Thirst updated!");
-    updateStats();
+  setTimeout(() => (emoji.style.opacity = '1'), 30);
+  setTimeout(() => emoji.remove(), 1500);
+
+  try {
+    const res = await fetch(`${backendUrl}/update_thirst`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ petId: petId, amount: 10 }) // amount to increase
+    });
+
+    const data = await res.json();
+    if (data.success && data.thirst !== undefined) {
+      // update local pet object and bar
+      if (pet) pet.thirst = data.thirst;
+      const thirstBar = document.getElementById("thirstBar");
+      if (thirstBar) thirstBar.value = pet.thirst;
+
+      // optional: change bar color
+      if (pet.thirst > 70) thirstBar.style.setProperty("--progress-color", "#4caf50");
+      else if (pet.thirst > 35) thirstBar.style.setProperty("--progress-color", "#ffb300");
+      else thirstBar.style.setProperty("--progress-color", "#ff3d00");
+
+      showToast("💧 Your pet drank water!");
+    }
+  } catch (err) {
+    console.error("Drink action failed:", err);
+    showToast("⚠️ Failed to drink water.");
   }
 }
+
 
 
 function showToast(msg) {
@@ -1507,6 +1547,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
