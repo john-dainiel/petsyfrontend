@@ -262,27 +262,38 @@ function checkCollision(x1,y1,w1,h1,x2,y2,w2,h2){
 function playSound(audio){ const clone=audio.cloneNode(); clone.play(); }
 
 // End game
-function endRunnerGame(){
-    if(!gameRunning) return;
-    gameRunning=false;
-    fadeOutAudio(sounds.runner_start);
+function endRunnerGame() {
+  if (!gameRunning) return;
+  gameRunning = false;
 
-    ctx.fillStyle='rgba(0,0,0,0.6)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+  clearInterval(gameInterval);
+  clearInterval(timerInterval);
 
-    ctx.fillStyle='#fff';
-    ctx.font='36px Arial';
-    ctx.fillText('Game Over!',canvas.width/2-100,canvas.height/2-20);
-    ctx.font='24px Arial';
-    ctx.fillText(`Coins collected: ${score}`,canvas.width/2-90,canvas.height/2+20);
+  // Fade out background audio
+  fadeOutAudio(sounds.runner_start);
 
-    playSound(sounds.runner_gameover);
+  // Overlay
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    showPopup(`Game Over! You earned 🪙 ${score}`, async ()=>{
-        await updateCoinsOnServer(score,'runner');
-        initRunner('cat');
-    });
+  ctx.fillStyle = '#fff';
+  ctx.font = '36px Arial';
+  ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2 - 40);
+
+  ctx.font = '24px Arial';
+  ctx.fillText(`Coins collected: ${score}`, canvas.width / 2 - 90, canvas.height / 2);
+
+  ctx.font = '20px Arial';
+  ctx.fillText('Click ▶ Start again to retry', canvas.width / 2 - 120, canvas.height / 2 + 40);
+
+  playSound(sounds.runner_gameover);
+
+  showPopup(`Game Over! You earned 🪙 ${score}`, async () => {
+    await updateCoinsOnServer(score, 'runner');
+    initRunner('cat');
+  });
 }
+
 
 
 
@@ -462,4 +473,5 @@ document.getElementById('logoutBtn').onclick = () => {
   localStorage.clear(); // Optional: clear user data on logout
   window.location.href = 'index.html';
 };
+
 
