@@ -1401,7 +1401,7 @@ async function doDrinkAction() {
     const data = await res.json();
     if (data.success) {
       // locally update UI
-      if (pet) pet.thirst = Math.min(100, (pet.thirst || 0) + 10);
+      if (pet) pet.thirst = Math.min(100, (pet.thirst || 0) + 100);
       const thirstBar = document.getElementById("thirstBar");
       if (thirstBar) {
         thirstBar.value = pet.thirst;
@@ -1507,6 +1507,7 @@ async function loadpet() {
 })();
 
 // End of main.js
+
 
 
 
