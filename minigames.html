@@ -16,7 +16,7 @@
   <div class="games">
     <!-- Game Selector -->
     <div class="game-menu">
-      <button onclick="showGame('runner')">🏃 Runner</button>
+      <button onclick="showGame('runner')">Coin Catcher</button>
       <button onclick="showGame('quiz')">❓ Quiz</button>
       <button onclick="showGame('memory')">🧠 Memory</button>
 
@@ -32,7 +32,7 @@
       <canvas id="runnerCanvas" width="400" height="300"></canvas>
       <div id="runnerCoins">Coins 🪙 0</div>
       <div id="gameTimer">Time left: 30s</div>
-      <button id="runnerStartBtn">▶ Start Runner</button>
+      <button id="runnerStartBtn">▶ Start Coin catcher</button>
     </div>
 
     <!-- Quiz Game -->
@@ -57,7 +57,7 @@
 
   <!-- Leaderboards Column -->
   <div class="leaderboards">
-    <h3>🏃 Runner Leaderboard</h3>
+    <h3>Coin Catcher Leaderboard</h3>
     <div id="runner-leaderboard">Loading...</div>
 
     <h3>❓ Quiz Leaderboard</h3>
@@ -69,8 +69,29 @@
 </div>
 
 <script src="https://petsyfrontend.onrender.com/static/Js/minigames.js"></script>
+  <script>
+  // Coin Catcher Instructions
+  document.getElementById("runnerStartBtn").addEventListener("click", function() {
+    alert("🏃 Coin Catcher Instructions:\n- Catch coins!\n- Avoid obstacles!\nGood luck!");
+    startRunnerGame(); // make sure this function exists in minigames.js
+  });
+
+  // Quiz Game Instructions
+  document.getElementById("quizStartBtn").addEventListener("click", function() {
+    alert("❓ Quiz Instructions:\n- Solve basic math calculations!\n- Try to answer as many as you can!\n- Each correct answer gives you coins!");
+    startQuizGame(); // make sure this function exists in minigames.js
+  });
+
+  // Memory Game Instructions
+  document.getElementById("memoryStartBtn").addEventListener("click", function() {
+    alert("🧠 Memory Game Instructions:\n- Match as many pairs as you can!\n- Complete all pairs to advance levels!\n- Watch the timer!");
+    startMemoryGame(); // make sure this function exists in minigames.js
+  });
+</script>
+
 </body>
 </html>
+
 
 
 
