@@ -104,178 +104,186 @@ function showGame(game, petType='cat') {
   if(game==='memory') initMemory();
 }
 
-/* ==================== RUNNER GAME ==================== */
+/* ==================== RUNNER GAME WITHOUT PET BOUNCE ==================== */
 let canvas, ctx, petX, petY, petWidth = 80, petHeight = 80;
 let coinsArr = [], obstacles = [], score = 0;
-let gameInterval = null, timerInterval = null, countdown = 30, gameRunning = false;
-const petImg = new Image(), coinImg = new Image(), boneImg = new Image(), puddleImg = new Image();
+let gameRunning = false, countdown = 30;
+let coinSpawnTimer = 0, obstacleSpawnTimer = 0, lastTime = 0;
+let selectedLevel = 1; // 1 = easy, 2 = medium, 3 = hard
+const levelMultipliers = {1:1, 2:2, 3:3};
+const levelSpeeds = {1:{coin:4, obstacle:5}, 2:{coin:6, obstacle:7}, 3:{coin:8, obstacle:10}};
+
+const petImg = new Image();
+const coinImg = new Image(), boneImg = new Image(), puddleImg = new Image();
 let imagesLoaded = 0;
 
 // Load images helper
-function loadImage(img, src) {
-  img.src = src;
-  img.onload = () => imagesLoaded++;
-  img.onerror = () => imagesLoaded++;
-}
+function loadImage(img, src) { img.src = src; img.onload = ()=>imagesLoaded++; img.onerror = ()=>imagesLoaded++; }
 
-// Init runner game
-function initRunner(petType = 'cat') {
-  canvas = document.getElementById('runnerCanvas');
-  ctx = canvas.getContext('2d');
-  petX = canvas.width / 2 - petWidth / 2;
-  petY = canvas.height - petHeight - 10;
-  score = 0;
-  coinsArr = [];
-  obstacles = [];
-  countdown = 30;
-  gameRunning = false;
-  imagesLoaded = 0;
+// Initialize runner
+function initRunner(petType='cat'){
+    canvas = document.getElementById('runnerCanvas');
+    ctx = canvas.getContext('2d');
 
-  loadImage(petImg, petType === 'cat' ? 'static/images/cat_happy.png' : 'static/images/dog_happy.png');
-  loadImage(coinImg, 'static/images/coin.png');
-  loadImage(boneImg, 'static/images/bones.png');
-  loadImage(puddleImg, 'static/images/puddle.png');
+    petX = canvas.width/2 - petWidth/2;
+    petY = canvas.height - petHeight - 10;
+    score = 0; coinsArr=[]; obstacles=[];
+    countdown = 30; gameRunning=false; coinSpawnTimer=0; obstacleSpawnTimer=0; lastTime=0;
 
-  document.getElementById('runnerCoins').innerText = `Coins 🪙 0`;
-  drawRunnerStartScreen();
-  updateTimerDisplay();
+    loadImage(petImg, petType==='cat'?'static/images/cat_happy.png':'static/images/dog_happy.png');
+    loadImage(coinImg,'static/images/coin.png');
+    loadImage(boneImg,'static/images/bones.png');
+    loadImage(puddleImg,'static/images/puddle.png');
+
+    document.getElementById('runnerCoins').innerText=`Coins 🪙 0`;
+    drawRunnerStartScreen();
+    updateTimerDisplay();
+    showLevelSelection();
 }
 
 // Start screen
-function drawRunnerStartScreen() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#cce0ff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#000';
-  ctx.font = '36px Arial';
-  ctx.fillText('Click ▶ Start Game', canvas.width / 2 - 150, canvas.height / 2);
+function drawRunnerStartScreen(){
+    ctx.fillStyle='#87CEEB'; // sky
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#228B22'; // ground
+    ctx.fillRect(0,canvas.height-100,canvas.width,100);
+    ctx.fillStyle='#000';
+    ctx.font='32px Arial';
+    ctx.fillText('Select Level & Click ▶ Start',canvas.width/2-200,canvas.height/2);
 }
 
-// Fade out audio helper
-function fadeOutAudio(audio, duration = 500) {
-  if (!audio) return;
-  let volStep = audio.volume / (duration / 50);
-  let fade = setInterval(() => {
-    if (audio.volume > volStep) {
-      audio.volume -= volStep;
-    } else {
-      audio.pause();
-      audio.currentTime = 0;
-      audio.volume = 1;
-      clearInterval(fade);
-    }
-  }, 50);
+// Show level selection buttons
+function showLevelSelection(){
+    const container=document.getElementById('runnerLevelSelection');
+    container.innerHTML='';
+    [1,2,3].forEach(level=>{
+        const btn=document.createElement('button');
+        btn.innerText=`Level ${level}`;
+        btn.className='level-btn';
+        btn.onclick=()=>{ selectedLevel=level; startRunnerGame(); };
+        container.appendChild(btn);
+    });
 }
-
-// Start button click
-document.getElementById('runnerStartBtn').onclick = () => {
-  if (gameRunning) return;
-  if (imagesLoaded < 4) { alert("Loading images..."); return; }
-  startRunnerGame();
-  sounds.runner_start.loop = true;
-  sounds.runner_start.play();
-};
 
 // Player movement
-document.addEventListener('keydown', e => {
-  if (!gameRunning) return;
-  if (e.code === 'ArrowLeft') petX -= 15;
-  if (e.code === 'ArrowRight') petX += 15;
-  if (petX < 0) petX = 0;
-  if (petX + petWidth > canvas.width) petX = canvas.width - petWidth;
+document.addEventListener('keydown', e=>{
+    if(!gameRunning) return;
+    if(e.code==='ArrowLeft') petX-=10;
+    if(e.code==='ArrowRight') petX+=10;
+    if(petX<0) petX=0;
+    if(petX+petWidth>canvas.width) petX=canvas.width-petWidth;
 });
 
-// Spawn coin & obstacles
-function spawnRunnerCoin() { coinsArr.push({ x: Math.random() * (canvas.width - 40), y: -30, width: 40, height: 40 }); }
-function spawnRunnerObstacle() { 
-  const type = Math.random() < 0.5 ? 'bone' : 'puddle'; 
-  obstacles.push({ x: Math.random() * (canvas.width - 40), y: -30, width: 50, height: 50, type }); 
+// Spawn coins & obstacles
+function spawnRunnerCoin(){ coinsArr.push({x:Math.random()*(canvas.width-40),y:-30,width:40,height:40}); }
+function spawnRunnerObstacle(){
+    const type = Math.random()<0.5?'bone':'puddle';
+    obstacles.push({x:Math.random()*(canvas.width-50),y:-30,width:50,height:50,type});
 }
 
-// Start the game
-function startRunnerGame() {
-  gameRunning = true;
-  score = 0;
-  coinsArr = [];
-  obstacles = [];
-  countdown = 30;
-  document.getElementById('runnerCoins').innerText = `Coins 🪙 0`;
-  gameInterval = setInterval(runnerGameLoop, 20);
-  timerInterval = setInterval(() => {
-    countdown--;
-    updateTimerDisplay();
-    if (countdown <= 0) endRunnerGame();
-  }, 1000);
+// Start game
+function startRunnerGame(){
+    if(imagesLoaded<4){ alert("Loading images..."); return; }
+    gameRunning=true; score=0; coinsArr=[]; obstacles=[]; countdown=30;
+    coinSpawnTimer=0; obstacleSpawnTimer=0; lastTime=performance.now();
+    sounds.runner_start.loop=true; sounds.runner_start.play();
+
+    const timerInterval=setInterval(()=>{
+        if(!gameRunning){ clearInterval(timerInterval); return; }
+        countdown--;
+        updateTimerDisplay();
+        if(countdown<=0) endRunnerGame();
+    },1000);
+
+    requestAnimationFrame(runnerLoop);
 }
 
-function updateTimerDisplay() { document.getElementById('gameTimer').innerText = `Time left: ${countdown}s`; }
+// Update timer display
+function updateTimerDisplay(){ document.getElementById('gameTimer').innerText=`Time left: ${countdown}s`; }
 
-// Game loop
-function runnerGameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#cce0ff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(petImg, petX, petY, petWidth, petHeight);
+// Main game loop
+function runnerLoop(timestamp){
+    if(!gameRunning) return;
 
-  if (Math.random() < 0.02) spawnRunnerCoin();
-  if (Math.random() < 0.01) spawnRunnerObstacle();
+    const delta=timestamp-lastTime;
+    lastTime=timestamp;
 
-  // Coins
-  for (let i = coinsArr.length - 1; i >= 0; i--) {
-    const c = coinsArr[i];
-    c.y += 4;
-    ctx.drawImage(coinImg, c.x, c.y, c.width, c.height);
-    if (c.x < petX + petWidth && c.x + c.width > petX && c.y < petY + petHeight && c.y + c.height > petY) {
-      score++; coinsArr.splice(i, 1);
-      document.getElementById('runnerCoins').innerText = `Coins 🪙 ${score}`;
-      sounds.coin.play();
+    coinSpawnTimer+=delta; obstacleSpawnTimer+=delta;
+    const speeds=levelSpeeds[selectedLevel];
+
+    if(coinSpawnTimer>=1000){ spawnRunnerCoin(); coinSpawnTimer=0; }
+    if(obstacleSpawnTimer>=1500){ spawnRunnerObstacle(); obstacleSpawnTimer=0; }
+
+    // Background
+    ctx.fillStyle='#87CEEB'; ctx.fillRect(0,0,canvas.width,canvas.height); // sky
+    ctx.fillStyle='#228B22'; ctx.fillRect(0,canvas.height-100,canvas.width,100); // ground
+
+    // Draw pet (static)
+    ctx.drawImage(petImg,petX,petY,petWidth,petHeight);
+
+    // Coins
+    for(let i=coinsArr.length-1;i>=0;i--){
+        const c=coinsArr[i]; c.y+=speeds.coin;
+        ctx.drawImage(coinImg,c.x,c.y,c.width,c.height);
+        if(checkCollision(petX,petY,petWidth,petHeight,c.x,c.y,c.width,c.height)){
+            score+=levelMultipliers[selectedLevel];
+            coinsArr.splice(i,1);
+            updateRunnerInfoDisplay();
+            playSound(sounds.coin);
+        }else if(c.y>canvas.height) coinsArr.splice(i,1);
     }
-    if (c.y > canvas.height) coinsArr.splice(i, 1);
-  }
 
-  // Obstacles
-  for (let i = obstacles.length - 1; i >= 0; i--) {
-    const ob = obstacles[i];
-    ob.y += 5;
-    if (ob.type === 'bone') ctx.drawImage(boneImg, ob.x, ob.y, ob.width, ob.height);
-    else ctx.drawImage(puddleImg, ob.x, ob.y, ob.width, ob.height);
-
-    if (ob.x < petX + petWidth && ob.x + ob.width > petX && ob.y < petY + petHeight && ob.y + ob.height > petY) {
-      endRunnerGame();
-      return;
+    // Obstacles
+    for(let i=obstacles.length-1;i>=0;i--){
+        const ob=obstacles[i]; ob.y+=speeds.obstacle;
+        ctx.drawImage(ob.type==='bone'?boneImg:puddleImg,ob.x,ob.y,ob.width,ob.height);
+        if(checkCollision(petX,petY,petWidth,petHeight,ob.x,ob.y,ob.width,ob.height)){ endRunnerGame(); return; }
+        else if(ob.y>canvas.height) obstacles.splice(i,1);
     }
-    if (ob.y > canvas.height) obstacles.splice(i, 1);
-  }
+
+    // Display level info
+    updateRunnerInfoDisplay();
+
+    requestAnimationFrame(runnerLoop);
 }
+
+// Display level & coins with multiplier
+function updateRunnerInfoDisplay(){
+    ctx.fillStyle='#000'; ctx.font='20px Arial';
+    ctx.fillText(`Level ${selectedLevel} • Coins 🪙 ${score} (x${levelMultipliers[selectedLevel]})`,10,30);
+}
+
+// Collision detection
+function checkCollision(x1,y1,w1,h1,x2,y2,w2,h2){
+    return x1<x2+w2 && x1+w1>x2 && y1<y2+h2 && y1+h1>y2;
+}
+
+// Play sound
+function playSound(audio){ const clone=audio.cloneNode(); clone.play(); }
 
 // End game
-function endRunnerGame() {
-  if (!gameRunning) return;
-  gameRunning = false;
+function endRunnerGame(){
+    if(!gameRunning) return;
+    gameRunning=false;
+    fadeOutAudio(sounds.runner_start);
 
-  clearInterval(gameInterval);
-  clearInterval(timerInterval);
+    ctx.fillStyle='rgba(0,0,0,0.6)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // Fade out runner_start background
-  fadeOutAudio(sounds.runner_start);
+    ctx.fillStyle='#fff';
+    ctx.font='36px Arial';
+    ctx.fillText('Game Over!',canvas.width/2-100,canvas.height/2-20);
+    ctx.font='24px Arial';
+    ctx.fillText(`Coins collected: ${score}`,canvas.width/2-90,canvas.height/2+20);
 
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    playSound(sounds.runner_gameover);
 
-  ctx.fillStyle = '#fff';
-  ctx.font = '36px Arial';
-  ctx.fillText('Game Over!', canvas.width / 2 - 100, canvas.height / 2 - 20);
-
-  ctx.font = '24px Arial';
-  ctx.fillText(`Coins collected: ${score}`, canvas.width / 2 - 90, canvas.height / 2 + 20);
-
-  sounds.runner_gameover.play();
-
-  showPopup(`Game Over! You earned 🪙 ${score}`, async () => {
-    await updateCoinsOnServer(score, 'runner');
-    initRunner('cat');
-  });
+    showPopup(`Game Over! You earned 🪙 ${score}`, async ()=>{
+        await updateCoinsOnServer(score,'runner');
+        initRunner('cat');
+    });
 }
+
 
 
 
@@ -454,3 +462,4 @@ document.getElementById('logoutBtn').onclick = () => {
   localStorage.clear(); // Optional: clear user data on logout
   window.location.href = 'index.html';
 };
+
