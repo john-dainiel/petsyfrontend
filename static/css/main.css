@@ -1,6 +1,6 @@
 /* ============================
    🌙 PETSY Main Page Styles - Fixed Fit
-   ===========================*/
+   ============================*/
 
 /* Body & layout */
 html, body {
@@ -174,34 +174,33 @@ progress::-moz-progress-bar { background: var(--progress-color); border-radius: 
 .logout:hover { background: rgba(255,0,0,0.5); }
 
 /* =========================
-   MODALS (CLICK-SAFE FIX)
+   MODALS FIXED
    ========================= */
 
-/* Overlay (behind modal) */
+/* Feed/Shop/Options modal wrapper */
+.feed-modal,
+.modal {
+  position: fixed;
+  inset: 0; /* full screen */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* below content */
+}
+
+/* Overlay */
 .modal-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.35); /* lighter so bars don’t look disabled */
+  background: rgba(0,0,0,0.35);
   z-index: 1000;
-  pointer-events: auto;
 }
 
-/* Modal container */
-.modal,
-.feed-modal {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 320px;
-  max-width: 90%;
-  z-index: 1001; /* ABOVE overlay */
-  pointer-events: auto;
-}
-
-/* Modal content (clickable area) */
+/* Modal content */
 .modal .modal-content,
 .feed-modal .modal-content {
+  position: relative;
+  z-index: 1001; /* above overlay */
   background: rgba(255,255,255,0.98);
   color: #222;
   padding: 1.5rem;
@@ -211,7 +210,6 @@ progress::-moz-progress-bar { background: var(--progress-color); border-radius: 
   box-shadow: 0 8px 30px rgba(0,0,0,0.4);
   pointer-events: auto;
 }
-
 
 .hidden { display: none !important; }
 
@@ -257,4 +255,3 @@ progress::-moz-progress-bar { background: var(--progress-color); border-radius: 
   .pet-display img { width: 150px; }
   .side-buttons { bottom: 120px; }
 }
-
