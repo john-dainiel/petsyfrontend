@@ -174,6 +174,113 @@ checkoutBtn.addEventListener("click", async () => {
   renderCart();
 });
 
+// -------------------------------
+// User-Friendly Enhancements
+// -------------------------------
+
+// Tooltip on items
+function createTooltip(text) {
+  const tooltip = document.createElement("span");
+  tooltip.className = "tooltip";
+  tooltip.innerText = text;
+  return tooltip;
+}
+
+// Add quantity display next to item in cart
+function renderCart() {
+  cartContainer.innerHTML = "";
+  cart.forEach((item, idx) => {
+    const div = document.createElement("div");
+    div.classList.add("cart-item");
+
+    div.innerHTML = `
+      <span>${item.emoji} ${item.name} x ${item.quantity} = ${item.price * item.quantity}</span>
+      <button class="remove-btn">Remove</button>
+    `;
+
+    const removeBtn = div.querySelector(".remove-btn");
+    removeBtn.addEventListener("click", () => {
+      if (confirm(`Remove ${item.name} from cart?`)) {
+        removeFromCart(idx);
+      }
+    });
+
+    cartContainer.appendChild(div);
+  });
+  updateRemainingCoins();
+}
+
+// Highlight items that cost more than remaining coins
+function highlightExpensiveItems() {
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  itemsContainer.querySelectorAll(".item").forEach((div, idx) => {
+    const remaining = userCoins - total;
+    const qtyInput = div.querySelector("input");
+    if (items[idx].price * parseInt(qtyInput.value || 0) > remaining) {
+      div.style.backgroundColor = "#ffe6e6"; // light red
+    } else {
+      div.style.backgroundColor = ""; // normal
+    }
+  });
+}
+
+// Show small success message when adding item
+function showAddMessage(item) {
+  const msg = document.createElement("div");
+  msg.className = "add-msg";
+  msg.innerText = `Added ${item.quantity} x ${item.name} to cart!`;
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 1500);
+}
+
+// Override addToCart to show message
+const originalAddToCart = addToCart;
+addToCart = function(idx) {
+  const qty = parseInt(document.getElementById(`qty-${idx}`).value);
+  if (qty <= 0) return;
+  originalAddToCart(idx);
+  const item = items[idx];
+  showAddMessage({ ...item, quantity: qty });
+  highlightExpensiveItems();
+}
+
+// Update remaining coins also highlights expensive items
+const originalUpdateRemainingCoins = updateRemainingCoins;
+updateRemainingCoins = function() {
+  originalUpdateRemainingCoins();
+  highlightExpensiveItems();
+}
+
+// Small CSS for tooltip and messages
+const style = document.createElement("style");
+style.innerHTML = `
+.tooltip {
+  margin-left: 8px;
+  font-size: 0.85em;
+  color: #555;
+}
+.add-msg {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #d4edda;
+  color: #155724;
+  padding: 8px 12px;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  font-weight: bold;
+  z-index: 9999;
+}
+.item input {
+  width: 50px;
+  margin-left: 5px;
+}
+.item button {
+  margin-left: 5px;
+}
+`;
+document.head.appendChild(style);
+
 
 // -------------------------------
 // Initialize
